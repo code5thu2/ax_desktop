@@ -1,0 +1,16 @@
+[package]
+name = "ax-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+shared-types = { path = "../shared-types" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+reqwest = { workspace = true }
+zip = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
