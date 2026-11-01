@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useStorage } from '@vueuse/core'
 import type { PluginItem } from '../types/plugin'
+import { nativeBridge } from '@/services/nativeBridge'
 
 export const INITIAL_PLUGINS: PluginItem[] = [
   {
@@ -251,10 +252,9 @@ export const usePluginStore = defineStore('plugins', () => {
   async function fetchCatalogFromServer() {
     isLoadingCatalog.value = true
     try {
-      const res = await fetch(`${registryServerUrl.value}/api/v1/catalog`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
+      const data = await nativeBridge.getCatalog(registryServerUrl.value)
       const remoteServers = data.servers || []
+      isServerOnline.value = true
 
       // Merge remote servers with local state
       remoteServers.forEach((remote: any) => {

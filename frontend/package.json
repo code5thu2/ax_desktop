@@ -11,12 +11,16 @@
     "test:watch": "vitest",
     "typecheck": "vue-tsc --noEmit",
     "mock": "node mock-server.cjs",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
     "build:desktop": "build_desktop.bat",
     "build:installer": "build_installer.bat"
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.10.0",
     "@primevue/themes": "^4.0.7",
+    "@tauri-apps/api": "^2.0.0",
     "@vueuse/core": "^10.9.0",
     "highlight.js": "^11.9.0",
     "lucide-vue-next": "^0.350.0",

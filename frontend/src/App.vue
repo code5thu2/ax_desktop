@@ -3,6 +3,7 @@ import { watch, onMounted } from 'vue'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useSettingsStore } from '@/features/settings/stores/settingsStore'
+import { nativeBridge } from '@/services/nativeBridge'
 
 const settingsStore = useSettingsStore()
 
@@ -15,13 +16,8 @@ function syncTheme(isDark: boolean) {
     root.classList.remove('dark', 'app-dark')
   }
 
-  // Synchronize Windows 11 title bar via pywebview DesktopApi
-  if (typeof window !== 'undefined') {
-    const api = (window as any).pywebview?.api
-    if (api && typeof api.set_theme === 'function') {
-      api.set_theme(isDark)
-    }
-  }
+  // Synchronize Windows 11 title bar via NativeBridge (Tauri IPC or fallback)
+  nativeBridge.setTheme(isDark)
 }
 
 watch(
