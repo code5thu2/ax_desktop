@@ -91,11 +91,11 @@ async function handleRegister() {
   formError.value = null
 
   try {
-    await nativeBridge.requestRegisterOtp({
-      email: email.value.trim(),
-      username: username.value.trim(),
-      password: password.value,
-    })
+    const res = await nativeBridge.requestRegisterOtp(email.value.trim())
+    if (!res.ok) {
+      formError.value = res.error || 'Gửi OTP thất bại'
+      return
+    }
 
     formSuccess.value = t('register.successMsg')
 

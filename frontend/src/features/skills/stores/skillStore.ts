@@ -1,0 +1,334 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { nativeBridge } from '@/services/nativeBridge'
+import type { SkillItem } from '@/types/generated/SkillItem'
+import type { SkillDetail } from '@/types/generated/SkillDetail'
+import type { SkillVersionItem } from '@/types/generated/SkillVersionItem'
+import type { InstalledPlugin } from '@/types/generated/InstalledPlugin'
+
+export type StudioMode = 'skills' | 'mcp'
+export type SkillTab = 'marketplace' | 'installed' | 'projects'
+export type InstalledFilter = 'all' | 'global' | 'project'
+
+export const useSkillStore = defineStore('skills', () => {
+  // App Mode (Skill Marketplace vs MCP Protocol Studio)
+  const currentMode = ref<StudioMode>('skills')
+
+  // Navigation & Filtering
+  const activeTab = ref<SkillTab>('marketplace')
+  const installedFilter = ref<InstalledFilter>('all')
+  const searchQuery = ref('')
+  const selectedCategory = ref<string>('All')
+
+  // Data states
+  const skills = ref<SkillItem[]>([])
+  const selectedSkillName = ref<string | null>(null)
+  const skillDetail = ref<SkillDetail | null>(null)
+  const skillVersions = ref<SkillVersionItem[]>([])
+  const installedSkills = ref<InstalledPlugin[]>([])
+  const recentProjects = ref<string[]>([])
+  const currentProject = ref<string | null>(null)
+
+  // System states
+  const isLoading = ref(false)
+  const isCheckingUpdate = ref(false)
+  const availableUpdate = ref<any>(null)
+  const autostartEnabled = ref(false)
+
+  // Dialog Visibility
+  const showScopeModal = ref(false)
+  const pendingInstallSkill = ref<SkillItem | null>(null)
+  const showFolderPickerModal = ref(false)
+  const showCloneSkillModal = ref(false)
+  const showUpdateDialog = ref(false)
+
+  // Computed Properties
+  const selectedSkill = computed<SkillItem | null>(() => {
+    if (!selectedSkillName.value) return skills.value[0] || null
+    return skills.value.find((s) => s.name === selectedSkillName.value) || null
+  })
+
+  const filteredMarketplaceSkills = computed<SkillItem[]>(() => {
+    let list = skills.value
+    if (selectedCategory.value && selectedCategory.value !== 'All') {
+      list = list.filter((s) => s.categories.includes(selectedCategory.value))
+    }
+    if (searchQuery.value.trim()) {
+      const q = searchQuery.value.toLowerCase().trim()
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.description.toLowerCase().includes(q) ||
+          s.creatorName.toLowerCase().includes(q)
+      )
+    }
+    return list
+  })
+
+  const filteredInstalledSkills = computed<InstalledPlugin[]>(() => {
+    let list = installedSkills.value
+    if (installedFilter.value === 'global') {
+      list = list.filter((s) => s.scope === 'global')
+    } else if (installedFilter.value === 'project') {
+      list = list.filter((s) => s.scope === 'project')
+    }
+    if (searchQuery.value.trim()) {
+      const q = searchQuery.value.toLowerCase().trim()
+      list = list.filter((s) => s.name.toLowerCase().includes(q))
+    }
+    return list
+  })
+
+  // Mode and Tab switchers
+  function setMode(mode: StudioMode) {
+    currentMode.value = mode
+  }
+
+  function setActiveTab(tab: SkillTab) {
+    activeTab.value = tab
+  }
+
+  function setInstalledFilter(filter: InstalledFilter) {
+    installedFilter.value = filter
+  }
+
+  // Actions
+  async function loadPortalStatus() {
+    try {
+      const status = await nativeBridge.getStatus()
+      installedSkills.value = status.installed || []
+      recentProjects.value = status.recentProjects || []
+      if (!currentProject.value && recentProjects.value.length > 0) {
+        currentProject.value = recentProjects.value[0]
+      }
+      autostartEnabled.value = await nativeBridge.isAutostartEnabled()
+    } catch (e) {
+      console.warn('Failed to load portal status:', e)
+    }
+  }
+
+  async function fetchMarketplaceSkills(query?: string) {
+    isLoading.value = true
+    try {
+      const res = await nativeBridge.fetchSkills({ skillName: query })
+      skills.value = res.items
+      if (res.items.length > 0 && !selectedSkillName.value) {
+        selectedSkillName.value = res.items[0].name
+        await fetchSkillDetail(res.items[0].id)
+      }
+    } catch (e) {
+      console.error('Failed to fetch marketplace skills:', e)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function fetchSkillDetail(id: number | bigint) {
+    try {
+      const [detail, versions] = await Promise.all([
+        nativeBridge.getSkillDetail(id),
+        nativeBridge.getSkillVersions(id),
+      ])
+      skillDetail.value = detail
+      skillVersions.value = versions
+    } catch (e) {
+      console.error(`Failed to fetch skill detail for ${id}:`, e)
+    }
+  }
+
+  function selectSkill(skill: SkillItem) {
+    selectedSkillName.value = skill.name
+    fetchSkillDetail(skill.id)
+  }
+
+  async function installSkill(
+    name: string,
+    version: number,
+    scope: 'global' | 'project',
+    targetDir?: string
+  ): Promise<InstalledPlugin> {
+    isLoading.value = true
+    try {
+      const target = scope === 'project' ? (targetDir || currentProject.value || '.') : '.'
+      const installed = await nativeBridge.installSkill(name, version, target, scope)
+
+      // Update state
+      const existingIdx = installedSkills.value.findIndex((s) => s.name === name)
+      if (existingIdx >= 0) {
+        installedSkills.value[existingIdx] = installed
+      } else {
+        installedSkills.value.push(installed)
+      }
+
+      // Mark in marketplace skills
+      const mSkill = skills.value.find((s) => s.name === name)
+      if (mSkill) {
+        mSkill.installed = true
+        mSkill.enabled = true
+        mSkill.installScope = scope
+      }
+
+      return installed
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function uninstallSkill(name: string, projectPath?: string): Promise<boolean> {
+    isLoading.value = true
+    try {
+      const ok = await nativeBridge.uninstallSkill(name, projectPath)
+      if (ok) {
+        installedSkills.value = installedSkills.value.filter((s) => s.name !== name)
+        const mSkill = skills.value.find((s) => s.name === name)
+        if (mSkill) {
+          mSkill.installed = false
+          mSkill.enabled = false
+        }
+      }
+      return ok
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function toggleSkill(name: string, enabled: boolean, projectPath?: string): Promise<boolean> {
+    try {
+      const ok = await nativeBridge.toggleSkill(name, enabled, projectPath)
+      if (ok) {
+        const item = installedSkills.value.find((s) => s.name === name)
+        if (item) {
+          item.enabled = enabled
+        }
+        const mSkill = skills.value.find((s) => s.name === name)
+        if (mSkill) {
+          mSkill.enabled = enabled
+        }
+      }
+      return ok
+    } catch (e) {
+      console.error(`Failed to toggle skill ${name}:`, e)
+      return false
+    }
+  }
+
+  async function cloneSkills(
+    sourceProject: string,
+    targetProject: string,
+    skillNames: string[]
+  ): Promise<InstalledPlugin[]> {
+    isLoading.value = true
+    try {
+      const cloned = await nativeBridge.cloneSkill(sourceProject, targetProject, skillNames)
+      await nativeBridge.saveRecentProject(targetProject)
+      if (!recentProjects.value.includes(targetProject)) {
+        recentProjects.value.unshift(targetProject)
+      }
+      return cloned
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  function setCurrentProject(projectPath: string) {
+    currentProject.value = projectPath
+    if (!recentProjects.value.includes(projectPath)) {
+      recentProjects.value.unshift(projectPath)
+    }
+    nativeBridge.saveRecentProject(projectPath).catch(() => {})
+  }
+
+  function addProject(projectPath: string) {
+    if (!recentProjects.value.includes(projectPath)) {
+      recentProjects.value.unshift(projectPath)
+    }
+    currentProject.value = projectPath
+    nativeBridge.saveRecentProject(projectPath).catch(() => {})
+  }
+
+  async function removeProject(projectPath: string) {
+    await nativeBridge.removeRecentProject(projectPath)
+    recentProjects.value = recentProjects.value.filter((p) => p !== projectPath)
+    if (currentProject.value === projectPath) {
+      currentProject.value = recentProjects.value[0] || null
+    }
+  }
+
+  async function pickProjectFolder(): Promise<string | null> {
+    const res = await nativeBridge.selectFolder()
+    if (res.ok && res.path) {
+      await addProject(res.path)
+      return res.path
+    }
+    return null
+  }
+
+  async function checkForUpdates() {
+    isCheckingUpdate.value = true
+    try {
+      const rel = await nativeBridge.checkForUpdate()
+      if (rel.status === 'success' && rel.updateAvailable) {
+        availableUpdate.value = rel
+        showUpdateDialog.value = true
+      }
+    } catch (e) {
+      console.warn('Update check failed:', e)
+    } finally {
+      isCheckingUpdate.value = false
+    }
+  }
+
+  async function openAiproStudio(): Promise<string> {
+    return await nativeBridge.openAiproStudio()
+  }
+
+  async function setAutostart(enable: boolean) {
+    await nativeBridge.setAutostart(enable)
+    autostartEnabled.value = enable
+  }
+
+  return {
+    currentMode,
+    activeTab,
+    installedFilter,
+    searchQuery,
+    selectedCategory,
+    skills,
+    selectedSkillName,
+    selectedSkill,
+    skillDetail,
+    skillVersions,
+    installedSkills,
+    recentProjects,
+    currentProject,
+    isLoading,
+    isCheckingUpdate,
+    availableUpdate,
+    autostartEnabled,
+    showScopeModal,
+    pendingInstallSkill,
+    showFolderPickerModal,
+    showCloneSkillModal,
+    showUpdateDialog,
+    filteredMarketplaceSkills,
+    filteredInstalledSkills,
+    setMode,
+    setActiveTab,
+    setInstalledFilter,
+    loadPortalStatus,
+    fetchMarketplaceSkills,
+    fetchSkillDetail,
+    selectSkill,
+    installSkill,
+    uninstallSkill,
+    toggleSkill,
+    cloneSkills,
+    setCurrentProject,
+    addProject,
+    removeProject,
+    pickProjectFolder,
+    checkForUpdates,
+    openAiproStudio,
+    setAutostart,
+  }
+})

@@ -74,17 +74,20 @@ async function handleVerifyOtp() {
   formError.value = null
 
   try {
-    const res = await nativeBridge.verifyRegisterOtp({
-      email: props.email,
-      otp: otpValue.value,
-      username: props.username,
-      password: props.password,
-    })
+    const res = await nativeBridge.verifyRegisterOtp(props.email, otpValue.value)
+    if (!res.ok) {
+      formError.value = res.error || 'Xác thực OTP thất bại'
+      return
+    }
 
     formSuccess.value = t('otp.successMsg', { code: otpValue.value })
 
     setTimeout(() => {
-      emit('login-success', res.user)
+      emit('login-success', {
+        id: BigInt(Date.now()) as unknown as bigint,
+        name: props.username,
+        email: props.email,
+      })
     }, 1000)
   } catch (err: any) {
     formError.value = err?.message || String(err)
@@ -101,11 +104,7 @@ async function handleResendOtp() {
   formSuccess.value = null
 
   try {
-    await nativeBridge.requestRegisterOtp({
-      email: props.email,
-      username: props.username,
-      password: props.password,
-    })
+    await nativeBridge.requestRegisterOtp(props.email)
     infoNotice.value = t('otp.infoResent')
     startCountdown()
   } catch (err: any) {

@@ -1,14 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { defineComponent, h, Transition } from 'vue'
 import PrimeVue from 'primevue/config'
 import App from '../App.vue'
+import { useAuthStore } from '@/features/auth/stores/authStore'
 
 describe('App Route Transitions', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const auth = useAuthStore()
+    auth.setGuestMode()
   })
 
   it('wraps router-view in a page-fade transition with out-in mode', async () => {
@@ -52,6 +56,7 @@ describe('App Route Transitions', () => {
     })
 
     await router.isReady()
+    await flushPromises()
 
     // Verify Transition exists with name "page-fade" and mode "out-in"
     const transition = wrapper.findComponent(Transition)

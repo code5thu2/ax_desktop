@@ -5,8 +5,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'plugins',
-      component: () => import('@/features/plugins/views/PluginStandaloneView.vue'),
+      name: 'portal',
+      component: () => import('@/features/skills/AXPortalView.vue'),
     },
     {
       path: '/plugins',

@@ -122,7 +122,9 @@ pub fn run() {
             commands::is_autostart_enabled,
             commands::set_autostart,
             commands::remember_project_path,
+            commands::save_recent_project,
             commands::remove_recent_project,
+            commands::show_window,
             commands::get_app_info,
             // MCP Protocol Studio
             commands::get_catalog,

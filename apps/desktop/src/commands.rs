@@ -422,7 +422,10 @@ pub fn set_autostart(enable: bool) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn remember_project_path(state: State<'_, AppState>, path: String) -> Result<(), String> {
+pub fn save_recent_project(state: State<'_, AppState>, path: String) -> Result<serde_json::Value, String> {
+    if path.trim().is_empty() {
+        return Err("Project path cannot be empty".to_string());
+    }
     let mut settings = read_json_safe::<Settings>(&state.settings_path).unwrap_or(Settings {
         theme: "dark".to_string(),
         recent_projects: vec![],
@@ -430,13 +433,23 @@ pub fn remember_project_path(state: State<'_, AppState>, path: String) -> Result
         remember_account: true,
     });
     let norm = normalize_path(&path);
-    settings.recent_projects.retain(|p| p != &norm);
+    settings.recent_projects.retain(|p| p.to_lowercase() != norm.to_lowercase());
     settings.recent_projects.insert(0, norm);
-    write_json_atomic(&state.settings_path, &settings).map_err(|e| e.to_string())
+    if settings.recent_projects.len() > 8 {
+        settings.recent_projects.truncate(8);
+    }
+    write_json_atomic(&state.settings_path, &settings).map_err(|e| e.to_string())?;
+    Ok(serde_json::json!({ "ok": true }))
 }
 
 #[tauri::command]
-pub fn remove_recent_project(state: State<'_, AppState>, path: String) -> Result<(), String> {
+pub fn remember_project_path(state: State<'_, AppState>, path: String) -> Result<(), String> {
+    let _ = save_recent_project(state, path);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn remove_recent_project(state: State<'_, AppState>, path: String) -> Result<serde_json::Value, String> {
     let mut settings = read_json_safe::<Settings>(&state.settings_path).unwrap_or(Settings {
         theme: "dark".to_string(),
         recent_projects: vec![],
@@ -444,8 +457,16 @@ pub fn remove_recent_project(state: State<'_, AppState>, path: String) -> Result
         remember_account: true,
     });
     let norm = normalize_path(&path);
-    settings.recent_projects.retain(|p| p != &norm);
-    write_json_atomic(&state.settings_path, &settings).map_err(|e| e.to_string())
+    settings.recent_projects.retain(|p| p.to_lowercase() != norm.to_lowercase());
+    write_json_atomic(&state.settings_path, &settings).map_err(|e| e.to_string())?;
+    Ok(serde_json::json!({ "ok": true }))
+}
+
+#[tauri::command]
+pub fn show_window(window: Window) -> Result<(), String> {
+    let _ = window.show();
+    let _ = window.set_focus();
+    Ok(())
 }
 
 #[tauri::command]

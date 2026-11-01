@@ -1,17 +1,15 @@
 /**
  * Unified Native Bridge Adapter for AX Desktop
- * Automatically routes calls to Tauri v2 Native IPC if running in desktop shell,
- * or falls back seamlessly to Mock/HTTP Gateway in web browser mode.
+ * Maps 1:1 with Tauri v2 Native IPC commands per AX Desktop API Reference.
+ * Provides fallback mock responses in browser/test mode.
  */
 
 import type { CatalogResponse } from '@/types/generated/CatalogResponse'
 import type { PortalStatus } from '@/types/generated/PortalStatus'
-import type { Settings } from '@/types/generated/Settings'
 import type { SkillItem } from '@/types/generated/SkillItem'
 import type { SkillDetail } from '@/types/generated/SkillDetail'
 import type { SkillVersionItem } from '@/types/generated/SkillVersionItem'
 import type { InstalledPlugin } from '@/types/generated/InstalledPlugin'
-import type { GithubRelease } from '@/types/generated/GithubRelease'
 import type { AuthUser } from '@/types/generated/AuthUser'
 
 export function isTauriEnvironment(): boolean {
@@ -40,56 +38,164 @@ let mockUser: AuthUser = {
   avatar: undefined,
 }
 
+let mockSkills: SkillItem[] = [
+  {
+    id: BigInt(1) as unknown as bigint,
+    name: 'vietnam-business-law-skills',
+    description: 'Tự động tra cứu và phân tích luật doanh nghiệp, lao động và thuế Việt Nam với độ chính xác cao.',
+    creatorName: 'AIPRO Law Lab',
+    createdAt: '2026-10-01T08:00:00Z',
+    status: 'APPROVED',
+    scope: 'PUBLIC',
+    categories: ['Legal', 'Business'],
+    stages: ['Production'],
+    viewCount: BigInt(1250) as unknown as bigint,
+    avgRating: 4.9,
+    ratingCount: BigInt(48) as unknown as bigint,
+    subscribed: false,
+    installed: false,
+    enabled: false,
+    installedProjects: [],
+    projectStates: {},
+  },
+  {
+    id: BigInt(2) as unknown as bigint,
+    name: 'frontend-design-master',
+    description: 'Thiết kế giao diện PrimeVue & Tailwind chuẩn UX/UI chuyên nghiệp, loại bỏ jank và animation thừa.',
+    creatorName: 'AIPRO Studio',
+    createdAt: '2026-10-10T08:00:00Z',
+    status: 'APPROVED',
+    scope: 'PUBLIC',
+    categories: ['Frontend', 'UI'],
+    stages: ['Production'],
+    viewCount: BigInt(3400) as unknown as bigint,
+    avgRating: 4.8,
+    ratingCount: BigInt(112) as unknown as bigint,
+    subscribed: true,
+    installed: true,
+    enabled: true,
+    installScope: 'global',
+    installedProjects: [],
+    projectStates: {},
+    installedVersion: 2,
+  },
+  {
+    id: BigInt(3) as unknown as bigint,
+    name: 'spring-boot-suite',
+    description: 'Bộ công cụ phân tích Bean, Request Mappings, và chẩn đoán lỗi tự động cho Spring Boot.',
+    creatorName: 'DevTools Corp',
+    createdAt: '2026-09-15T08:00:00Z',
+    status: 'APPROVED',
+    scope: 'PUBLIC',
+    categories: ['Backend', 'Java'],
+    stages: ['Production'],
+    viewCount: BigInt(980) as unknown as bigint,
+    avgRating: 4.7,
+    ratingCount: BigInt(35) as unknown as bigint,
+    subscribed: false,
+    installed: false,
+    enabled: false,
+    installedProjects: [],
+    projectStates: {},
+  },
+]
+
+let mockInstalled: InstalledPlugin[] = [
+  {
+    id: BigInt(2) as unknown as bigint,
+    name: 'frontend-design-master',
+    version: 2,
+    scope: 'global',
+    installedAt: '2026-10-10T08:00:00Z',
+    enabled: true,
+  },
+]
+
+let mockRecentProjects: string[] = [
+  'D:/AI_Projects/FinanceAssistant',
+  'D:/AI_Projects/CodeReviewer',
+]
+
 export const nativeBridge = {
   isTauri: isTauriEnvironment,
 
   // ==========================================
-  // Auth Commands
+  // A.1 Auth IPC Commands
   // ==========================================
-  async login(payload: { email: string; password: string }): Promise<any> {
+  async login(payload: { email: string; password: string }): Promise<{ ok: boolean; user?: AuthUser; error?: string }> {
     if (isTauriEnvironment()) {
       return await invokeNative('login', { payload })
     }
-    // Web mock fallback
     mockLoggedIn = true
     mockUser.email = payload.email
-    return {
-      tokens: { access_token: 'mock_token', token_type: 'Bearer', expires_in: 3600 },
-      user: mockUser,
-    }
+    return { ok: true, user: mockUser }
   },
 
-  async requestRegisterOtp(payload: { email: string; username: string; password: string }): Promise<string> {
+  async requestRegisterOtp(email: string): Promise<{ ok: boolean; error?: string }> {
     if (isTauriEnvironment()) {
-      return await invokeNative('request_register_otp', { payload })
+      return await invokeNative('request_register_otp', { email })
     }
-    return '123456'
+    return { ok: true }
   },
 
-  async verifyRegisterOtp(payload: { email: string; otp: string; username: string; password: string }): Promise<any> {
+  async verifyRegisterOtp(email: string, otp: string): Promise<{ ok: boolean; error?: string }> {
     if (isTauriEnvironment()) {
-      return await invokeNative('verify_register_otp', { payload })
+      return await invokeNative('verify_register_otp', { email, otp })
     }
-    if (payload.otp !== '123456') {
+    if (otp !== '123456') {
       throw new Error('Mã OTP không chính xác. Mã hợp lệ cho môi trường thử nghiệm là 123456')
     }
+    return { ok: true }
+  },
+
+  async register(payload: { name: string; email: string; password: string; confirmPassword: string }): Promise<{ ok: boolean; error?: string }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('register', { payload })
+    }
     mockLoggedIn = true
     mockUser.email = payload.email
-    mockUser.name = payload.username
-    return {
-      tokens: { access_token: 'mock_token', token_type: 'Bearer', expires_in: 3600 },
-      user: mockUser,
-    }
+    mockUser.name = payload.name
+    return { ok: true }
   },
 
-  async logout(): Promise<void> {
+  async requestForgotOtp(email: string): Promise<{ ok: boolean; error?: string }> {
     if (isTauriEnvironment()) {
-      await invokeNative('logout')
-      return
+      return await invokeNative('request_forgot_otp', { email })
+    }
+    return { ok: true }
+  },
+
+  async verifyForgotOtp(email: string, otp: string): Promise<{ ok: boolean; error?: string }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('verify_forgot_otp', { email, otp })
+    }
+    return { ok: true }
+  },
+
+  async resetPassword(email: string, newPassword: string): Promise<{ ok: boolean; error?: string }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('reset_password', { payload: { email, new_password: newPassword } })
+    }
+    return { ok: true }
+  },
+
+  async logout(): Promise<{ ok: boolean }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('logout')
     }
     mockLoggedIn = false
+    return { ok: true }
   },
 
+  async showWindow(): Promise<void> {
+    if (isTauriEnvironment()) {
+      await invokeNative('show_window')
+    }
+  },
+
+  // ==========================================
+  // A.2 Status & Marketplace Commands
+  // ==========================================
   async getStatus(): Promise<PortalStatus> {
     if (isTauriEnvironment()) {
       try {
@@ -102,143 +208,79 @@ export const nativeBridge = {
       loggedIn: mockLoggedIn,
       user: mockLoggedIn ? mockUser : undefined,
       theme: 'dark',
-      installed: [],
-      recentProjects: ['D:/AI_Projects/FinanceAssistant', 'D:/AI_Projects/CodeReviewer'],
+      installed: mockInstalled,
+      recentProjects: mockRecentProjects,
       rememberAccount: true,
       rememberedEmail: 'thang@aipro.studio',
     }
   },
 
-  async getSettings(): Promise<Settings> {
+  async fetchSkills(params: { page?: number; pageSize?: number; skillName?: string; categoryIds?: string[] } = {}): Promise<{ items: SkillItem[]; totalCount: number }> {
     if (isTauriEnvironment()) {
-      return await invokeNative<Settings>('get_settings')
+      return await invokeNative<{ items: SkillItem[]; totalCount: number }>('fetch_skills', {
+        query: params.skillName,
+        page: params.page,
+        pageSize: params.pageSize,
+      })
     }
+    let list = mockSkills
+    if (params.skillName) {
+      const q = params.skillName.toLowerCase()
+      list = list.filter((s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q))
+    }
+    return { items: list, totalCount: list.length }
+  },
+
+  async listMarketplaceSkills(query?: string, _category?: string, _tag?: string): Promise<SkillItem[]> {
+    const res = await this.fetchSkills({ skillName: query })
+    return res.items
+  },
+
+  async getSkillDetail(id: number | bigint): Promise<SkillDetail> {
+    const numId = Number(id)
+    if (isTauriEnvironment()) {
+      return await invokeNative<SkillDetail>('get_skill_detail', { id: numId })
+    }
+    const matched = mockSkills.find((s) => Number(s.id) === numId) || mockSkills[0]
     return {
-      theme: 'dark',
-      recentProjects: ['D:/AI_Projects/FinanceAssistant'],
-      rememberedEmail: 'thang@aipro.studio',
-      rememberAccount: true,
-    }
-  },
-
-  async updateSettings(payload: Settings): Promise<void> {
-    if (isTauriEnvironment()) {
-      await invokeNative('update_settings', { payload })
-    }
-  },
-
-  // ==========================================
-  // Skill Marketplace Commands
-  // ==========================================
-  async listMarketplaceSkills(query?: string, category?: string, tag?: string): Promise<SkillItem[]> {
-    if (isTauriEnvironment()) {
-      return await invokeNative<SkillItem[]>('list_marketplace_skills', { query, category, tag })
-    }
-    return [
-      {
-        id: BigInt(1) as unknown as bigint,
-        name: 'vietnam-business-law-skills',
-        description: 'Tự động tra cứu và phân tích luật doanh nghiệp, lao động và thuế Việt Nam với độ chính xác cao.',
-        creatorName: 'AIPRO Law Lab',
-        createdAt: '2026-10-01T08:00:00Z',
-        status: 'published',
-        scope: 'public',
-        categories: ['Legal', 'Business'],
-        stages: ['Production'],
-        viewCount: BigInt(1250) as unknown as bigint,
-        avgRating: 4.9,
-        ratingCount: BigInt(48) as unknown as bigint,
-        subscribed: false,
-        installed: false,
-        enabled: false,
-        installedProjects: [],
-        projectStates: {},
-      },
-      {
-        id: BigInt(2) as unknown as bigint,
-        name: 'frontend-design-master',
-        description: 'Thiết kế giao diện PrimeVue & Tailwind chuẩn UX/UI chuyên nghiệp, loại bỏ jank và animation thừa.',
-        creatorName: 'AIPRO Studio',
-        createdAt: '2026-10-10T08:00:00Z',
-        status: 'published',
-        scope: 'public',
-        categories: ['Frontend', 'UI'],
-        stages: ['Production'],
-        viewCount: BigInt(3400) as unknown as bigint,
-        avgRating: 4.8,
-        ratingCount: BigInt(112) as unknown as bigint,
-        subscribed: true,
-        installed: true,
-        enabled: true,
-        installScope: 'global',
-        installedProjects: [],
-        projectStates: {},
-        installedVersion: 2,
-      },
-      {
-        id: BigInt(3) as unknown as bigint,
-        name: 'spring-boot-suite',
-        description: 'Bộ công cụ phân tích Bean, Request Mappings, và chẩn đoán lỗi tự động cho Spring Boot.',
-        creatorName: 'DevTools Corp',
-        createdAt: '2026-09-15T08:00:00Z',
-        status: 'published',
-        scope: 'public',
-        categories: ['Backend', 'Java'],
-        stages: ['Production'],
-        viewCount: BigInt(980) as unknown as bigint,
-        avgRating: 4.7,
-        ratingCount: BigInt(35) as unknown as bigint,
-        subscribed: false,
-        installed: false,
-        enabled: false,
-        installedProjects: [],
-        projectStates: {},
-      },
-    ]
-  },
-
-  async getSkillDetail(name: string): Promise<SkillDetail> {
-    if (isTauriEnvironment()) {
-      return await invokeNative<SkillDetail>('get_skill_detail', { name })
-    }
-    return {
-      id: BigInt(1) as unknown as bigint,
-      name,
-      description: 'Mô tả chi tiết về skill ' + name,
-      creatorName: 'AIPRO Studio',
-      createdAt: '2026-10-01T08:00:00Z',
-      status: 'published',
-      scope: 'public',
-      categories: ['Productivity'],
-      stages: ['Production'],
-      viewCount: BigInt(100) as unknown as bigint,
-      avgRating: 5.0,
-      ratingCount: BigInt(12) as unknown as bigint,
-      subscribed: false,
-      installed: false,
-      enabled: false,
-      installedProjects: [],
-      projectStates: {},
-      version: 1,
-      hashtags: ['productivity', 'ai'],
-      files: [{ id: BigInt(1) as unknown as bigint, fileName: 'SKILL.md', fileSize: BigInt(1024) as unknown as bigint, createdAt: '2026-10-01T08:00:00Z' }],
+      id: matched.id,
+      name: matched.name,
+      description: matched.description,
+      creatorName: matched.creatorName,
+      createdAt: matched.createdAt,
+      status: matched.status,
+      scope: matched.scope,
+      categories: matched.categories,
+      stages: matched.stages,
+      viewCount: matched.viewCount,
+      avgRating: matched.avgRating,
+      ratingCount: matched.ratingCount,
+      subscribed: matched.subscribed,
+      installed: matched.installed,
+      enabled: matched.enabled,
+      installedProjects: matched.installedProjects,
+      projectStates: matched.projectStates,
+      version: matched.installedVersion || 1,
+      hashtags: ['automation', 'aipro'],
+      files: [{ id: BigInt(1) as unknown as bigint, fileName: 'SKILL.md', fileSize: BigInt(1024) as unknown as bigint, createdAt: matched.createdAt }],
       isCreator: false,
       canEdit: false,
-      updatedAt: '2026-10-01T08:00:00Z',
+      updatedAt: matched.createdAt,
     }
   },
 
-  async listSkillVersions(name: string): Promise<SkillVersionItem[]> {
+  async getSkillVersions(id: number | bigint): Promise<SkillVersionItem[]> {
+    const numId = Number(id)
     if (isTauriEnvironment()) {
-      return await invokeNative<SkillVersionItem[]>('list_skill_versions', { name })
+      return await invokeNative<SkillVersionItem[]>('get_skill_versions', { id: numId })
     }
     return [
       {
         version: 1,
-        name,
-        description: 'Bản phát hành đầu tiên',
-        publicScope: 'public',
-        hashtags: ['initial'],
+        name: 'skill-initial',
+        description: 'Bản phát hành ổn định ban đầu',
+        publicScope: 'PUBLIC',
+        hashtags: ['v1', 'stable'],
         creatorName: 'AIPRO Studio',
         createdAt: '2026-10-01T08:00:00Z',
         files: [],
@@ -246,28 +288,54 @@ export const nativeBridge = {
     ]
   },
 
-  async listInstalledSkills(projectPath?: string): Promise<InstalledPlugin[]> {
+  // ==========================================
+  // A.3 Install / Uninstall / Toggle / Clone
+  // ==========================================
+  async install(payload: { skill_id: number | bigint; name?: string; version?: number; scope?: string; project_path?: string }): Promise<{ ok: boolean; error?: string; warning?: string }> {
     if (isTauriEnvironment()) {
-      return await invokeNative<InstalledPlugin[]>('list_installed_skills', { projectPath })
+      return await invokeNative('install', {
+        payload: {
+          skill_id: Number(payload.skill_id),
+          name: payload.name,
+          version: payload.version,
+          scope: payload.scope,
+          project_path: payload.project_path,
+        },
+      })
     }
-    return [
-      {
-        id: BigInt(1) as unknown as bigint,
-        name: 'frontend-design-master',
-        version: 2,
-        scope: 'global',
-        installedAt: '2026-10-10T08:00:00Z',
-        enabled: true,
-      },
-    ]
+    // Mock local install
+    const sId = BigInt(payload.skill_id) as unknown as bigint
+    const item: InstalledPlugin = {
+      id: sId,
+      name: payload.name || 'custom-skill',
+      version: payload.version || 1,
+      scope: payload.scope || 'global',
+      installedAt: new Date().toISOString(),
+      projectPath: payload.project_path,
+      enabled: true,
+    }
+    mockInstalled.push(item)
+    const m = mockSkills.find((s) => s.id === sId)
+    if (m) {
+      m.installed = true
+      m.enabled = true
+      m.installScope = payload.scope
+    }
+    return { ok: true }
   },
 
   async installSkill(name: string, version: number, targetDir: string, scope: string): Promise<InstalledPlugin> {
-    if (isTauriEnvironment()) {
-      return await invokeNative<InstalledPlugin>('install_skill', { name, version, targetDir, scope })
-    }
+    const matched = mockSkills.find((s) => s.name === name)
+    const id = matched ? matched.id : BigInt(Date.now()) as unknown as bigint
+    await this.install({
+      skill_id: id,
+      name,
+      version,
+      scope,
+      project_path: scope === 'project' ? targetDir : undefined,
+    })
     return {
-      id: BigInt(Date.now()) as unknown as bigint,
+      id,
       name,
       version,
       scope,
@@ -277,42 +345,147 @@ export const nativeBridge = {
     }
   },
 
-  async uninstallSkill(name: string, projectPath?: string): Promise<boolean> {
+  async uninstall(payload: { skill_id: number | bigint; scope?: string; project_path?: string }): Promise<{ ok: boolean; error?: string }> {
     if (isTauriEnvironment()) {
-      return await invokeNative<boolean>('uninstall_skill', { name, projectPath })
+      return await invokeNative('uninstall', {
+        payload: {
+          skill_id: Number(payload.skill_id),
+          scope: payload.scope,
+          project_path: payload.project_path,
+        },
+      })
     }
-    return true
+    const numId = Number(payload.skill_id)
+    mockInstalled = mockInstalled.filter((i) => Number(i.id) !== numId)
+    const m = mockSkills.find((s) => Number(s.id) === numId)
+    if (m) {
+      m.installed = false
+      m.enabled = false
+    }
+    return { ok: true }
+  },
+
+  async uninstallSkill(name: string, projectPath?: string): Promise<boolean> {
+    const matched = mockSkills.find((s) => s.name === name)
+    const id = matched ? matched.id : 0
+    const res = await this.uninstall({
+      skill_id: id,
+      scope: projectPath ? 'project' : 'global',
+      project_path: projectPath,
+    })
+    return res.ok
+  },
+
+  async toggle(payload: { skill_id: number | bigint; enabled: boolean; scope?: string; project_path?: string }): Promise<{ ok: boolean }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('toggle', {
+        payload: {
+          skill_id: Number(payload.skill_id),
+          enabled: payload.enabled,
+          scope: payload.scope,
+          project_path: payload.project_path,
+        },
+      })
+    }
+    const numId = Number(payload.skill_id)
+    const item = mockInstalled.find((i) => Number(i.id) === numId)
+    if (item) item.enabled = payload.enabled
+    const m = mockSkills.find((s) => Number(s.id) === numId)
+    if (m) m.enabled = payload.enabled
+    return { ok: true }
   },
 
   async toggleSkill(name: string, enabled: boolean, projectPath?: string): Promise<boolean> {
-    if (isTauriEnvironment()) {
-      return await invokeNative<boolean>('toggle_skill', { name, enabled, projectPath })
-    }
-    return true
+    const matched = mockSkills.find((s) => s.name === name)
+    const id = matched ? matched.id : 0
+    const res = await this.toggle({
+      skill_id: id,
+      enabled,
+      scope: projectPath ? 'project' : 'global',
+      project_path: projectPath,
+    })
+    return res.ok
   },
 
   async cloneSkill(sourceProject: string, targetProject: string, skillNames: string[]): Promise<InstalledPlugin[]> {
     if (isTauriEnvironment()) {
-      return await invokeNative<InstalledPlugin[]>('clone_skill', { sourceProject, targetProject, skillNames })
+      const cloned: InstalledPlugin[] = []
+      for (const name of skillNames) {
+        const matched = mockSkills.find((s) => s.name === name)
+        const skillId = matched ? Number(matched.id) : 1
+        await invokeNative('clone_skill', {
+          payload: {
+            skill_id: skillId,
+            source_project_path: sourceProject,
+            target_project_path: targetProject,
+          },
+        })
+      }
+      return cloned
     }
     return []
   },
 
   // ==========================================
-  // System & Platform Commands
+  // A.4 Settings / Projects / Integration
   // ==========================================
-  async openAiproStudio(): Promise<string> {
+  async setTheme(theme: string | boolean): Promise<void> {
+    const themeStr = typeof theme === 'boolean' ? (theme ? 'dark' : 'light') : theme
     if (isTauriEnvironment()) {
-      return await invokeNative<string>('open_aipro_studio')
+      try {
+        await invokeNative('set_theme', { theme: themeStr })
+        return
+      } catch {
+        // ignore
+      }
     }
-    return 'Đã kích hoạt khởi động AIPRO Studio trong chế độ thử nghiệm.'
   },
 
-  async checkAppUpdate(currentVersion: string): Promise<GithubRelease | null> {
+  async saveRecentProject(path: string): Promise<{ ok: boolean; error?: string }> {
     if (isTauriEnvironment()) {
-      return await invokeNative<GithubRelease | null>('check_app_update', { currentVersion })
+      return await invokeNative('save_recent_project', { path })
     }
-    return null
+    if (!mockRecentProjects.includes(path)) {
+      mockRecentProjects.unshift(path)
+    }
+    return { ok: true }
+  },
+
+  async removeRecentProject(path: string): Promise<{ ok: boolean; error?: string }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('remove_recent_project', { path })
+    }
+    mockRecentProjects = mockRecentProjects.filter((p) => p !== path)
+    return { ok: true }
+  },
+
+  async selectFolder(): Promise<{ ok: boolean; path?: string; cancelled?: boolean; error?: string }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('select_folder')
+    }
+    return { ok: true, path: 'D:/AI_Projects/DemoWorkspace' }
+  },
+
+  async openStudio(): Promise<{ ok: boolean; error?: string }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('open_studio')
+    }
+    return { ok: true }
+  },
+
+  async openAiproStudio(): Promise<string> {
+    const res = await this.openStudio()
+    if (res.ok) {
+      return 'Đã khởi động AIPRO Studio thành công.'
+    }
+    throw new Error(res.error || 'Không tìm thấy AIPRO_Studio.exe')
+  },
+
+  async checkForUpdate(): Promise<{ status: string; updateAvailable?: boolean; latestVersion?: string; currentVersion?: string; error?: string }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('check_for_update')
+    }
+    return { status: 'success', updateAvailable: false, currentVersion: '1.0.0' }
   },
 
   async isAutostartEnabled(): Promise<boolean> {
@@ -331,17 +504,7 @@ export const nativeBridge = {
       try {
         await invokeNative('set_autostart', { enable })
       } catch {
-        // Ignore
-      }
-    }
-  },
-
-  async setTheme(isDark: boolean): Promise<void> {
-    if (isTauriEnvironment()) {
-      try {
-        await invokeNative('set_theme', { isDark })
-      } catch {
-        // Ignore
+        // ignore
       }
     }
   },
@@ -362,22 +525,20 @@ export const nativeBridge = {
   },
 
   // ==========================================
-  // Legacy / MCP Catalog Commands
+  // MCP Protocol Studio Catalog
   // ==========================================
   async getCatalog(registryUrl: string, query?: string, category?: string): Promise<CatalogResponse> {
     if (isTauriEnvironment()) {
       try {
         return await invokeNative<CatalogResponse>('get_catalog', { query, category })
       } catch (e) {
-        console.warn('[NativeBridge] get_catalog invoke failed, falling back to fetch:', e)
+        console.warn('[NativeBridge] get_catalog failed, falling back:', e)
       }
     }
-
     const params = new URLSearchParams()
     if (query) params.append('q', query)
     if (category) params.append('category', category)
     const qs = params.toString() ? `?${params.toString()}` : ''
-
     const res = await fetch(`${registryUrl}/api/v1/catalog${qs}`)
     if (!res.ok) {
       throw new Error(`Failed to fetch catalog: HTTP ${res.status}`)

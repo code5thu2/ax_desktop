@@ -10,6 +10,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isInitialized = ref(false)
 
   async function checkAuthStatus() {
+    if (isGuest.value) {
+      isInitialized.value = true
+      return
+    }
     try {
       const status = await nativeBridge.getStatus()
       if (status.loggedIn && status.user) {
@@ -32,6 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn.value = true
     isGuest.value = false
     currentUser.value = user
+    isInitialized.value = true
   }
 
   function setGuestMode() {
@@ -43,6 +48,7 @@ export const useAuthStore = defineStore('auth', () => {
       email: 'guest@aipro.studio',
       avatar: undefined,
     }
+    isInitialized.value = true
   }
 
   async function logout() {
