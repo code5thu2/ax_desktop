@@ -1,0 +1,16 @@
+[package]
+name = "desktop"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+shared-types = { path = "../../crates/shared-types" }
+win11-platform = { path = "../../crates/win11-platform" }
+mcp-core = { path = "../../crates/mcp-core" }
+tauri = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
