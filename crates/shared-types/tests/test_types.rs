@@ -1,7 +1,7 @@
 use shared_types::models::{
     PluginEnvRequirement, PluginItem, PluginTool, CatalogResponse,
-    AuthUser, AuthTokens, InstalledPlugin, SkillItem, SkillDetail,
-    SkillVersionItem, PortalStatus, Settings, GithubRelease, GithubAsset
+    AuthUser, AuthTokens, InstalledPlugin,
+    PortalStatus, GithubRelease, GithubAsset
 };
 
 #[test]

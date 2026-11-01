@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title Build Installer - MCP Protocol Studio
+title Build Installer - AX Desktop
 cd /d "%~dp0"
 
 echo ======================================================================
