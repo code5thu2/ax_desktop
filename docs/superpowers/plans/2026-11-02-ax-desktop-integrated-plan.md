@@ -123,23 +123,24 @@
 
 ---
 
-### Task 6: Tauri Desktop Shell Integration in `apps/desktop`
+### Task 6: Tauri Desktop Shell Integration in `apps/desktop` (System Tray & Autostart)
 
 **Files:**
 - Modify: `apps/desktop/Cargo.toml` (thêm dependency `ax-core`)
 - Modify: `apps/desktop/tauri.conf.json` (`productName: "AX Desktop"`)
-- Modify: `apps/desktop/src/commands.rs` (đăng ký đầy đủ `js_api` contract IPC commands)
-- Modify: `apps/desktop/src/lib.rs`
+- Modify: `apps/desktop/src/commands.rs` (đăng ký đầy đủ `js_api` contract IPC commands + autostart)
+- Modify: `apps/desktop/src/lib.rs` (Tauri TrayIconBuilder, Close-to-Tray event handler, Window focus)
 - Test: `cargo test -p desktop`
 
 **Interfaces:**
-- Produces: Tauri IPC commands: `login`, `get_status`, `fetch_skills`, `get_skill_detail`, `install_skill`, `uninstall_skill`, `toggle_skill`, `clone_skill`, `open_studio`, `select_folder`, `check_for_update`, `download_update`
+- Produces: Tauri IPC commands: `login`, `get_status`, `fetch_skills`, `get_skill_detail`, `install_skill`, `uninstall_skill`, `toggle_skill`, `clone_skill`, `open_studio`, `select_folder`, `check_for_update`, `download_update`, `is_autostart_enabled`, `set_autostart`
+- System Tray: Khay hệ thống với menu "Mở AX Desktop", "Khởi động cùng Windows", "Thoát"; chặn nút Close `X` để ẩn xuống khay
 
-- [ ] **Step 1: Write tests for commands dispatching and error mapping**
-- [ ] **Step 2: Implement Tauri IPC handlers in `commands.rs` connecting to `ax-core`**
-- [ ] **Step 3: Register commands in `tauri::Builder` in `apps/desktop/src/lib.rs`**
+- [ ] **Step 1: Write tests for commands dispatching, autostart toggle, and error mapping**
+- [ ] **Step 2: Implement Tauri IPC handlers in `commands.rs` connecting to `ax-core` and `win11-platform`**
+- [ ] **Step 3: Setup System Tray Icon & Context Menu, hook `WindowEvent::CloseRequested` to hide window instead of exiting**
 - [ ] **Step 4: Verify workspace builds cleanly** (`cargo build -p desktop`)
-- [ ] **Step 5: Commit** (`git commit -m "feat(desktop): expose all ax-desktop js_api ipc commands in tauri shell"`)
+- [ ] **Step 5: Commit** (`git commit -m "feat(desktop): implement system tray, close-to-tray, and windows autostart"`)
 
 ---
 

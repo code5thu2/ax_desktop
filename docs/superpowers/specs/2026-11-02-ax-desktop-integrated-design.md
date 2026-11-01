@@ -18,6 +18,9 @@
    - Thay thế 100% backend Python cũ bằng Rust hiệu năng cao, khởi động < 0.3s, RAM ~40-50MB.
    - Triển khai **Mock API Engine** cho phép kiểm thử offline toàn bộ luồng Auth và Marketplace mà không phụ thuộc server mạng nội bộ.
    - Hỗ trợ cập nhật ứng dụng tự động qua GitHub Releases API công khai (`https://github.com/code5thu2/ax_desktop`).
+   - **Tích hợp System Tray & Windows Autostart**:
+     - Ẩn xuống khay hệ thống khi bấm nút Close `[X]` (Close-to-Tray), click vào icon khay để khôi phục cửa sổ.
+     - Khởi động cùng Windows qua Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` (có toggle trong Settings và Tray menu).
 3. **Frontend Hiện đại (Vue 3 + PrimeVue 4 Aura)**:
    - Tuân thủ triết lý `frontend-design`: Giao diện Obsidian AI Dark cao cấp, điểm nhấn ngọc lục bảo (Emerald `#10A37F`), hiệu ứng Ambient Glow và Glassmorphism.
    - Tích hợp bộ màn hình xác thực chất lượng cao từ `D:\primevue-auth-showcase` (`LoginScreen`, `RegisterScreen`, `OtpScreen`, `ForgotScreen`, `LogoutScreen`).
@@ -112,6 +115,8 @@ d:\mcp-server-test\
    - `select_folder()` -> Mở hộp thoại chọn thư mục gốc của Windows
    - `check_for_update()` -> Gọi GitHub Releases API (`https://api.github.com/repos/code5thu2/ax_desktop/releases`)
    - `download_update()` -> Tải file installer
+   - `is_autostart_enabled()` -> Kiểm tra trạng thái khởi động cùng Windows
+   - `set_autostart(enable: bool)` -> Bật/tắt ghi Registry khởi động cùng Windows
 4. **MCP Commands hiện có**:
    - `get_catalog()`, `execute_tool()`
 
