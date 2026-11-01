@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+*.spec
+
+# Virtual Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Binaries & Portable Engines
+bin/*.exe
+bin/*.zip
+bin/uv.exe
+
+# Storage runtime & cache
+storage/installed_clients/
+storage/installed/
+temp/
+*.log
+
+# Frontend Build & Dependencies
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/build/
+frontend/release/
+frontend/export/
+frontend/.cursor/
+frontend/.idea/
+frontend/.superpowers/
+frontend/*.spec
+
+# Rust / Tauri
+src-tauri/target/
+frontend/src-tauri/target/
+target/
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

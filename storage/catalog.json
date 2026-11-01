@@ -1,0 +1,1548 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-11-01T17:04:00.825031+00:00",
+  "total": 10,
+  "servers": [
+    {
+      "id": "git-syncer",
+      "name": "Git Syncer",
+      "version": "1.0.0",
+      "vendor": "Custom Upload",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-code",
+      "summary": "Custom uploaded MCP server: Git Syncer",
+      "category": "Custom Uploads",
+      "dependencies": [],
+      "envRequirements": [
+        {
+          "key": "GITHUB_TOKEN",
+          "label": "GitHub Personal Access Token",
+          "default": "",
+          "required": true,
+          "type": "password"
+        },
+        {
+          "key": "MAX_REPOSITORIES",
+          "label": "Max Repositories to Sync",
+          "default": "50",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [],
+      "tools_count": 0,
+      "download_url": "/api/v1/catalog/git-syncer/bundle"
+    },
+    {
+      "id": "custom-tax",
+      "name": "Custom Tax Calculator",
+      "version": "1.0.0",
+      "vendor": "Custom Upload",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-code",
+      "summary": "Calculates tax based on configurable rates",
+      "category": "Custom Uploads",
+      "dependencies": [
+        "mcp"
+      ],
+      "envRequirements": [
+        {
+          "key": "TAX_RATE",
+          "label": "Tax Rate",
+          "default": "",
+          "required": true,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "calculate_tax",
+          "description": "Calculates tax for target amount.",
+          "parameters": [
+            "amount"
+          ]
+        }
+      ],
+      "tools_count": 1,
+      "download_url": "/api/v1/catalog/custom-tax/bundle"
+    },
+    {
+      "id": "archive",
+      "name": "Archive MCP Studio",
+      "version": "1.0.0",
+      "vendor": "In-House Engineering",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-box",
+      "summary": "Nen/giai nen zip & tar",
+      "category": "In-House Tools",
+      "dependencies": [],
+      "envRequirements": [
+        {
+          "key": "ARCHIVE_ACCESS_MODE",
+          "label": "Archive Access Mode",
+          "default": "readonly",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "ARCHIVE_MAX_READ_BYTES",
+          "label": "Archive Max Read Bytes",
+          "default": "1000000",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "list_archive",
+          "description": "Liệt kê các mục trong file zip/tar (tên, kích thước, nén, thư mục?).",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "read_archive_member",
+          "description": "Đọc nội dung văn bản của MỘT file bên trong archive (không cần giải nén).",
+          "parameters": [
+            "path",
+            "member",
+            "max_bytes",
+            "encoding"
+          ]
+        },
+        {
+          "name": "server_info",
+          "description": "Xem chế độ truy cập và giới hạn đọc hiện tại.",
+          "parameters": []
+        },
+        {
+          "name": "extract_archive",
+          "description": "Giải nén archive vào thư mục dest (chống zip-slip). Cần readwrite.\n\nmembers: chỉ giải nén các mục nêu tên; bỏ trống = giải nén tất cả.",
+          "parameters": [
+            "path",
+            "dest",
+            "members",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "create_archive",
+          "description": "Tạo archive mới từ danh sách tệp/thư mục nguồn. Cần readwrite.\n\narchive_format: \"zip\" | \"tar\" | \"tar.gz\". Tên trong archive lấy theo tên gốc.",
+          "parameters": [
+            "archive_path",
+            "sources",
+            "archive_format"
+          ]
+        }
+      ],
+      "tools_count": 5,
+      "download_url": "/api/v1/catalog/archive/bundle"
+    },
+    {
+      "id": "documents",
+      "name": "Documents MCP Studio",
+      "version": "1.0.0",
+      "vendor": "In-House Engineering",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-cog",
+      "summary": "Doc .docx/.pdf/.pptx -> text",
+      "category": "In-House Tools",
+      "dependencies": [
+        "python-docx>=1.1",
+        "pypdf>=4.0",
+        "python-pptx>=0.6",
+        "fpdf2>=2.7",
+        "docxtpl>=0.16"
+      ],
+      "envRequirements": [
+        {
+          "key": "DOCS_ACCESS_MODE",
+          "label": "Docs Access Mode",
+          "default": "readonly",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "DOCS_MAX_CHARS",
+          "label": "Docs Max Chars",
+          "default": "200000",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "document_info",
+          "description": "Xem thông tin tài liệu: loại, kích thước, số trang/đoạn/slide, metadata.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "read_document",
+          "description": "Trích toàn bộ văn bản của tài liệu (giới hạn theo DOCS_MAX_CHARS).\n\npage_range chỉ áp dụng cho PDF, ví dụ \"1-5\" hoặc \"1,3,7\" (đánh số từ 1).\nmax_chars ghi đè giới hạn mặc định (không vượt quá DOCS_MAX_CHARS).",
+          "parameters": [
+            "path",
+            "max_chars",
+            "page_range"
+          ]
+        },
+        {
+          "name": "server_info",
+          "description": "Xem chế độ truy cập, định dạng đọc/ghi được hỗ trợ.",
+          "parameters": []
+        },
+        {
+          "name": "list_document_images",
+          "description": "Liệt kê ảnh nhúng trong tài liệu (docx/pptx/pdf) — chỉ metadata.\n\nTrả về tên file, định dạng, kích thước, vị trí (trang với PDF) — để biết có\nảnh nào trước khi gọi read_document_images.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "read_document_images",
+          "description": "Trả ảnh nhúng dưới dạng image content để AI/model vision xem nội dung.\n\nindex=None -> mọi ảnh (giới hạn max_images); index=N -> chỉ ảnh thứ N theo\nthứ tự của list_document_images. Ảnh định dạng vector (emf/wmf) chỉ báo metadata.",
+          "parameters": [
+            "path",
+            "index",
+            "max_images"
+          ]
+        },
+        {
+          "name": "write_document",
+          "description": "Tạo/ghi tài liệu từ văn bản. Hỗ trợ .docx/.txt/.md/.pdf. Cần readwrite.\n\n.docx: mỗi dòng -> một đoạn. .txt/.md: ghi thẳng. .pdf: dựng bằng fpdf2\n(dùng font unicode để in được tiếng Việt/Hàn). overwrite=False -> báo lỗi nếu đã có.",
+          "parameters": [
+            "path",
+            "content",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "append_document",
+          "description": "Nối thêm văn bản vào cuối tài liệu .docx/.txt/.md đã có. Cần readwrite.\n\n(PDF không hỗ trợ nối thêm — dùng write_document để tạo mới.)",
+          "parameters": [
+            "path",
+            "content"
+          ]
+        },
+        {
+          "name": "merge_pdf",
+          "description": "Gộp nhiều PDF thành một (theo thứ tự `paths`). Cần readwrite.",
+          "parameters": [
+            "paths",
+            "output",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "split_pdf",
+          "description": "Trích các trang của PDF ra một PDF mới. page_range vd \"1-5\" hoặc \"1,3,7\".\n\nBỏ trống page_range -> lấy tất cả. Cần readwrite.",
+          "parameters": [
+            "path",
+            "output",
+            "page_range",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "rotate_pdf",
+          "description": "Xoay trang PDF (bội số 90 độ). page_range=None -> xoay mọi trang. Cần readwrite.",
+          "parameters": [
+            "path",
+            "output",
+            "degrees",
+            "page_range",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "fill_docx_template",
+          "description": "Điền template Word .docx hoặc .doc bằng docxtpl (Jinja) & bracket tags, GIỮ NGUYÊN style.\n\nHỗ trợ:\n- Cú pháp Jinja: `{{ ten }}`, `{% for r in rows %}...{% endfor %}`.\n- Nhúng ảnh/chữ ký tự động: context chứa `{\"signature\": {\"image_path\": \"...\", \"width_mm\": 40}}`\n  hoặc đường dẫn ảnh .png/.jpg.\n- Điền placeholder dạng ngoặc: `[Họ và tên]`, `<TEN_KHACH>`, `{GIA}`.\n- Template đầu vào là `.docx` hoặc `.doc` (tự động chuyển đổi nếu là .doc).\nCần readwrite.",
+          "parameters": [
+            "template",
+            "output",
+            "context",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "get_docx_template_placeholders",
+          "description": "Khảo sát và trích xuất toàn bộ placeholder trong template Word (.doc, .docx).\n\nPhát hiện:\n- Biến Jinja: `{{ ten }}`, `{% for item in items %}`\n- Biến dạng ngoặc: `[Họ và tên]`, `<TEN_KHACH_HANG>`, `{SO_TIEN}`\nTìm trong toàn bộ văn bản (đoạn văn, bảng biểu, ô cell, header/footer).\nGiúp AI biết chính xác các biến cần điền mà không cần mở file.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "replace_document_text",
+          "description": "Thay thế văn bản/placeholder trong Word (.doc, .docx) với độ chính xác tuyệt đối (Không sai một ly).\n\nGiải quyết triệt để lỗi phân mảnh Run (Split-Run XML):\nNgay cả khi placeholder (vd `[Họ và tên]`) bị tách qua nhiều run XML khác nhau,\ncông cụ vẫn thay thế chuẩn xác và GIỮ NGUYÊN 100% định dạng (font chữ, cỡ chữ,\nin đậm bold, in nghiêng italic, màu chữ, gạch chân).\nHỗ trợ thay thế nhiều dòng ('\\n' chuyển thành line break).\nÁp dụng cho đoạn văn (paragraphs), bảng biểu (tables/cells), và header/footer.\nCần readwrite.",
+          "parameters": [
+            "path",
+            "output",
+            "replacements",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "fill_docx_table",
+          "description": "Nhân bản hàng mẫu (template row) trong bảng Word để điền danh sách dữ liệu động.\n\nGiữ nguyên 100% định dạng hàng (\"Không sai một ly\"):\n- Màu nền ô (cell shading/background fill)\n- Đường viền ô (borders)\n- Căn lề ô và đoạn văn (alignment)\n- Font chữ, cỡ chữ, bold, italic, màu sắc của từng ô\n- Vị trí hàng tổng cộng / footer bên dưới không bị lệch.\n\ntable_index: Thứ tự bảng trong file (0-based, mặc định 0).\nrows_data: Danh sách các dict dữ liệu, ví dụ:\n           [{\"{{stt}}\": \"1\", \"{{ten}}\": \"Sản phẩm A\", \"{{gia}}\": \"100.000\"}, ...]\n           hoặc dùng placeholder dạng `[STT]`, `[TEN]`.\ntemplate_row_index: Vị trí hàng mẫu trong bảng (thường là hàng 1 sau hàng tiêu đề 0).\nCần readwrite.",
+          "parameters": [
+            "path",
+            "output",
+            "table_index",
+            "rows_data",
+            "template_row_index",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "list_docx_tables",
+          "description": "Khảo sát và liệt kê toàn bộ bảng trong tài liệu Word (.docx hoặc .doc).\n\nTrả về: danh sách bảng, chỉ số (0-based), số hàng, số cột, tiêu đề cột và preview dữ liệu.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "read_docx_table",
+          "description": "Trích xuất dữ liệu có cấu trúc từ một bảng cụ thể trong Word (.docx, .doc).\n\nTự động xử lý ô gộp (Merged Cells): Khử triệt để lỗi in lặp text do ô gộp của OpenXML.\n- as_records=True -> trả về danh sách dict theo tiêu đề cột: [{\"Cột A\": \"giá trị 1\"}, ...].\n- as_records=False -> trả về ma trận lưới 2 chiều (matrix).\n- propagate_merged_values=False -> các ô gộp phụ nhận giá trị None; True -> nhân bản giá trị ô gốc.",
+          "parameters": [
+            "path",
+            "table_index",
+            "as_records",
+            "propagate_merged_values"
+          ]
+        },
+        {
+          "name": "insert_docx_table",
+          "description": "Tạo mới hoặc chèn thêm một bảng có định dạng chuyên nghiệp vào tài liệu Word (.docx, .doc).\n\nHỗ trợ preset màu văn phòng chuẩn:\n- 'corporate_blue': Xanh dương doanh nghiệp đậm\n- 'classic_navy': Xanh navy cổ điển\n- 'modern_gray': Xám hiện đại\n- 'emerald_green': Xanh ngọc lục bảo\n- 'crimson_red': Đỏ đô sang trọng\n\nĐịnh dạng chuẩn 'Không sai một ly':\n- Lặp tiêu đề trang (w:tblHeader) khi bảng kéo dài qua nhiều trang.\n- Chống gãy dòng (w:cantSplit) trên từng hàng.\n- Căn lề bảng, đệm trong ô (padding), độ rộng cột tùy chỉnh theo cm.\nCần readwrite.",
+          "parameters": [
+            "output",
+            "headers",
+            "data",
+            "path",
+            "title",
+            "style",
+            "col_widths",
+            "header_bg",
+            "header_color",
+            "preset",
+            "zebra_striping",
+            "alignment",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "set_docx_cell",
+          "description": "Cập nhật giá trị và định dạng cho một ô cụ thể trong bảng Word (.docx, .doc).\n\ntable_index: Thứ tự bảng trong tài liệu (0-based).\nrow, col: Tọa độ hàng và cột của ô cần sửa (0-based).\nvalue: Giá trị mới (None để giữ nguyên text hiện tại và chỉ đổi định dạng).\nbold, italic: In đậm / in nghiêng.\nfont_size: Cỡ chữ (Pt), ví dụ 11.0.\nfont_color: Mã màu chữ hex, ví dụ '#FF0000'.\nbg_color: Mã màu nền ô hex, ví dụ '#FFFF00'.\nalign: Căn lề ('left', 'center', 'right', 'justify').\nCần readwrite.",
+          "parameters": [
+            "path",
+            "output",
+            "table_index",
+            "row",
+            "col",
+            "value",
+            "bold",
+            "italic",
+            "font_size",
+            "font_color",
+            "bg_color",
+            "align",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "edit_docx_table_rows",
+          "description": "Thao tác thêm, chèn hoặc xóa hàng trong bảng Word (.docx, .doc).\n\naction:\n- 'append': Thêm các hàng mới vào cuối bảng.\n- 'insert': Chèn hàng mới tại vị trí row_index.\n- 'delete': Xóa hàng tại vị trí row_index.\ncopy_style: Tự động kế thừa định dạng (màu nền, viền kẻ, padding, font) từ hàng liền kề.\nCần readwrite.",
+          "parameters": [
+            "path",
+            "output",
+            "table_index",
+            "action",
+            "rows_data",
+            "row_index",
+            "copy_style",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "convert_doc_to_docx",
+          "description": "Chuyển đổi file Word legacy .doc (97-2003) sang định dạng .docx hiện đại.\n\nYêu cầu Microsoft Word trên máy tính (sử dụng Word COM automation). Cần readwrite.",
+          "parameters": [
+            "path",
+            "output",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "attach_file_to_docx",
+          "description": "Đính kèm/nhúng một tập tin bất kỳ (zip, pdf, txt, png...) vào tài liệu Word (.docx).\n\nTập tin được nhúng dưới dạng OLE Object kèm biểu tượng (icon) trong Word, cho phép\nngười xem click đúp chuột trực tiếp vào biểu tượng để mở hoặc trích xuất tệp.\nYêu cầu DOCS_ACCESS_MODE=readwrite.\n\nArgs:\n    docx_path: Đường dẫn tới tài liệu Word đích (.docx).\n    file_path: Đường dẫn tới tập tin cần đính kèm/nhúng vào tài liệu Word.\n    display_name: Tên hiển thị dưới biểu tượng đính kèm (mặc định là tên file).\n    caption: Đoạn văn bản chú thích/mô tả đặt phía trước biểu tượng đính kèm.\n    create_if_missing: Nếu True và docx_path chưa tồn tại, tự động tạo mới tài liệu Word.",
+          "parameters": [
+            "docx_path",
+            "file_path",
+            "display_name",
+            "caption",
+            "create_if_missing"
+          ]
+        },
+        {
+          "name": "save_template",
+          "description": "Lưu một template .docx vào kho theo `name` (dùng lại sau bằng fill_from_template).",
+          "parameters": [
+            "name",
+            "path",
+            "note",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "list_templates",
+          "description": "Liệt kê các template docx đã lưu trong kho.",
+          "parameters": []
+        },
+        {
+          "name": "fill_from_template",
+          "description": "Điền template docx đã lưu (gọi theo TÊN) bằng docxtpl. Cần readwrite.",
+          "parameters": [
+            "name",
+            "output",
+            "context",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "delete_template",
+          "description": "Xoá một template docx khỏi kho. Cần readwrite.",
+          "parameters": [
+            "name"
+          ]
+        },
+        {
+          "name": "read_docx_style",
+          "description": "Đọc ĐẦY ĐỦ định dạng .docx / .doc theo thứ tự block (đoạn văn / bảng).\n\nĐoạn: style, canh lề, thụt lề, giãn dòng + các run (text, font, size, bold/italic/\nunderline/strike, màu chữ, highlight). Bảng: text từng ô + **màu nền (shading)**,\n**border**, **merge** (gridSpan/vMerge), độ rộng ô. max_blocks giới hạn số block.",
+          "parameters": [
+            "path",
+            "max_blocks"
+          ]
+        }
+      ],
+      "tools_count": 26,
+      "download_url": "/api/v1/catalog/documents/bundle"
+    },
+    {
+      "id": "excel",
+      "name": "Excel MCP Studio",
+      "version": "1.0.0",
+      "vendor": "In-House Engineering",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-file-excel",
+      "summary": "Doc/ghi/dinh dang Excel .xlsx",
+      "category": "In-House Tools",
+      "dependencies": [
+        "openpyxl>=3.1",
+        "pandas>=2.0"
+      ],
+      "envRequirements": [
+        {
+          "key": "EXCEL_ACCESS_MODE",
+          "label": "Excel Access Mode",
+          "default": "readwrite",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "server_info",
+          "description": "Xem chế độ truy cập hiện tại (readonly/readwrite).",
+          "parameters": []
+        },
+        {
+          "name": "create_workbook",
+          "description": "Tạo workbook .xlsx mới. Đặt overwrite=True để ghi đè nếu file đã tồn tại.",
+          "parameters": [
+            "path",
+            "sheet_name",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "get_workbook_info",
+          "description": "Xem thông tin tổng quan: danh sách sheet, kích thước (số dòng/cột) mỗi sheet.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "list_sheets",
+          "description": "Liệt kê tên các sheet trong workbook.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "add_sheet",
+          "description": "Thêm một sheet mới. index=None -> thêm vào cuối.",
+          "parameters": [
+            "path",
+            "sheet_name",
+            "index"
+          ]
+        },
+        {
+          "name": "delete_sheet",
+          "description": "Xoá một sheet.",
+          "parameters": [
+            "path",
+            "sheet_name"
+          ]
+        },
+        {
+          "name": "rename_sheet",
+          "description": "Đổi tên sheet.",
+          "parameters": [
+            "path",
+            "old_name",
+            "new_name"
+          ]
+        },
+        {
+          "name": "read_range",
+          "description": "Đọc dữ liệu dạng lưới 2 chiều.\n\ncell_range: ví dụ \"A1:C10\". None -> đọc toàn bộ vùng đã dùng.\nevaluate_formulas=True -> trả giá trị đã tính; False -> trả công thức thô.",
+          "parameters": [
+            "path",
+            "sheet",
+            "cell_range",
+            "evaluate_formulas"
+          ]
+        },
+        {
+          "name": "read_cell",
+          "description": "Đọc giá trị của một ô, ví dụ cell=\"B2\".",
+          "parameters": [
+            "path",
+            "cell",
+            "sheet",
+            "evaluate_formulas"
+          ]
+        },
+        {
+          "name": "read_cell_format",
+          "description": "Đọc ĐẦY ĐỦ định dạng một ô: màu nền, fill, font (đậm/nghiêng/gạch/màu/size/tên),\nborder 4+chéo, canh lề (wrap/xoay/indent), number_format, protection, hyperlink,\ncomment, style name, vùng merge, độ rộng cột & cao dòng.",
+          "parameters": [
+            "path",
+            "cell",
+            "sheet",
+            "include_value",
+            "evaluate_formulas"
+          ]
+        },
+        {
+          "name": "read_range_format",
+          "description": "Đọc đầy đủ định dạng cho MỌI ô trong vùng (vd \"A1:C5\"). Xem read_cell_format.",
+          "parameters": [
+            "path",
+            "cell_range",
+            "sheet",
+            "include_value",
+            "evaluate_formulas"
+          ]
+        },
+        {
+          "name": "write_cell",
+          "description": "Ghi giá trị vào một ô. Chuỗi bắt đầu bằng '=' được coi là công thức.",
+          "parameters": [
+            "path",
+            "cell",
+            "value",
+            "sheet"
+          ]
+        },
+        {
+          "name": "write_range",
+          "description": "Ghi một lưới 2 chiều bắt đầu từ start_cell (mặc định A1).\n\nvalues là danh sách các dòng, mỗi dòng là danh sách giá trị.",
+          "parameters": [
+            "path",
+            "values",
+            "start_cell",
+            "sheet"
+          ]
+        },
+        {
+          "name": "clear_range",
+          "description": "Xoá nội dung các ô trong vùng (giữ nguyên định dạng).",
+          "parameters": [
+            "path",
+            "cell_range",
+            "sheet"
+          ]
+        },
+        {
+          "name": "set_formula",
+          "description": "Đặt công thức cho một ô. formula tự thêm '=' nếu thiếu, ví dụ \"SUM(A1:A10)\".",
+          "parameters": [
+            "path",
+            "cell",
+            "formula",
+            "sheet"
+          ]
+        },
+        {
+          "name": "format_range",
+          "description": "Định dạng một vùng ô.\n\nMàu dùng mã hex 6 ký tự, ví dụ \"FF0000\" (đỏ). number_format ví dụ \"#,##0.00\"\nhoặc \"0.0%\". border=True vẽ viền mảnh cho mọi ô trong vùng.",
+          "parameters": [
+            "path",
+            "cell_range",
+            "sheet",
+            "bold",
+            "italic",
+            "font_size",
+            "font_color",
+            "bg_color",
+            "number_format",
+            "h_align",
+            "v_align",
+            "wrap_text",
+            "border"
+          ]
+        },
+        {
+          "name": "merge_cells",
+          "description": "Gộp các ô trong vùng, ví dụ \"A1:D1\".",
+          "parameters": [
+            "path",
+            "cell_range",
+            "sheet"
+          ]
+        },
+        {
+          "name": "unmerge_cells",
+          "description": "Bỏ gộp ô cho vùng đã gộp.",
+          "parameters": [
+            "path",
+            "cell_range",
+            "sheet"
+          ]
+        },
+        {
+          "name": "set_column_width",
+          "description": "Đặt độ rộng cột, ví dụ column=\"B\", width=20.",
+          "parameters": [
+            "path",
+            "column",
+            "width",
+            "sheet"
+          ]
+        },
+        {
+          "name": "set_row_height",
+          "description": "Đặt chiều cao dòng.",
+          "parameters": [
+            "path",
+            "row",
+            "height",
+            "sheet"
+          ]
+        },
+        {
+          "name": "autofit_columns",
+          "description": "Ước lượng và giãn độ rộng cột theo nội dung dài nhất (giới hạn max_width).\n\nHỗ trợ chuẩn East Asian Width (CJK/Hangul): Các ký tự tiếng Hàn, chữ Hán, Nhật\nchiếm độ rộng gấp đôi (Wide ~2.0) ký tự Latin, đảm bảo không bị cắt cụt text.",
+          "parameters": [
+            "path",
+            "sheet",
+            "max_width"
+          ]
+        },
+        {
+          "name": "create_table",
+          "description": "Tạo bảng có định dạng (dòng đầu của vùng là tiêu đề cột).\n\ntable_name không được chứa dấu cách và phải là duy nhất trong workbook.",
+          "parameters": [
+            "path",
+            "cell_range",
+            "table_name",
+            "sheet",
+            "style"
+          ]
+        },
+        {
+          "name": "create_chart",
+          "description": "Tạo biểu đồ và đặt tại target_cell.\n\ndata_range: vùng dữ liệu số, gồm cả dòng tiêu đề, ví dụ \"B1:B10\".\ncategories_range: vùng nhãn trục (tuỳ chọn), ví dụ \"A2:A10\".",
+          "parameters": [
+            "path",
+            "chart_type",
+            "data_range",
+            "target_cell",
+            "sheet",
+            "categories_range",
+            "title"
+          ]
+        },
+        {
+          "name": "create_pivot_summary",
+          "description": "Tổng hợp kiểu pivot bằng pandas: nhóm theo group_by, gộp value_column.\n\nKết quả ghi ra target_sheet (mặc định \"<sheet>_summary\"). Dòng đầu nguồn là tiêu đề.",
+          "parameters": [
+            "path",
+            "group_by",
+            "value_column",
+            "source_sheet",
+            "agg",
+            "target_sheet"
+          ]
+        },
+        {
+          "name": "read_sheet_as_records",
+          "description": "Đọc sheet thành danh sách bản ghi (dict), kèm thông tin cột/kiểu dữ liệu.\n\nlimit giới hạn số dòng trả về (None = tất cả).",
+          "parameters": [
+            "path",
+            "sheet",
+            "limit"
+          ]
+        },
+        {
+          "name": "import_csv",
+          "description": "Nạp CSV vào một sheet của workbook .xlsx.\n\nNếu file .xlsx chưa tồn tại sẽ tạo mới. overwrite=True để thay sheet trùng tên.",
+          "parameters": [
+            "csv_path",
+            "xlsx_path",
+            "sheet_name",
+            "overwrite",
+            "delimiter",
+            "encoding"
+          ]
+        },
+        {
+          "name": "export_csv",
+          "description": "Xuất một sheet ra file CSV. Cần readwrite (tạo file trên đĩa).\n\nencoding: Mặc định 'utf-8-sig' có BOM để Microsoft Excel trên Windows tự nhận diện đúng tiếng Việt.",
+          "parameters": [
+            "xlsx_path",
+            "csv_path",
+            "sheet",
+            "delimiter",
+            "encoding"
+          ]
+        },
+        {
+          "name": "copy_range_style",
+          "description": "Sao chép toàn bộ định dạng (font, viền kẻ border, màu nền fill, căn lề alignment,\nđịnh dạng số number_format, khoá protection, chiều cao dòng, ô gộp merged cells) từ vùng mẫu sang vùng đích.\n\nHỗ trợ nhân bản dòng: Nếu source_range là 1 ô (vd \"A1\") hoặc 1 dòng (vd \"A5:G5\"),\nvà target_range gồm nhiều dòng (vd \"A6:G30\"), từng cột tương ứng sẽ được sao chép\nđịnh dạng cho toàn bộ các dòng đích. Cần readwrite.",
+          "parameters": [
+            "path",
+            "source_range",
+            "target_range",
+            "sheet",
+            "copy_row_height",
+            "replicate_merged_cells"
+          ]
+        },
+        {
+          "name": "fill_template",
+          "description": "Tạo file mới từ template .xlsx (theo đường dẫn) rồi điền các ô — GIỮ NGUYÊN định dạng 100%.\n\n- cells: map ô cố định -> giá trị, ô có thể kèm sheet: {\"B2\": 10, \"Sheet2!A1\": \"x\"}.\n- table_data: danh sách 2 chiều các dòng cần điền vào bảng động.\n- start_cell: ô bắt đầu điền bảng (mặc định A2 hoặc dòng mẫu của template).\n- copy_table_style=True: tự động sao chép 100% font, màu nền, viền kẻ, căn lề, định dạng số,\n  chiều cao dòng từ dòng mẫu start_cell cho toàn bộ các dòng mới trong table_data.\n- replicate_merged_cells=True: tự động nhân bản các khối ô gộp (merged cells) của dòng mẫu\n  (vd: cột Tên Hàng Hóa merge B:C) cho toàn bộ các dòng mới.\nCần readwrite. Lưu ý: chart/ảnh phức tạp trong template có thể không giữ được qua openpyxl.",
+          "parameters": [
+            "template",
+            "output",
+            "cells",
+            "table_data",
+            "start_cell",
+            "sheet",
+            "overwrite",
+            "copy_table_style",
+            "replicate_merged_cells"
+          ]
+        },
+        {
+          "name": "save_template",
+          "description": "Lưu một file .xlsx làm template vào kho theo `name` (dùng lại sau bằng fill_from_template).",
+          "parameters": [
+            "name",
+            "path",
+            "note",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "list_templates",
+          "description": "Liệt kê các template Excel đã lưu trong kho.",
+          "parameters": []
+        },
+        {
+          "name": "fill_from_template",
+          "description": "Điền dữ liệu từ template đã lưu (gọi theo TÊN) — giữ nguyên định dạng 100%. Cần readwrite.",
+          "parameters": [
+            "name",
+            "output",
+            "cells",
+            "table_data",
+            "start_cell",
+            "sheet",
+            "overwrite",
+            "copy_table_style",
+            "replicate_merged_cells"
+          ]
+        },
+        {
+          "name": "delete_template",
+          "description": "Xoá một template Excel khỏi kho. Cần readwrite.",
+          "parameters": [
+            "name"
+          ]
+        },
+        {
+          "name": "list_images",
+          "description": "Liệt kê ảnh nhúng trong workbook (chỉ metadata, không kèm dữ liệu ảnh).\n\nTrả về vị trí (sheet, ô neo), tên file, định dạng, kích thước từng ảnh — để\nbiết có ảnh nào trước khi gọi read_images. sheet=None -> mọi sheet.",
+          "parameters": [
+            "path",
+            "sheet"
+          ]
+        },
+        {
+          "name": "read_images",
+          "description": "Trả về ảnh nhúng dưới dạng image content để AI/model vision xem nội dung.\n\nindex=None -> mọi ảnh (lọc theo sheet nếu có), giới hạn max_images.\nindex=N -> chỉ ảnh thứ N theo thứ tự của list_images.\nMỗi ảnh kèm một dòng chú thích (sheet, ô neo, tên file, kích thước). Ảnh\nđịnh dạng vector (emf/wmf) không hiển thị được sẽ chỉ báo metadata.",
+          "parameters": [
+            "path",
+            "sheet",
+            "index",
+            "max_images"
+          ]
+        }
+      ],
+      "tools_count": 35,
+      "download_url": "/api/v1/catalog/excel/bundle"
+    },
+    {
+      "id": "filesystem",
+      "name": "Filesystem MCP Studio",
+      "version": "1.0.0",
+      "vendor": "In-House Engineering",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-cog",
+      "summary": "Duyet tep + giam sat he thong",
+      "category": "In-House Tools",
+      "dependencies": [
+        "psutil>=5.9"
+      ],
+      "envRequirements": [
+        {
+          "key": "FS_ACCESS_MODE",
+          "label": "Fs Access Mode",
+          "default": "readonly",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "FS_MAX_READ_BYTES",
+          "label": "Fs Max Read Bytes",
+          "default": "1000000",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "FS_ROOTS",
+          "label": "Fs Roots",
+          "default": "",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "list_directory",
+          "description": "Liệt kê nội dung một thư mục (thư mục trước, rồi tệp; sắp theo tên).\n\npath bỏ trống -> dùng gốc đầu tiên trong FS_ROOTS, hoặc thư mục home.\nshow_hidden=True để hiện file/thư mục bắt đầu bằng dấu chấm.",
+          "parameters": [
+            "path",
+            "show_hidden"
+          ]
+        },
+        {
+          "name": "file_info",
+          "description": "Xem thông tin chi tiết một tệp/thư mục: kiểu, kích thước, thời gian, thuộc tính.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "read_text_file",
+          "description": "Đọc nội dung một tệp văn bản (giới hạn theo FS_MAX_READ_BYTES).\n\nKý tự giải mã lỗi sẽ được thay thế thay vì báo lỗi. max_bytes ghi đè giới\nhạn mặc định (không vượt quá FS_MAX_READ_BYTES).",
+          "parameters": [
+            "path",
+            "max_bytes",
+            "encoding"
+          ]
+        },
+        {
+          "name": "read_file_stream",
+          "description": "Đọc một phần (chunk) của file văn bản theo cơ chế streaming/phân trang O(1).\n\nDùng khi bạn muốn ĐỌC TOÀN VĂN hoặc DUYỆT TỪNG PHẦN một file dài/lớn mà không làm tràn RAM.\nTrả về next_offset và has_more để tiếp tục gọi đọc các phần kế tiếp.\n\nArgs:\n    path: Đường dẫn tới file cần đọc.\n    offset: Vị trí byte bắt đầu đọc (mặc định 0).\n    limit: Số byte tối đa đọc trong chunk này (mặc định 50,000 bytes).\n    encoding: Bảng mã file (mặc định utf-8).",
+          "parameters": [
+            "path",
+            "offset",
+            "limit",
+            "encoding"
+          ]
+        },
+        {
+          "name": "stream_grep_file",
+          "description": "Tìm kiếm từ khóa hoặc biểu thức chính quy (Regex) trong file theo luồng streaming.\n\nDùng khi bạn muốn TÌM KIẾM thông tin (mã lỗi, user ID, keyword, log event) trong file\n(đặc biệt là file lớn > 1MB hoặc file log dài).\nTool quét qua toàn bộ file từng dòng một nên tiêu tốn cực ít RAM (< 1MB) và không bị tràn bộ nhớ.\n\nArgs:\n    path: Đường dẫn file cần tìm.\n    pattern: Từ khóa hoặc biểu thức Regex cần tìm.\n    max_matches: Số dòng khớp tối đa cần lấy (mặc định 50).\n    context_lines: Số dòng ngữ cảnh trước và sau dòng khớp cần lấy (mặc định 1).\n    ignore_case: Không phân biệt hoa/thường (mặc định True).\n    encoding: Bảng mã file (mặc định utf-8).",
+          "parameters": [
+            "path",
+            "pattern",
+            "max_matches",
+            "context_lines",
+            "ignore_case",
+            "encoding"
+          ]
+        },
+        {
+          "name": "search_files",
+          "description": "Tìm tệp/thư mục theo mẫu tên (glob, không phân biệt hoa thường).\n\nVí dụ pattern=\"*.log\", \"report_*\". recursive=True quét cả thư mục con.",
+          "parameters": [
+            "path",
+            "pattern",
+            "recursive",
+            "max_results"
+          ]
+        },
+        {
+          "name": "list_drives",
+          "description": "Liệt kê các ổ đĩa (Windows) hoặc điểm gốc, kèm dung lượng tổng/còn trống.",
+          "parameters": []
+        },
+        {
+          "name": "read_media_file",
+          "description": "Đọc một tệp ảnh và trả về dưới dạng image content cho model vision \"nhìn\".\n\nHỗ trợ png/jpg/jpeg/gif/webp/bmp/tiff... (nhận diện theo đuôi tệp). Ảnh\npng/jpeg/gif/webp hiển thị trực tiếp; định dạng khác chỉ trả chú thích.\nTệp lớn hơn 20MB bị từ chối để tránh nghẽn.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "server_info",
+          "description": "Xem cấu hình hiện tại: chế độ truy cập, thư mục gốc cho phép, giới hạn đọc.",
+          "parameters": []
+        },
+        {
+          "name": "system_info",
+          "description": "Thông tin hệ thống: OS, hostname, thời gian bật máy, số CPU, tổng RAM.",
+          "parameters": []
+        },
+        {
+          "name": "cpu_usage",
+          "description": "% sử dụng CPU (đo trong `interval` giây). per_core=True để xem từng nhân.",
+          "parameters": [
+            "interval",
+            "per_core"
+          ]
+        },
+        {
+          "name": "memory_usage",
+          "description": "Tình trạng RAM và swap (tổng/đã dùng/còn trống/%).",
+          "parameters": []
+        },
+        {
+          "name": "disk_usage",
+          "description": "Dung lượng từng phân vùng ổ đĩa (mount, hệ thống tệp, tổng/dùng/%).",
+          "parameters": []
+        },
+        {
+          "name": "list_processes",
+          "description": "Liệt kê tiến trình đang chạy, sắp theo 'memory' hoặc 'cpu'.\n\nname_contains: chỉ lấy tiến trình có tên chứa chuỗi này (không phân biệt hoa thường).",
+          "parameters": [
+            "sort_by",
+            "limit",
+            "name_contains"
+          ]
+        },
+        {
+          "name": "process_info",
+          "description": "Chi tiết một tiến trình theo PID: tên, trạng thái, RAM, CPU, dòng lệnh.",
+          "parameters": [
+            "pid"
+          ]
+        },
+        {
+          "name": "network_info",
+          "description": "Danh sách card mạng + địa chỉ IP, và thống kê kết nối theo trạng thái.",
+          "parameters": []
+        },
+        {
+          "name": "kill_process",
+          "description": "Kết thúc một tiến trình theo PID (terminate). Cần readwrite.",
+          "parameters": [
+            "pid"
+          ]
+        },
+        {
+          "name": "edit_file",
+          "description": "Sửa một tệp văn bản bằng cách thay `old_text` thành `new_text`.\n\nKhớp chính xác (kể cả xuống dòng/thụt lề). Nếu `old_text` xuất hiện nhiều lần\nmà replace_all=False -> báo lỗi để tránh sửa nhầm; đặt replace_all=True để thay\ntất cả. Trả về diff kiểu git. dry_run=True chỉ xem trước (không cần readwrite),\nghi thật cần FS_ACCESS_MODE=readwrite.",
+          "parameters": [
+            "path",
+            "old_text",
+            "new_text",
+            "replace_all",
+            "dry_run"
+          ]
+        },
+        {
+          "name": "write_text_file",
+          "description": "Ghi nội dung văn bản vào tệp (tạo mới hoặc ghi đè). Cần readwrite.",
+          "parameters": [
+            "path",
+            "content",
+            "overwrite"
+          ]
+        },
+        {
+          "name": "create_directory",
+          "description": "Tạo thư mục (kể cả các cấp cha còn thiếu). Cần readwrite.",
+          "parameters": [
+            "path"
+          ]
+        },
+        {
+          "name": "move_path",
+          "description": "Di chuyển hoặc đổi tên tệp/thư mục. Cần readwrite.",
+          "parameters": [
+            "src",
+            "dst"
+          ]
+        },
+        {
+          "name": "delete_path",
+          "description": "Xoá tệp, hoặc thư mục (recursive=True để xoá cả nội dung bên trong). Cần readwrite.",
+          "parameters": [
+            "path",
+            "recursive"
+          ]
+        }
+      ],
+      "tools_count": 22,
+      "download_url": "/api/v1/catalog/filesystem/bundle"
+    },
+    {
+      "id": "gitlab",
+      "name": "Gitlab MCP Studio",
+      "version": "1.0.0",
+      "vendor": "In-House Engineering",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-code",
+      "summary": "GitLab API: projects, code, issues, MR, CI/CD pipelines",
+      "category": "In-House Tools",
+      "dependencies": [],
+      "envRequirements": [
+        {
+          "key": "GITLAB_ACCESS_MODE",
+          "label": "Gitlab Access Mode",
+          "default": "readwrite",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "GITLAB_TOKEN",
+          "label": "Gitlab Token",
+          "default": "glpat-A-4YaPv5IAryyWQ_9dn2QmM6MQpvOjEKdTo1dWZoag8.01.171daa900",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "GITLAB_URL",
+          "label": "Gitlab Url",
+          "default": "https://gitlab.com",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "server_info",
+          "description": "Retrieve GitLab MCP server status, authentication, and configured instance URL.",
+          "parameters": []
+        },
+        {
+          "name": "gitlab_search_repositories",
+          "description": "Search GitLab repositories/projects.\n\nArgs:\n    query: Search term (e.g. project name)\n    membership: Limit to projects the user is a member of (default: False)\n    page: Page number for pagination (default: 1)\n    per_page: Number of results per page (default: 20, max: 100)",
+          "parameters": [
+            "query",
+            "membership",
+            "page",
+            "per_page"
+          ]
+        },
+        {
+          "name": "gitlab_get_project",
+          "description": "Get detailed information about a GitLab project.\n\nArgs:\n    project_id: Project ID (e.g. '84560507') or URL-encoded path (e.g. 'khoaivoban/hanzigo')",
+          "parameters": [
+            "project_id"
+          ]
+        },
+        {
+          "name": "gitlab_list_branches",
+          "description": "List branches of a repository.\n\nArgs:\n    project_id: Project ID or path\n    search: Optional search filter for branch name",
+          "parameters": [
+            "project_id",
+            "search"
+          ]
+        },
+        {
+          "name": "gitlab_get_file_contents",
+          "description": "Get raw contents of a file from a repository.\n\nArgs:\n    project_id: Project ID or path\n    file_path: Relative path to file (e.g. 'README.md', 'src/App.vue')\n    ref: Branch name, tag, or commit hash (default: 'main')",
+          "parameters": [
+            "project_id",
+            "file_path",
+            "ref"
+          ]
+        },
+        {
+          "name": "gitlab_create_or_update_file",
+          "description": "Create or update a file in the repository (requires readwrite mode).\n\nArgs:\n    project_id: Project ID or path\n    file_path: Relative path of the file\n    content: String content of the file\n    commit_message: Git commit message\n    branch: Target branch (default: 'main')",
+          "parameters": [
+            "project_id",
+            "file_path",
+            "content",
+            "commit_message",
+            "branch"
+          ]
+        },
+        {
+          "name": "gitlab_list_issues",
+          "description": "List issues in a GitLab project.\n\nArgs:\n    project_id: Project ID or path\n    state: Issue state ('opened', 'closed', 'all', default: 'opened')\n    page: Page number\n    per_page: Issues per page",
+          "parameters": [
+            "project_id",
+            "state",
+            "page",
+            "per_page"
+          ]
+        },
+        {
+          "name": "gitlab_create_issue",
+          "description": "Create a new issue in a project (requires readwrite mode).\n\nArgs:\n    project_id: Project ID or path\n    title: Issue title\n    description: Markdown description\n    labels: Optional list of labels (e.g. ['bug', 'frontend'])",
+          "parameters": [
+            "project_id",
+            "title",
+            "description",
+            "labels"
+          ]
+        },
+        {
+          "name": "gitlab_list_merge_requests",
+          "description": "List merge requests in a project.\n\nArgs:\n    project_id: Project ID or path\n    state: State ('opened', 'closed', 'merged', 'all')\n    page: Page number\n    per_page: Results per page",
+          "parameters": [
+            "project_id",
+            "state",
+            "page",
+            "per_page"
+          ]
+        },
+        {
+          "name": "gitlab_create_merge_request",
+          "description": "Create a new merge request (requires readwrite mode).\n\nArgs:\n    project_id: Project ID or path\n    source_branch: Source feature branch\n    target_branch: Target branch to merge into (e.g. 'main')\n    title: Title of MR\n    description: Detailed description of changes",
+          "parameters": [
+            "project_id",
+            "source_branch",
+            "target_branch",
+            "title",
+            "description"
+          ]
+        },
+        {
+          "name": "gitlab_list_pipelines",
+          "description": "List CI/CD pipelines of a project.\n\nArgs:\n    project_id: Project ID or path\n    status: Filter by status ('running', 'success', 'failed', 'canceled')\n    ref: Filter by branch or tag\n    page: Page number\n    per_page: Pipelines per page",
+          "parameters": [
+            "project_id",
+            "status",
+            "ref",
+            "page",
+            "per_page"
+          ]
+        },
+        {
+          "name": "gitlab_get_pipeline_jobs",
+          "description": "List all jobs in a specific pipeline.\n\nArgs:\n    project_id: Project ID or path\n    pipeline_id: ID of the pipeline",
+          "parameters": [
+            "project_id",
+            "pipeline_id"
+          ]
+        },
+        {
+          "name": "gitlab_get_job_log",
+          "description": "Retrieve terminal trace/log of a CI/CD job to debug failures.\n\nArgs:\n    project_id: Project ID or path\n    job_id: ID of the job\n    tail_lines: Number of ending lines to return (default: 100, max: 1000)",
+          "parameters": [
+            "project_id",
+            "job_id",
+            "tail_lines"
+          ]
+        }
+      ],
+      "tools_count": 13,
+      "download_url": "/api/v1/catalog/gitlab/bundle"
+    },
+    {
+      "id": "jenkins",
+      "name": "Jenkins MCP Studio",
+      "version": "1.0.0",
+      "vendor": "In-House Engineering",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-cog",
+      "summary": "Jenkins CI/CD: trigger, build log, upstream/downstream, auto-fix",
+      "category": "In-House Tools",
+      "dependencies": [],
+      "envRequirements": [
+        {
+          "key": "JENKINS_ACCESS_MODE",
+          "label": "Jenkins Access Mode",
+          "default": "readwrite",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "JENKINS_API_TOKEN",
+          "label": "Jenkins Api Token",
+          "default": "",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "JENKINS_URL",
+          "label": "Jenkins Url",
+          "default": "http://localhost:8080",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "JENKINS_USER",
+          "label": "Jenkins User",
+          "default": "",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "server_info",
+          "description": "Retrieve Jenkins MCP server status, all registered instances, and active instance details.\n\nPass instance (alias) or project (path/repo) to inspect a specific target.",
+          "parameters": [
+            "instance",
+            "project"
+          ]
+        },
+        {
+          "name": "jenkins_list_instances",
+          "description": "List all configured Jenkins server instances (e.g. Jenkins 1, Jenkins 2) and their URLs.",
+          "parameters": []
+        },
+        {
+          "name": "jenkins_configure_instance",
+          "description": "Register or update a Jenkins instance with an alias/name, URL, username, and API token.\n\nExample: alias='jenkins-dev', url='http://jenkins-dev:8080', user='admin', token='...'\nPersists configuration so you don't need to re-enter it.\nRequires write access (JENKINS_ACCESS_MODE=readwrite).",
+          "parameters": [
+            "alias",
+            "url",
+            "user",
+            "token"
+          ]
+        },
+        {
+          "name": "jenkins_map_project",
+          "description": "Bind a project (git repository path or git remote URL) to a Jenkins instance and default job.\n\nExample: project_identifier='D:/superpowers_aipro', instance_alias='jenkins-1', default_job='superpowers-ci'\nPersists the mapping so all future builds for this project use the right Jenkins automatically.\nRequires write access (JENKINS_ACCESS_MODE=readwrite).",
+          "parameters": [
+            "project_identifier",
+            "instance_alias",
+            "default_job"
+          ]
+        },
+        {
+          "name": "jenkins_get_project_config",
+          "description": "Retrieve the mapped Jenkins instance and default job for a project.",
+          "parameters": [
+            "project_identifier"
+          ]
+        },
+        {
+          "name": "jenkins_trigger_job",
+          "description": "Trigger a Jenkins build for a Freestyle project or Pipeline.\n\nSupports multibranch/folder paths (e.g. 'folder/job-name' or 'repo/main').\nParameters can be passed as a dictionary of key-value pairs.\nOptionally specify target instance alias or project path.\nRequires write access (JENKINS_ACCESS_MODE=readwrite).",
+          "parameters": [
+            "job_name",
+            "params",
+            "instance",
+            "project"
+          ]
+        },
+        {
+          "name": "jenkins_get_build_status",
+          "description": "Get build status (BUILDING, SUCCESS, FAILURE, UNSTABLE, ABORTED).\n\nIf build_number is omitted, queries the latest build (lastBuild).",
+          "parameters": [
+            "job_name",
+            "build_number",
+            "instance",
+            "project"
+          ]
+        },
+        {
+          "name": "jenkins_get_pipeline_stages",
+          "description": "Retrieve stage-by-stage execution breakdown for a Pipeline job via /wfapi/describe.\n\nIdentifies which exact stage failed (e.g. Checkout, Compile, Test, Docker Build).\nGracefully returns an empty list for Freestyle projects.",
+          "parameters": [
+            "job_name",
+            "build_number",
+            "instance",
+            "project"
+          ]
+        },
+        {
+          "name": "jenkins_get_console_output",
+          "description": "Fetch text console output from a build.\n\ntail_lines specifies how many trailing lines to retrieve (default: 200).\nSet tail_lines=0 to retrieve the entire console log.",
+          "parameters": [
+            "job_name",
+            "build_number",
+            "tail_lines",
+            "instance",
+            "project"
+          ]
+        },
+        {
+          "name": "jenkins_get_pipeline_graph",
+          "description": "Inspect Upstream causes (parent pipeline/build that triggered this) and Downstream projects.",
+          "parameters": [
+            "job_name",
+            "build_number",
+            "instance",
+            "project"
+          ]
+        },
+        {
+          "name": "jenkins_restart_job",
+          "description": "Restart/re-trigger a build reusing identical parameters from the previous run.\n\nRequires write access (JENKINS_ACCESS_MODE=readwrite).",
+          "parameters": [
+            "job_name",
+            "build_number",
+            "instance",
+            "project"
+          ]
+        }
+      ],
+      "tools_count": 11,
+      "download_url": "/api/v1/catalog/jenkins/bundle"
+    },
+    {
+      "id": "postgres",
+      "name": "Postgres MCP Studio",
+      "version": "1.0.0",
+      "vendor": "In-House Engineering",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-database",
+      "summary": "Truy van & khao sat PostgreSQL",
+      "category": "In-House Tools",
+      "dependencies": [
+        "psycopg[binary]>=3.1",
+        "psycopg_pool>=3.2"
+      ],
+      "envRequirements": [
+        {
+          "key": "DATABASE_URL",
+          "label": "Database Url",
+          "default": "postgresql://user:pass@host:5432/dbname",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "PG_ACCESS_MODE",
+          "label": "Pg Access Mode",
+          "default": "readonly",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "server_info",
+          "description": "Xem phiên bản Postgres, database/user hiện tại và chế độ truy cập.",
+          "parameters": []
+        },
+        {
+          "name": "list_schemas",
+          "description": "Liệt kê các schema do người dùng tạo (bỏ qua schema hệ thống).",
+          "parameters": []
+        },
+        {
+          "name": "list_objects",
+          "description": "Liệt kê các đối tượng trong một schema theo loại (bảng/view/...).",
+          "parameters": [
+            "schema",
+            "object_type"
+          ]
+        },
+        {
+          "name": "describe_object",
+          "description": "Mô tả chi tiết một bảng/view: cột, kiểu, khoá chính, khoá ngoại, index.",
+          "parameters": [
+            "table",
+            "schema"
+          ]
+        },
+        {
+          "name": "list_indexes",
+          "description": "Liệt kê index của một bảng (tên + định nghĩa).",
+          "parameters": [
+            "table",
+            "schema"
+          ]
+        },
+        {
+          "name": "execute_query",
+          "description": "Chạy một câu SELECT (chỉ đọc) và trả về các dòng kết quả.\n\nDùng placeholder %s cho tham số, truyền giá trị qua `params` để tránh SQL\ninjection, ví dụ sql=\"SELECT * FROM users WHERE id = %s\", params=[42].\nmax_rows giới hạn số dòng trả về (mặc định 100).",
+          "parameters": [
+            "sql",
+            "params",
+            "max_rows"
+          ]
+        },
+        {
+          "name": "execute_statement",
+          "description": "Chạy câu lệnh ghi (INSERT/UPDATE/DELETE/DDL).\n\nChỉ hoạt động khi PG_ACCESS_MODE=readwrite; nếu readonly sẽ báo lỗi.",
+          "parameters": [
+            "sql",
+            "params"
+          ]
+        },
+        {
+          "name": "explain_query",
+          "description": "Chạy EXPLAIN để xem kế hoạch thực thi.\n\nanalyze=True sẽ thực sự chạy truy vấn (EXPLAIN ANALYZE) để đo thời gian thật;\nở chế độ readonly, truy vấn có thao tác ghi sẽ bị Postgres từ chối.",
+          "parameters": [
+            "sql",
+            "analyze",
+            "query_format"
+          ]
+        },
+        {
+          "name": "get_top_queries",
+          "description": "Top truy vấn tốn tài nguyên nhất (cần extension pg_stat_statements).\n\nNếu extension chưa bật, tool trả về hướng dẫn cách kích hoạt.",
+          "parameters": [
+            "limit",
+            "sort_by"
+          ]
+        },
+        {
+          "name": "analyze_db_health",
+          "description": "Kiểm tra sức khoẻ nhanh: kích thước DB, tỉ lệ cache hit, số kết nối,\ncác bảng lớn nhất và index chưa được dùng.",
+          "parameters": []
+        }
+      ],
+      "tools_count": 10,
+      "download_url": "/api/v1/catalog/postgres/bundle"
+    },
+    {
+      "id": "screenshot",
+      "name": "Screenshot MCP Studio",
+      "version": "1.0.0",
+      "vendor": "In-House Engineering",
+      "runtime": "python",
+      "entrypoint": "server.py",
+      "icon": "pi pi-camera",
+      "summary": "Chup man hinh -> vision",
+      "category": "In-House Tools",
+      "dependencies": [
+        "mss>=9.0",
+        "pillow>=10.0"
+      ],
+      "envRequirements": [
+        {
+          "key": "SCREENSHOT_ENABLED",
+          "label": "Screenshot Enabled",
+          "default": "1",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "key": "SCREENSHOT_MAX_WIDTH",
+          "label": "Screenshot Max Width",
+          "default": "0",
+          "required": false,
+          "type": "text"
+        }
+      ],
+      "tools": [
+        {
+          "name": "list_monitors",
+          "description": "Liệt kê màn hình: index (0=tất cả, 1..n=từng cái), vị trí, độ phân giải.",
+          "parameters": []
+        },
+        {
+          "name": "capture_screen",
+          "description": "Chụp màn hình. monitor=0: toàn bộ (gộp mọi màn hình); 1,2..: một màn hình cụ thể.\n\nsave_path: lưu ảnh ra file .png. max_width>0: thu nhỏ chiều rộng cho nhẹ.",
+          "parameters": [
+            "monitor",
+            "save_path",
+            "max_width"
+          ]
+        },
+        {
+          "name": "capture_region",
+          "description": "Chụp một vùng chữ nhật theo toạ độ màn hình (left, top, width, height).",
+          "parameters": [
+            "left",
+            "top",
+            "width",
+            "height",
+            "save_path",
+            "max_width"
+          ]
+        },
+        {
+          "name": "capture_with_grid",
+          "description": "Chụp màn hình + vẽ LƯỚI TOẠ ĐỘ 2 cấp (đường đậm có số mỗi `step`, đường mảnh\nmỗi `minor`≈step/4) để đọc toạ độ vùng cần.\n\nDùng ảnh lưới CHỈ để lấy toạ độ; còn hiển thị/cắt/khoanh thì dùng capture_screen /\ncapture_region / highlight_regions trên ảnh SẠCH (nhãn lưới là toạ độ gốc, dùng\ntrực tiếp cho các tool đó). Gợi ý step ~100–200px (đừng quá dày sẽ rối/khó đọc).",
+          "parameters": [
+            "monitor",
+            "step",
+            "minor",
+            "color",
+            "save_path",
+            "max_width"
+          ]
+        },
+        {
+          "name": "capture_region_with_grid",
+          "description": "ZOOM: chụp MỘT VÙNG rồi vẽ lưới mịn — để lấy toạ độ chính xác hơn.\n\nNhãn lưới là toạ độ TOÀN MÀN HÌNH (đã cộng offset left/top), nên dùng trực tiếp\ncho capture_region / highlight_regions. Luồng 2 bước: capture_with_grid (thô) →\ncapture_region_with_grid quanh vùng đó (mịn).",
+          "parameters": [
+            "left",
+            "top",
+            "width",
+            "height",
+            "step",
+            "minor",
+            "color",
+            "save_path",
+            "max_width"
+          ]
+        },
+        {
+          "name": "highlight_regions",
+          "description": "Chụp màn hình rồi VẼ khung (mặc định đỏ) quanh các vùng cần highlight.\n\nregions: danh sách vùng, mỗi vùng [left, top, width, height] hoặc\n{left, top, width, height} — toạ độ theo pixel của ảnh chụp.\nlabels: (tuỳ chọn) nhãn cho từng vùng. save_path: lưu .png. Trả ảnh cho vision.",
+          "parameters": [
+            "regions",
+            "monitor",
+            "color",
+            "width",
+            "labels",
+            "save_path",
+            "max_width"
+          ]
+        },
+        {
+          "name": "highlight_image",
+          "description": "Vẽ khung highlight lên một ẢNH CÓ SẴN (.png/.jpg...), trả ảnh (và lưu nếu có `output`).\n\nregions: [left, top, width, height] hoặc {left,top,width,height} theo pixel ảnh.",
+          "parameters": [
+            "path",
+            "regions",
+            "output",
+            "color",
+            "width",
+            "labels",
+            "max_width"
+          ]
+        }
+      ],
+      "tools_count": 7,
+      "download_url": "/api/v1/catalog/screenshot/bundle"
+    }
+  ]
+}
