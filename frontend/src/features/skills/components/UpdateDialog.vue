@@ -2,8 +2,10 @@
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { useSkillStore } from '../stores/skillStore'
+import { useI18n } from '@/i18n'
 
 const store = useSkillStore()
+const { t } = useI18n()
 
 function handleOpenRelease() {
   if (store.availableUpdate?.downloadUrl) {
@@ -19,7 +21,7 @@ function handleOpenRelease() {
   <Dialog
     v-model:visible="store.showUpdateDialog"
     modal
-    header="Bản cập nhật mới sẵn sàng"
+    :header="t('updateModal.title')"
     :style="{ width: '450px' }"
   >
     <div class="space-y-4 py-2">
@@ -32,13 +34,13 @@ function handleOpenRelease() {
             AX Desktop {{ store.availableUpdate?.latestVersion || 'v1.1.0' }}
           </h4>
           <p class="text-xs text-slate-500 dark:text-slate-400">
-            Phiên bản hiện tại: {{ store.availableUpdate?.currentVersion || 'v1.0.0' }}
+            {{ t('updateModal.currentVersion', { version: store.availableUpdate?.currentVersion || 'v1.0.0' }) }}
           </p>
         </div>
       </div>
 
       <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-        Một phiên bản mới của AX Desktop đã được phát hành trên GitHub (<code class="font-mono text-emerald-600 dark:text-emerald-400">code5thu2/ax_desktop</code>) với nhiều cải tiến hiệu năng và tính năng mới.
+        {{ t('updateModal.desc') }}
       </p>
     </div>
 
@@ -46,14 +48,14 @@ function handleOpenRelease() {
       <div class="flex items-center justify-end gap-2 pt-2">
         <Button
           type="button"
-          label="Để sau"
+          :label="t('updateModal.laterBtn')"
           variant="text"
           class="!rounded-xl !text-xs cursor-pointer"
           @click="store.showUpdateDialog = false"
         />
         <Button
           type="button"
-          label="Tải về Cập nhật"
+          :label="t('updateModal.downloadBtn')"
           icon="pi pi-download"
           class="!rounded-xl !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer"
           @click="handleOpenRelease"

@@ -420,6 +420,15 @@ export const nativeBridge = {
             target_project_path: targetProject,
           },
         })
+        cloned.push({
+          id: BigInt(skillId) as unknown as bigint,
+          name,
+          version: 1,
+          enabled: true,
+          installedAt: new Date().toISOString(),
+          scope: 'project',
+          projectPath: targetProject,
+        })
       }
       return cloned
     }

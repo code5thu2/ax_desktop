@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
+import Tag from 'primevue/tag'
+import InputSwitch from 'primevue/inputswitch'
 import { usePluginStore } from '../stores/pluginStore'
+import { useI18n } from '@/i18n'
 import type { PluginItem } from '../types/plugin'
 
 interface Props {
@@ -17,11 +20,27 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const pluginStore = usePluginStore()
+const { t } = useI18n()
 const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('overview')
 const showInstallSuccessToast = ref(false)
 const toastMessage = ref('')
 const isEditingInstalledConfig = ref(false)
 
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+function triggerToast(msg: string) {
+  toastMessage.value = msg
+  showInstallSuccessToast.value = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    showInstallSuccessToast.value = false
+    toastTimer = null
+  }, 2500)
+}
+
+onUnmounted(() => {
+  if (toastTimer) clearTimeout(toastTimer)
+})
 
 // Git Import Modal State
 const gitRepoUrl = ref('')
@@ -31,45 +50,6 @@ const gitName = ref('')
 const gitDesc = ref('')
 const isGitImporting = ref(false)
 const gitImportError = ref('')
-
-// User-defined environment variable drafts for Upload and Git Import
-interface CustomEnvDraft {
-  key: string
-  label: string
-  default: string
-  type: 'text' | 'password'
-  required: boolean
-}
-const gitCustomEnvs = ref<CustomEnvDraft[]>([])
-const uploadCustomEnvs = ref<CustomEnvDraft[]>([])
-
-function addGitCustomEnv() {
-  gitCustomEnvs.value.push({
-    key: '',
-    label: '',
-    default: '',
-    type: 'text',
-    required: false
-  })
-}
-
-function removeGitCustomEnv(index: number) {
-  gitCustomEnvs.value.splice(index, 1)
-}
-
-function addUploadCustomEnv() {
-  uploadCustomEnvs.value.push({
-    key: '',
-    label: '',
-    default: '',
-    type: 'text',
-    required: false
-  })
-}
-
-function removeUploadCustomEnv(index: number) {
-  uploadCustomEnvs.value.splice(index, 1)
-}
 
 // File Upload Modal State
 const uploadFile = ref<File | null>(null)
@@ -91,42 +71,24 @@ onMounted(() => {
   pluginStore.fetchCatalogFromServer()
 })
 
-
-
 async function handleGitImport() {
   if (!gitRepoUrl.value.trim()) return
   isGitImporting.value = true
   gitImportError.value = ''
   try {
-    const customEnvs = gitCustomEnvs.value
-      .filter((e) => e.key.trim())
-      .map((e) => ({
-        key: e.key.trim(),
-        label: e.label.trim() || undefined,
-        default: e.default.trim() || undefined,
-        type: e.type,
-        required: e.required
-      }))
-
     const res = await pluginStore.importFromGit(
       gitRepoUrl.value.trim(),
       gitBranch.value.trim() || 'main',
       gitToken.value.trim() || undefined,
       gitName.value.trim() || undefined,
-      gitDesc.value.trim() || undefined,
-      customEnvs.length > 0 ? customEnvs : undefined
+      gitDesc.value.trim() || undefined
     )
     pluginStore.showGitImportModal = false
     gitRepoUrl.value = ''
     gitToken.value = ''
     gitName.value = ''
     gitDesc.value = ''
-    gitCustomEnvs.value = []
-    toastMessage.value = `Đã nhập và xuất bản thành công MCP: ${res.name} (${res.tools_count} tools)`
-    showInstallSuccessToast.value = true
-    setTimeout(() => {
-      showInstallSuccessToast.value = false
-    }, 3000)
+    triggerToast(`Đã nhập và xuất bản thành công MCP: ${res.name} (${res.tools_count} tools)`)
   } catch (err: any) {
     gitImportError.value = err.message || 'Lỗi khi nhập Git'
   } finally {
@@ -146,32 +108,16 @@ async function handleUploadSubmit() {
   isUploading.value = true
   uploadError.value = ''
   try {
-    const customEnvs = uploadCustomEnvs.value
-      .filter((e) => e.key.trim())
-      .map((e) => ({
-        key: e.key.trim(),
-        label: e.label.trim() || undefined,
-        default: e.default.trim() || undefined,
-        type: e.type,
-        required: e.required
-      }))
-
     const res = await pluginStore.uploadCustomMCP(
       uploadFile.value,
       uploadName.value.trim() || undefined,
-      uploadDesc.value.trim() || undefined,
-      customEnvs.length > 0 ? customEnvs : undefined
+      uploadDesc.value.trim() || undefined
     )
     pluginStore.showUploadModal = false
     uploadFile.value = null
     uploadName.value = ''
     uploadDesc.value = ''
-    uploadCustomEnvs.value = []
-    toastMessage.value = `Đã upload và xuất bản thành công: ${res.name} (${res.tools_count} tools)`
-    showInstallSuccessToast.value = true
-    setTimeout(() => {
-      showInstallSuccessToast.value = false
-    }, 3000)
+    triggerToast(`Đã upload và xuất bản thành công: ${res.name} (${res.tools_count} tools)`)
   } catch (err: any) {
     uploadError.value = err.message || 'Lỗi upload code'
   } finally {
@@ -185,8 +131,6 @@ const showToolArgsInput = ref<Record<string, boolean>>({})
 function toggleToolArgs(toolName: string) {
   showToolArgsInput.value[toolName] = !showToolArgsInput.value[toolName]
 }
-
-
 
 async function runToolTest(toolName: string) {
   testingToolName.value = toolName
@@ -215,7 +159,7 @@ function handleInstall(id: string, name: string) {
     pendingMcpPlugin.value = plugin
     isEditingInstalledConfig.value = false
     envConfigValues.value = {}
-    plugin.envRequirements.forEach(req => {
+    plugin.envRequirements.forEach((req) => {
       envConfigValues.value[req.key] = req.default || ''
     })
     showEnvConfigModal.value = true
@@ -228,10 +172,11 @@ function openConfigModal(plugin: PluginItem) {
   pendingMcpPlugin.value = plugin
   isEditingInstalledConfig.value = true
   envConfigValues.value = {}
-  plugin.envRequirements?.forEach(req => {
-    envConfigValues.value[req.key] = (plugin.configuredEnv && plugin.configuredEnv[req.key] !== undefined)
-      ? plugin.configuredEnv[req.key]
-      : (req.default || '')
+  plugin.envRequirements?.forEach((req) => {
+    envConfigValues.value[req.key] =
+      plugin.configuredEnv && plugin.configuredEnv[req.key] !== undefined
+        ? plugin.configuredEnv[req.key]
+        : req.default || ''
   })
   showEnvConfigModal.value = true
 }
@@ -245,11 +190,7 @@ async function confirmEnvConfigInstall() {
   if (isEditingInstalledConfig.value) {
     await pluginStore.updateMcpConfig(mcp.id, envConfigValues.value)
     isEditingInstalledConfig.value = false
-    toastMessage.value = `Đã cập nhật cấu hình cho ${mcp.name}`
-    showInstallSuccessToast.value = true
-    setTimeout(() => {
-      showInstallSuccessToast.value = false
-    }, 2500)
+    triggerToast(`Đã cập nhật cấu hình cho ${mcp.name}`)
   } else {
     executeInstall(mcp.id, mcp.name)
   }
@@ -257,502 +198,429 @@ async function confirmEnvConfigInstall() {
 
 function executeInstall(id: string, name: string) {
   pluginStore.installPlugin(id)
-  toastMessage.value = `Đã cài đặt thành công MCP Server: ${name}`
-  showInstallSuccessToast.value = true
-  setTimeout(() => {
-    showInstallSuccessToast.value = false
-  }, 2500)
+  triggerToast(`Đã cài đặt thành công MCP Server: ${name}`)
 }
 
 function handleUninstall(id: string, name: string) {
   pluginStore.uninstallPlugin(id)
-  toastMessage.value = `Đã gỡ cài đặt: ${name}`
-  showInstallSuccessToast.value = true
-  setTimeout(() => {
-    showInstallSuccessToast.value = false
-  }, 2500)
+  triggerToast(`Đã gỡ cài đặt: ${name}`)
 }
 </script>
 
 <template>
-  <div class="h-full min-h-0 flex flex-col bg-white dark:bg-[#171717] text-slate-900 dark:text-[#ececec] select-none font-sans">
+  <div class="h-full min-h-0 flex bg-white dark:bg-[#121214] text-slate-900 dark:text-[#ececec] select-none font-sans overflow-hidden">
     <!-- Notification Toast Banner -->
     <div
       v-if="showInstallSuccessToast"
-      class="px-4 py-1.5 bg-[#10A37F]/10 border-b border-[#10A37F]/20 text-[#10A37F] text-xs flex items-center justify-between transition-all"
+      class="fixed top-16 right-6 z-50 px-4 py-2 bg-emerald-500 text-white text-xs rounded-xl shadow-lg flex items-center gap-2 animate-bounce"
     >
-      <div class="flex items-center gap-2">
-        <i class="pi pi-check-circle text-xs"></i>
-        <span>{{ toastMessage }}</span>
-      </div>
-      <button type="button" @click="showInstallSuccessToast = false">
-        <i class="pi pi-times text-[10px]"></i>
+      <i class="pi pi-check-circle text-sm"></i>
+      <span class="font-bold">{{ toastMessage }}</span>
+      <button type="button" class="ml-2 cursor-pointer" @click="showInstallSuccessToast = false">
+        <i class="pi pi-times text-xs"></i>
       </button>
     </div>
 
-    <!-- Main Content: IntelliJ Master-Detail Split Pane -->
+    <!-- Main Content: Split Pane matching Skill Marketplace exactly -->
     <div class="flex-1 flex min-h-0 overflow-hidden">
-      <!-- LEFT PANE: Plugins List (~360px - 384px) -->
+      <!-- LEFT PANE: MCP Servers List (w-80 md:w-96 lg:w-[420px]) -->
       <div
         v-show="props.showList"
         data-testid="plugin-list-pane"
-        class="w-84 sm:w-96 border-r border-[#e5e5e5] dark:border-[#2e2e2e] bg-[#fbfbfb] dark:bg-[#181818] flex flex-col flex-shrink-0 transition-all duration-200"
+        class="w-80 md:w-96 lg:w-[420px] border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex flex-col p-4 space-y-4 overflow-hidden flex-shrink-0"
       >
-        <!-- PANE CONTROL HEADER: Tabs + Search + Category Filter Pills -->
-        <div class="p-3 border-b border-[#e5e5e5] dark:border-[#2a2a2a] bg-white dark:bg-[#1e1e1e] space-y-2.5 flex-shrink-0 shadow-2xs">
-          <!-- 1. Tabs Segmented Control: Marketplace | Installed -->
-          <div class="grid grid-cols-2 p-1 rounded-xl bg-neutral-100 dark:bg-[#141414] border border-neutral-200/80 dark:border-[#2c2c2c] gap-1">
-            <button
-              type="button"
-              data-testid="tab-marketplace"
-              class="py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              :class="[
-                pluginStore.activeTab === 'marketplace'
-                  ? 'bg-white dark:bg-[#2b2b2b] text-slate-900 dark:text-white shadow-xs font-bold'
-                  : 'text-neutral-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              ]"
-              @click="pluginStore.setActiveTab('marketplace')"
-            >
-              <i class="pi pi-shopping-bag text-xs"></i>
-              <span>Marketplace</span>
-            </button>
-
-            <button
-              type="button"
-              data-testid="tab-installed"
-              class="py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              :class="[
-                pluginStore.activeTab === 'installed'
-                  ? 'bg-white dark:bg-[#2b2b2b] text-slate-900 dark:text-white shadow-xs font-bold'
-                  : 'text-neutral-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'
-              ]"
-              @click="pluginStore.setActiveTab('installed')"
-            >
-              <i class="pi pi-check-circle text-xs"></i>
-              <span>Installed</span>
-              <span
-                data-testid="installed-badge-count"
-                class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold"
-                :class="[
-                  pluginStore.activeTab === 'installed'
-                    ? 'bg-[#10A37F] text-white'
-                    : 'bg-neutral-200 dark:bg-[#333333] text-neutral-600 dark:text-neutral-300'
-                ]"
-              >
-                {{ pluginStore.installedCount }}
-              </span>
-            </button>
-          </div>
-
-          <!-- 2. Search Input (Full width of list pane) -->
-          <div class="relative w-full">
-            <i class="pi pi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 text-xs"></i>
-            <input
-              v-model="pluginStore.searchQuery"
-              data-testid="plugin-search-input"
-              type="text"
-              placeholder="Tìm kiếm MCP Servers & Tools..."
-              class="w-full pl-8 pr-7 py-1.5 text-xs rounded-lg bg-neutral-50 dark:bg-[#141414] border border-[#e5e5e5] dark:border-[#2e2e2e] focus:border-[#10A37F] dark:focus:border-[#10A37F] text-slate-900 dark:text-[#ececec] placeholder:text-neutral-400 focus:outline-none transition shadow-2xs"
-            />
-            <button
-              v-if="pluginStore.searchQuery"
-              type="button"
-              class="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
-              title="Xóa tìm kiếm"
-              @click="pluginStore.searchQuery = ''"
-            >
-              <i class="pi pi-times text-[10px]"></i>
-            </button>
-          </div>
-
-          <!-- 3. Category Filter Pills (Exact matching user screenshot) -->
-          <div class="grid grid-cols-4 p-0.5 rounded-lg bg-neutral-100 dark:bg-[#141414] border border-neutral-200/80 dark:border-[#2c2c2c] gap-0.5">
-            <button
-              type="button"
-              data-testid="filter-all"
-              class="py-1 px-1 rounded-md text-[11px] font-medium transition cursor-pointer text-center"
-              :class="pluginStore.filterCategory === 'all'
-                ? 'bg-[#10A37F] text-white font-semibold shadow-xs'
-                : 'text-neutral-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'"
-              @click="pluginStore.setFilterCategory('all')"
-            >
-              Tất cả
-            </button>
-            <button
-              type="button"
-              data-testid="filter-inhouse"
-              class="py-1 px-1 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center justify-center gap-1"
-              :class="pluginStore.filterCategory === 'In-House Tools'
-                ? 'bg-[#10A37F] text-white font-semibold shadow-xs'
-                : 'text-neutral-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'"
-              @click="pluginStore.setFilterCategory('In-House Tools')"
-            >
-              <i class="pi pi-verified text-[10px]"></i>
-              <span>In-House</span>
-            </button>
-            <button
-              type="button"
-              data-testid="filter-custom"
-              class="py-1 px-1 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center justify-center gap-1"
-              :class="pluginStore.filterCategory === 'Custom Tools'
-                ? 'bg-[#10A37F] text-white font-semibold shadow-xs'
-                : 'text-neutral-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'"
-              @click="pluginStore.setFilterCategory('Custom Tools')"
-            >
-              <i class="pi pi-code text-[10px]"></i>
-              <span>Custom</span>
-            </button>
-            <button
-              type="button"
-              data-testid="filter-git"
-              class="py-1 px-1 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center justify-center gap-1"
-              :class="pluginStore.filterCategory === 'Git Tools'
-                ? 'bg-[#10A37F] text-white font-semibold shadow-xs'
-                : 'text-neutral-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-white'"
-              @click="pluginStore.setFilterCategory('Git Tools')"
-            >
-              <i class="pi pi-github text-[10px]"></i>
-              <span>Git</span>
-            </button>
-          </div>
+        <!-- Search Bar -->
+        <div class="relative">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <InputText
+            v-model="pluginStore.searchQuery"
+            data-testid="plugin-search-input"
+            :placeholder="t('mcpStudio.searchPlaceholder')"
+            class="w-full !pl-9 !py-2 !text-xs !rounded-xl"
+          />
+          <button
+            v-if="pluginStore.searchQuery"
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer"
+            @click="pluginStore.searchQuery = ''"
+          >
+            <i class="pi pi-times"></i>
+          </button>
         </div>
 
-        <!-- Sub-header counter -->
-        <div class="px-3.5 py-2 border-b border-[#e5e5e5] dark:border-[#2e2e2e] flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">
-          <span>{{ pluginStore.activeTab === 'marketplace' ? 'Available in Store' : 'Installed on Machine' }}</span>
-          <span class="font-mono text-xs">{{ pluginStore.filteredPlugins.length }} items</span>
+        <!-- 1. Tabs Segmented Control: Marketplace | Installed -->
+        <div class="grid grid-cols-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 gap-1">
+          <button
+            type="button"
+            data-testid="tab-marketplace"
+            class="py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            :class="[
+              pluginStore.activeTab === 'marketplace'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            ]"
+            @click="pluginStore.setActiveTab('marketplace')"
+          >
+            <i class="pi pi-compass text-xs text-emerald-500"></i>
+            <span>{{ t('mcpStudio.tabMarketplace') }}</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="tab-installed"
+            class="py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            :class="[
+              pluginStore.activeTab === 'installed'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+            ]"
+            @click="pluginStore.setActiveTab('installed')"
+          >
+            <i class="pi pi-check-circle text-xs text-teal-400"></i>
+            <span>{{ t('mcpStudio.tabInstalled') }}</span>
+            <Tag :value="String(pluginStore.installedCount)" severity="success" class="!text-[10px] !py-0 !px-1.5 !font-mono" />
+          </button>
         </div>
 
-        <!-- List items -->
-        <div class="flex-1 overflow-y-auto divide-y divide-[#e5e5e5] dark:divide-[#262626]">
+        <!-- 2. Category Filter Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <button
+            type="button"
+            data-testid="filter-all"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
+            :class="pluginStore.filterCategory === 'all' ? 'bg-emerald-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'"
+            @click="pluginStore.setFilterCategory('all')"
+          >
+            {{ t('mcpStudio.catAll') }}
+          </button>
+          <button
+            type="button"
+            data-testid="filter-inhouse"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
+            :class="pluginStore.filterCategory === 'In-House Tools' ? 'bg-emerald-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'"
+            @click="pluginStore.setFilterCategory('In-House Tools')"
+          >
+            {{ t('mcpStudio.catInHouse') }}
+          </button>
+          <button
+            type="button"
+            data-testid="filter-custom"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
+            :class="pluginStore.filterCategory === 'Custom Tools' ? 'bg-emerald-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'"
+            @click="pluginStore.setFilterCategory('Custom Tools')"
+          >
+            {{ t('mcpStudio.catCustom') }}
+          </button>
+          <button
+            type="button"
+            data-testid="filter-git"
+            class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap"
+            :class="pluginStore.filterCategory === 'Git Tools' ? 'bg-emerald-500 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'"
+            @click="pluginStore.setFilterCategory('Git Tools')"
+          >
+            {{ t('mcpStudio.catGit') }}
+          </button>
+        </div>
+
+        <!-- 3. Add Server Action Toolbar -->
+        <div class="flex items-center gap-2">
+          <Button
+            type="button"
+            icon="pi pi-github"
+            :label="t('mcpStudio.btnImportGit')"
+            variant="outlined"
+            class="flex-1 !py-1 !px-2 !text-[11px] !font-bold !rounded-xl cursor-pointer"
+            @click="pluginStore.showGitImportModal = true"
+          />
+          <Button
+            type="button"
+            icon="pi pi-upload"
+            :label="t('mcpStudio.btnUploadZip')"
+            variant="outlined"
+            class="flex-1 !py-1 !px-2 !text-[11px] !font-bold !rounded-xl cursor-pointer"
+            @click="pluginStore.showUploadModal = true"
+          />
+        </div>
+
+        <!-- 4. MCP Server Cards List -->
+        <div class="flex-1 overflow-y-auto space-y-2.5 pr-1">
           <div
             v-if="pluginStore.filteredPlugins.length === 0"
-            class="p-8 text-center text-xs text-neutral-400 dark:text-neutral-500"
+            class="text-center py-12 text-xs text-slate-400"
           >
-            <i class="pi pi-inbox text-2xl mb-2 block"></i>
-            <span>No plugins found matching criteria</span>
+            <i class="pi pi-inbox text-3xl mb-2 text-slate-300 dark:text-slate-700 block"></i>
+            <span>{{ t('mcpStudio.noServersFound') }}</span>
           </div>
 
           <div
             v-for="plugin in pluginStore.filteredPlugins"
             :key="plugin.id"
             :data-testid="`plugin-item-${plugin.id}`"
-            class="p-3 transition-colors cursor-pointer flex items-start gap-3 relative"
-            :class="[
-              pluginStore.selectedPlugin?.id === plugin.id
-                ? 'bg-white dark:bg-[#262626] border-l-2 border-[#10A37F]'
-                : 'hover:bg-neutral-100 dark:hover:bg-[#202020]'
-            ]"
+            class="p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2.5"
+            :class="pluginStore.selectedPlugin?.id === plugin.id ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-xs' : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900/60'"
             @click="pluginStore.selectPlugin(plugin.id)"
           >
-            <!-- Plugin Icon -->
-            <div
-              class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs mt-0.5"
-              :class="[
-                plugin.type === 'mcp'
-                  ? 'bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20'
-                  : 'bg-emerald-500/10 text-[#10A37F] border border-emerald-500/20'
-              ]"
-            >
-              <i :class="[plugin.icon, 'text-sm']"></i>
-            </div>
-
-            <!-- Plugin Info -->
-            <div class="flex-1 min-w-0 pr-1">
-              <div class="flex items-center justify-between gap-1">
-                <span class="text-xs font-bold truncate text-slate-900 dark:text-white" :title="plugin.name">
-                  {{ plugin.name }}
-                </span>
+            <!-- Card top -->
+            <div class="flex items-start justify-between gap-2.5">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-sm shadow-xs flex-shrink-0">
+                  <i :class="plugin.icon || 'pi pi-share-alt'"></i>
+                </div>
+                <div class="min-w-0">
+                  <h3 class="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {{ plugin.name }}
+                  </h3>
+                  <div class="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <span class="truncate">{{ plugin.vendor || 'AIPRO Community' }}</span>
+                    <span>&bull;</span>
+                    <span>v{{ plugin.version }}</span>
+                  </div>
+                </div>
               </div>
 
-              <!-- Badges & Stats row -->
-              <div class="flex items-center gap-1.5 mt-1 text-[10px]">
-                <!-- Category Badge -->
-                <span
-                  class="px-1.5 py-0.2 rounded font-mono text-[9px] font-semibold tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                >
-                  {{ plugin.category || 'MCP' }}
-                </span>
-                <span class="text-neutral-400 font-mono">{{ plugin.downloads }}</span>
-                <span class="text-amber-500 font-mono">★ {{ plugin.rating }}</span>
+              <div class="flex items-center gap-1.5">
+                <Tag
+                  :value="plugin.category || 'MCP'"
+                  severity="info"
+                  class="!text-[10px] !py-0.5 !px-1.5"
+                />
               </div>
-
-              <!-- Summary snippet -->
-              <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-1 leading-normal font-normal">
-                {{ plugin.summary }}
-              </p>
             </div>
 
-            <!-- Action Button / Toggle on Right -->
-            <div class="shrink-0 flex items-center self-center" @click.stop>
-              <!-- In Marketplace: Install or Installed status -->
-              <template v-if="pluginStore.activeTab === 'marketplace'">
-                <button
-                  v-if="!plugin.installed"
-                  type="button"
-                  :data-testid="`install-btn-${plugin.id}`"
-                  class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[#10A37F] hover:bg-[#0e8e6e] active:scale-95 text-white transition cursor-pointer shadow-2xs"
-                  @click="handleInstall(plugin.id, plugin.name)"
-                >
-                  Install
-                </button>
-                <span
-                  v-else
-                  class="text-[11px] font-medium text-neutral-400 dark:text-neutral-500 flex items-center gap-1"
-                >
-                  <i class="pi pi-check text-[10px] text-[#10A37F]"></i>
-                  <span>Installed</span>
-                </span>
-              </template>
+            <!-- Summary preview -->
+            <p class="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+              {{ plugin.summary || plugin.description }}
+            </p>
 
-              <!-- In Installed tab: Toggle Switch (Enabled/Disabled) -->
-              <template v-else>
-                <button
-                  type="button"
-                  :data-testid="`toggle-btn-${plugin.id}`"
-                  class="w-8 h-4.5 rounded-full transition-colors relative cursor-pointer flex items-center px-0.5"
-                  :class="plugin.enabled ? 'bg-[#10A37F]' : 'bg-neutral-300 dark:bg-[#404040]'"
-                  :title="plugin.enabled ? 'Click to disable' : 'Click to enable'"
-                  @click="pluginStore.togglePlugin(plugin.id)"
-                >
-                  <span
-                    class="w-3.5 h-3.5 rounded-full bg-white transition-transform shadow-xs"
-                    :class="plugin.enabled ? 'translate-x-3.5' : 'translate-x-0'"
-                  ></span>
-                </button>
-              </template>
+            <!-- Card footer -->
+            <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-800/80">
+              <div class="flex items-center gap-2">
+                <span class="flex items-center gap-1 text-amber-500 font-bold">
+                  <i class="pi pi-star-fill text-[10px]"></i>
+                  {{ plugin.rating || 5.0 }}
+                </span>
+                <span>&bull;</span>
+                <span>{{ plugin.downloads || '100+' }}</span>
+              </div>
+
+              <div @click.stop>
+                <template v-if="pluginStore.activeTab === 'marketplace'">
+                  <Button
+                    v-if="!plugin.installed"
+                    type="button"
+                    :data-testid="`install-btn-${plugin.id}`"
+                    :label="t('mcpStudio.installBtn')"
+                    icon="pi pi-download"
+                    class="!py-1 !px-2.5 !text-[11px] !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-xs cursor-pointer !rounded-lg"
+                    @click="handleInstall(plugin.id, plugin.name)"
+                  />
+                  <span v-else class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <i class="pi pi-check text-[10px]"></i> {{ t('portal.readyBadge') }}
+                  </span>
+                </template>
+                <template v-else>
+                  <InputSwitch
+                    :modelValue="plugin.enabled"
+                    @update:modelValue="() => pluginStore.togglePlugin(plugin.id)"
+                  />
+                </template>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- RIGHT PANE: Plugin Detail Preview (IntelliJ Style) -->
-      <div v-if="pluginStore.selectedPlugin" class="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#171717] overflow-y-auto">
-        <!-- Detail Header -->
-        <div class="p-5 border-b border-[#e5e5e5] dark:border-[#2e2e2e] flex items-start justify-between gap-4 flex-shrink-0">
+      <!-- RIGHT PANE: MCP Server Detail Panel (Matching SkillDetailPanel.vue exactly) -->
+      <div v-if="pluginStore.selectedPlugin" class="h-full flex-1 flex flex-col p-6 overflow-hidden bg-slate-50/50 dark:bg-slate-950/40">
+        <!-- Detail Header Card -->
+        <div class="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm flex items-start justify-between gap-4">
           <div class="flex items-start gap-4 min-w-0">
-            <!-- Large Icon -->
-            <div
-              class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
-              :class="[
-                pluginStore.selectedPlugin.type === 'mcp'
-                  ? 'bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20'
-                  : 'bg-emerald-500/10 text-[#10A37F] border border-emerald-500/20'
-              ]"
-            >
-              <i :class="[pluginStore.selectedPlugin.icon, 'text-xl']"></i>
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-2xl shadow-md shadow-emerald-500/20 flex-shrink-0">
+              <i :class="pluginStore.selectedPlugin.icon || 'pi pi-share-alt'"></i>
             </div>
-
-            <!-- Title & Metadata -->
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <h3 class="text-base font-bold text-slate-900 dark:text-white truncate">
+                <h1 class="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
                   {{ pluginStore.selectedPlugin.name }}
-                </h3>
-                <!-- Type Pill -->
-                <span
-                  class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wider"
-                  :class="[
-                    pluginStore.selectedPlugin.type === 'mcp'
-                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                  ]"
-                >
-                  {{ pluginStore.selectedPlugin.type }}
-                </span>
-                <span class="text-[11px] font-mono text-neutral-400">
-                  {{ pluginStore.selectedPlugin.version }}
-                </span>
+                </h1>
+                <Tag value="APPROVED" severity="success" class="!text-[10px] !py-0.5 !px-2 !font-bold" />
+                <Tag :value="pluginStore.selectedPlugin.category || 'MCP PROTOCOL'" severity="info" class="!text-[10px] !py-0.5 !px-2 !font-bold" />
               </div>
 
-              <!-- Vendor & Stats -->
-              <div class="flex items-center gap-3 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                <span>By <strong class="text-slate-800 dark:text-slate-200">{{ pluginStore.selectedPlugin.vendor }}</strong></span>
-                <span>•</span>
-                <span class="text-amber-500 font-mono">★ {{ pluginStore.selectedPlugin.rating }}</span>
-                <span>•</span>
-                <span class="font-mono">{{ pluginStore.selectedPlugin.downloads }} downloads</span>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                <span>{{ t('portal.authorLabel') }}: <strong class="text-slate-700 dark:text-slate-300">{{ pluginStore.selectedPlugin.vendor }}</strong></span>
+                <span>&bull;</span>
+                <span>{{ t('portal.versionLabel') }}: <strong class="text-slate-700 dark:text-slate-300">v{{ pluginStore.selectedPlugin.version }}</strong></span>
+              </p>
+
+              <div class="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                <span class="flex items-center gap-1 text-amber-500 font-bold">
+                  <i class="pi pi-star-fill text-xs"></i>
+                  {{ pluginStore.selectedPlugin.rating }}
+                </span>
+                <span>&bull;</span>
+                <span>{{ pluginStore.selectedPlugin.downloads }}</span>
               </div>
             </div>
           </div>
 
           <!-- Top-right Action Buttons -->
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex items-center gap-3 flex-shrink-0">
             <template v-if="!pluginStore.selectedPlugin.installed">
-              <button
+              <Button
                 type="button"
                 data-testid="detail-install-btn"
-                class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#10A37F] hover:bg-[#0e8e6e] text-white transition cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95"
+                :label="t('mcpStudio.installBtn')"
+                icon="pi pi-download"
+                class="!py-2.5 !px-4 !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/25 cursor-pointer !rounded-xl"
                 @click="handleInstall(pluginStore.selectedPlugin.id, pluginStore.selectedPlugin.name)"
-              >
-                <i class="pi pi-download text-xs"></i>
-                <span>Install</span>
-              </button>
+              />
             </template>
             <template v-else>
-              <!-- Enable / Disable Button -->
-              <button
-                type="button"
-                data-testid="detail-toggle-btn"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#e5e5e5] dark:border-[#383838] transition cursor-pointer"
-                :class="[
-                  pluginStore.selectedPlugin.enabled
-                    ? 'bg-neutral-100 dark:bg-[#282828] text-slate-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-[#333333]'
-                    : 'bg-[#10A37F]/10 border-[#10A37F]/30 text-[#10A37F] font-semibold'
-                ]"
-                @click="pluginStore.togglePlugin(pluginStore.selectedPlugin.id)"
-              >
-                {{ pluginStore.selectedPlugin.enabled ? 'Disable' : 'Enable' }}
-              </button>
+              <div class="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  {{ pluginStore.selectedPlugin.enabled ? t('portal.activeStatus') : t('portal.disabledStatus') }}
+                </span>
+                <InputSwitch
+                  :modelValue="pluginStore.selectedPlugin.enabled"
+                  @update:modelValue="() => pluginStore.selectedPlugin && pluginStore.togglePlugin(pluginStore.selectedPlugin.id)"
+                />
+              </div>
 
-              <!-- Configure Button for Installed MCP with env requirements -->
-              <button
-                v-if="pluginStore.selectedPlugin.installed && pluginStore.selectedPlugin.envRequirements?.length"
+              <!-- Configure Button -->
+              <Button
+                v-if="pluginStore.selectedPlugin.envRequirements?.length"
                 type="button"
                 data-testid="detail-config-btn"
-                class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 dark:bg-[#2b2b2b] dark:hover:bg-[#383838] text-slate-800 dark:text-neutral-200 transition cursor-pointer flex items-center gap-1.5 border border-[#e5e5e5] dark:border-[#383838] active:scale-95 shadow-2xs"
-                title="Xem và chỉnh sửa cấu hình biến môi trường"
+                icon="pi pi-sliders-h"
+                :label="t('mcpStudio.configureBtn')"
+                variant="outlined"
+                class="!py-2.5 !px-3 !text-xs !rounded-xl cursor-pointer"
                 @click="openConfigModal(pluginStore.selectedPlugin)"
-              >
-                <i class="pi pi-sliders-h text-xs text-amber-500"></i>
-                <span>Cấu hình</span>
-              </button>
+              />
 
               <!-- Uninstall Button -->
-              <button
+              <Button
                 type="button"
                 data-testid="detail-uninstall-btn"
-                class="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition cursor-pointer"
+                icon="pi pi-trash"
+                :label="t('mcpStudio.uninstallBtn')"
+                variant="outlined"
+                severity="danger"
+                class="!py-2.5 !px-3 !text-xs !rounded-xl cursor-pointer"
                 @click="handleUninstall(pluginStore.selectedPlugin.id, pluginStore.selectedPlugin.name)"
-              >
-                Uninstall
-              </button>
+              />
             </template>
           </div>
         </div>
 
-        <!-- Detail Sub-Navigation (IntelliJ Tabs: Overview, Tools / Triggers, Config, Change Notes) -->
-        <div class="px-5 border-b border-[#e5e5e5] dark:border-[#2e2e2e] flex items-center gap-4 flex-shrink-0 bg-[#f9f9f9] dark:bg-[#1f1f1f]">
+        <!-- Scope Card (If installed) -->
+        <div
+          v-if="pluginStore.selectedPlugin.installed"
+          class="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-between text-xs mt-4"
+        >
+          <div class="flex items-center gap-2.5">
+            <i class="pi pi-info-circle text-emerald-600 dark:text-emerald-400 text-sm"></i>
+            <div>
+              <span class="font-bold text-slate-900 dark:text-white">
+                Thư mục Sandbox MCP: <code class="font-mono bg-white dark:bg-slate-900 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-800">{{ pluginStore.selectedPlugin.installPath || '~/.aipro/mcp' }}</code>
+              </span>
+              <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Giao tiếp qua Model Context Protocol tiêu chuẩn (JSON-RPC 2.0).
+              </span>
+            </div>
+          </div>
+          <Tag value="MCP SERVER" severity="success" class="!text-[10px] !font-bold" />
+        </div>
+
+        <!-- Navigation Tabs inside Detail -->
+        <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 mt-4">
           <button
             type="button"
             data-testid="subtab-overview"
-            class="py-2.5 text-xs font-semibold border-b-2 transition cursor-pointer"
-            :class="[
-              activeDetailTab === 'overview'
-                ? 'border-[#10A37F] text-[#10A37F]'
-                : 'border-transparent text-neutral-500 hover:text-slate-900 dark:hover:text-white'
-            ]"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+            :class="activeDetailTab === 'overview' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
             @click="activeDetailTab = 'overview'"
           >
-            Overview
+            <i class="pi pi-file-edit text-xs"></i>
+            <span>{{ t('mcpStudio.tabOverview') }}</span>
           </button>
 
           <button
             type="button"
             data-testid="subtab-tools"
-            class="py-2.5 text-xs font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5"
-            :class="[
-              activeDetailTab === 'tools'
-                ? 'border-[#10A37F] text-[#10A37F]'
-                : 'border-transparent text-neutral-500 hover:text-slate-900 dark:hover:text-white'
-            ]"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+            :class="activeDetailTab === 'tools' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
             @click="activeDetailTab = 'tools'"
           >
-            <span>Exposed Tools</span>
-            <span class="px-1.5 py-0.2 rounded-full bg-neutral-200 dark:bg-[#2e2e2e] text-[10px] font-mono">
-              {{ pluginStore.selectedPlugin.tools?.length || 0 }}
-            </span>
+            <i class="pi pi-box text-xs"></i>
+            <span>{{ t('mcpStudio.tabTools', { count: pluginStore.selectedPlugin.tools?.length || 0 }) }}</span>
           </button>
 
-          <!-- Configuration Tab (For MCPs with Env Requirements) -->
           <button
             v-if="pluginStore.selectedPlugin.envRequirements?.length"
             type="button"
             data-testid="subtab-config"
-            class="py-2.5 text-xs font-semibold border-b-2 transition cursor-pointer flex items-center gap-1.5"
-            :class="[
-              activeDetailTab === 'config'
-                ? 'border-[#10A37F] text-[#10A37F]'
-                : 'border-transparent text-neutral-500 hover:text-slate-900 dark:hover:text-white'
-            ]"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+            :class="activeDetailTab === 'config' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
             @click="activeDetailTab = 'config'"
           >
-            <i class="pi pi-sliders-h text-xs" :class="activeDetailTab === 'config' ? 'text-[#10A37F]' : 'text-amber-500'"></i>
-            <span>Cấu Hình</span>
+            <i class="pi pi-sliders-h text-xs text-amber-500"></i>
+            <span>{{ t('mcpStudio.tabEnv') }}</span>
           </button>
 
           <button
             type="button"
             data-testid="subtab-changelog"
-            class="py-2.5 text-xs font-semibold border-b-2 transition cursor-pointer"
-            :class="[
-              activeDetailTab === 'changelog'
-                ? 'border-[#10A37F] text-[#10A37F]'
-                : 'border-transparent text-neutral-500 hover:text-slate-900 dark:hover:text-white'
-            ]"
+            class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+            :class="activeDetailTab === 'changelog' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-slate-200 dark:border-slate-700' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
             @click="activeDetailTab = 'changelog'"
           >
-            What's New
+            <i class="pi pi-history text-xs"></i>
+            <span>{{ t('mcpStudio.tabChangelog') }}</span>
           </button>
         </div>
 
-        <!-- Detail Sub-Tab Content -->
-        <div class="p-5 flex-1 overflow-y-auto text-xs space-y-4">
+        <!-- Detail Sub-Tab Content Area -->
+        <div class="flex-1 overflow-y-auto bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 min-h-0 mt-4">
           <!-- 1. OVERVIEW TAB -->
           <div v-if="activeDetailTab === 'overview'" class="space-y-4">
-            <div>
-              <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-1.5 text-xs">
-                Description
-              </h4>
-              <p class="text-neutral-600 dark:text-neutral-300 leading-relaxed font-normal">
-                {{ pluginStore.selectedPlugin.description }}
-              </p>
-            </div>
+            <div class="prose dark:prose-invert max-w-none text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">Mô tả MCP Server</h3>
+              <p>{{ pluginStore.selectedPlugin.description }}</p>
 
-            <!-- Key Features -->
-            <div>
-              <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2 text-xs">
-                Key Features
-              </h4>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white mt-4 mb-2">Tính năng nổi bật (Key Features)</h3>
               <div class="space-y-1.5">
                 <div
                   v-for="(feat, idx) in pluginStore.selectedPlugin.features"
                   :key="idx"
-                  class="flex items-start gap-2 text-neutral-600 dark:text-neutral-300"
+                  class="flex items-start gap-2"
                 >
-                  <i class="pi pi-check text-[#10A37F] text-xs mt-0.5 shrink-0"></i>
+                  <i class="pi pi-check text-emerald-500 text-xs mt-0.5 shrink-0"></i>
                   <span>{{ feat }}</span>
                 </div>
               </div>
-            </div>
 
-            <!-- Plugin Specifications Card -->
-            <div class="p-3.5 rounded-xl border border-[#e5e5e5] dark:border-[#2e2e2e] bg-[#f9f9f9] dark:bg-[#212121] grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
-              <div>
-                <span class="text-neutral-400 block mb-0.5">Plugin Type</span>
-                <span class="font-semibold capitalize text-slate-800 dark:text-white">{{ pluginStore.selectedPlugin.type }} Extension</span>
-              </div>
-              <div>
-                <span class="text-neutral-400 block mb-0.5">Execution Environment</span>
-                <span class="font-semibold text-slate-800 dark:text-white">{{ pluginStore.selectedPlugin.type === 'mcp' ? 'Model Context Protocol (JSON-RPC)' : 'Prompt-driven Agentic Sub-routine' }}</span>
-              </div>
-              <div>
-                <span class="text-neutral-400 block mb-0.5">Version & Build</span>
-                <span class="font-mono text-slate-800 dark:text-white">{{ pluginStore.selectedPlugin.version }}</span>
-              </div>
-              <div>
-                <span class="text-neutral-400 block mb-0.5">Status</span>
-                <span
-                  class="font-semibold"
-                  :class="pluginStore.selectedPlugin.installed ? (pluginStore.selectedPlugin.enabled ? 'text-[#10A37F]' : 'text-neutral-400') : 'text-neutral-500'"
-                >
-                  {{ pluginStore.selectedPlugin.installed ? (pluginStore.selectedPlugin.enabled ? 'Installed (Active)' : 'Installed (Disabled)') : 'Not Installed' }}
-                </span>
-              </div>
-              <div v-if="pluginStore.selectedPlugin.installed && pluginStore.selectedPlugin.installPath" class="sm:col-span-4 pt-2.5 border-t border-[#e5e5e5] dark:border-[#2e2e2e]">
-                <div class="text-neutral-500 dark:text-neutral-400 font-mono text-[11px] flex items-center gap-1.5">
-                  <i class="pi pi-folder-open text-xs text-[#10A37F]"></i>
-                  <span>{{ pluginStore.selectedPlugin.installPath }}</span>
+              <!-- Specifications Card -->
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white mt-4 mb-2">Thông số Kỹ thuật</h3>
+              <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
+                <div>
+                  <span class="text-slate-400 block mb-0.5">Loại Extension</span>
+                  <span class="font-bold text-slate-800 dark:text-white">{{ pluginStore.selectedPlugin.type }} Protocol</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block mb-0.5">Giao thức thực thi</span>
+                  <span class="font-bold text-slate-800 dark:text-white">JSON-RPC 2.0 (Stdio / SSE)</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block mb-0.5">Phiên bản</span>
+                  <span class="font-mono text-slate-800 dark:text-white">v{{ pluginStore.selectedPlugin.version }}</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block mb-0.5">Trạng thái</span>
+                  <span class="font-bold text-emerald-600 dark:text-emerald-400">
+                    {{ pluginStore.selectedPlugin.installed ? (pluginStore.selectedPlugin.enabled ? 'Đã kích hoạt' : 'Đã vô hiệu hóa') : 'Chưa cài đặt' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -760,93 +628,87 @@ function handleUninstall(id: string, name: string) {
 
           <!-- 2. TOOLS TAB -->
           <div v-else-if="activeDetailTab === 'tools'" class="space-y-3">
-            <!-- MCP Tools List -->
-            <div class="text-[11px] text-neutral-500 dark:text-neutral-400 mb-2">
-              MCP Server này cung cấp {{ pluginStore.selectedPlugin.tools?.length || 0 }} công cụ (callable tools) kết nối qua JSON-RPC:
+            <div class="text-xs text-slate-500 dark:text-slate-400 mb-2">
+              MCP Server này cung cấp <strong>{{ pluginStore.selectedPlugin.tools?.length || 0 }}</strong> công cụ có thể gọi trực tiếp:
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div
                 v-for="tool in pluginStore.selectedPlugin.tools"
                 :key="tool.name"
-                class="p-3 rounded-xl border border-[#e5e5e5] dark:border-[#2e2e2e] bg-[#f9f9f9] dark:bg-[#212121] flex flex-col justify-between"
+                class="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex flex-col justify-between"
               >
                 <div>
-                  <div class="flex items-center justify-between gap-2 mb-1">
+                  <div class="flex items-center justify-between gap-2 mb-1.5">
                     <div class="flex items-center gap-2">
-                      <span class="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
+                      <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
                         {{ tool.name }}
                       </span>
-                      <span class="text-[10px] px-1.5 py-0.2 rounded bg-neutral-200 dark:bg-[#333333] font-mono text-neutral-500">
+                      <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
                         tool
                       </span>
                     </div>
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1.5">
                       <button
                         type="button"
-                        class="px-1.5 py-0.5 rounded text-[10px] text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-[#2e2e2e] transition cursor-pointer"
-                        :class="showToolArgsInput[tool.name] ? 'bg-neutral-200 dark:bg-[#2e2e2e] text-blue-500' : ''"
-                        :title="showToolArgsInput[tool.name] ? 'Ẩn ô nhập tham số' : 'Nhập tham số JSON'"
+                        class="px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer"
                         @click="toggleToolArgs(tool.name)"
                       >
                         <i class="pi pi-code text-[10px]"></i>
-                        <span class="ml-0.5 text-[9px] font-mono">JSON</span>
+                        <span class="ml-1">JSON</span>
                       </button>
                       <button
                         type="button"
-                        class="px-2 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition cursor-pointer flex items-center gap-1"
+                        class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer flex items-center gap-1"
                         :disabled="testingToolName === tool.name"
-                        title="Gọi thử nghiệm tool qua HTTP Gateway"
                         @click="runToolTest(tool.name)"
                       >
                         <i v-if="testingToolName === tool.name" class="pi pi-spin pi-spinner text-[9px]"></i>
                         <i v-else class="pi pi-play text-[9px]"></i>
-                        <span>Chạy Thử</span>
+                        <span>{{ testingToolName === tool.name ? t('mcpStudio.testRunning') : t('mcpStudio.runTestBtn') }}</span>
                       </button>
                     </div>
                   </div>
-                  <p class="text-[11px] text-neutral-600 dark:text-neutral-300">
+                  <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                     {{ tool.description }}
                   </p>
 
                   <!-- Parameters list badge -->
                   <div
                     v-if="tool.parameters && (Array.isArray(tool.parameters) ? tool.parameters.length : Object.keys(tool.parameters?.properties || {}).length)"
-                    class="mt-1.5 flex flex-wrap items-center gap-1"
+                    class="mt-2 flex flex-wrap items-center gap-1.5"
                   >
-                    <span class="text-[10px] text-neutral-400">Tham số:</span>
+                    <span class="text-[10px] text-slate-400">Tham số:</span>
                     <span
                       v-for="p in (Array.isArray(tool.parameters) ? tool.parameters : Object.keys(tool.parameters?.properties || {}))"
                       :key="p"
-                      class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-neutral-200/80 dark:bg-[#2b2b2b] text-neutral-600 dark:text-neutral-400"
+                      class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
                     >
                       {{ p }}
                     </span>
                   </div>
 
                   <!-- Optional JSON Input for Tool Testing -->
-                  <div v-if="showToolArgsInput[tool.name]" class="mt-2 space-y-1">
-                    <div class="text-[10px] text-neutral-400 flex items-center justify-between">
-                      <span>Nhập tham số gọi tool (JSON format):</span>
-                    </div>
+                  <div v-if="showToolArgsInput[tool.name]" class="mt-2.5 space-y-1">
+                    <span class="text-[10px] text-slate-400">Tham số JSON:</span>
                     <input
                       v-model="toolInputArgs[tool.name]"
                       type="text"
-                      placeholder='{"param": "value"}'
-                      class="w-full text-[10px] font-mono py-1 px-2 rounded border border-[#e5e5e5] dark:border-[#383838] bg-white dark:bg-[#1a1a1a] text-slate-800 dark:text-slate-200"
+                      :placeholder="t('mcpStudio.paramsPlaceholder')"
+                      class="w-full text-xs font-mono py-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
                       @keydown.enter="runToolTest(tool.name)"
                     />
                   </div>
                 </div>
 
                 <!-- Live Test Call Output -->
-                <div v-if="toolOutputs[tool.name]" class="mt-2.5 pt-2 border-t border-[#e5e5e5] dark:border-[#2e2e2e]">
-                  <div class="text-[10px] font-mono text-neutral-400 mb-1 flex items-center justify-between">
-                    <span>Phản hồi Gateway:</span>
-                    <button type="button" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200" @click="delete toolOutputs[tool.name]">
-                      <i class="pi pi-times text-[9px]"></i>
+                <div v-if="toolOutputs[tool.name]" class="mt-3 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                  <div class="text-[10px] font-mono text-slate-400 mb-1 flex items-center justify-between">
+                    <span>{{ t('mcpStudio.testResult') }}</span>
+                    <button type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer" @click="delete toolOutputs[tool.name]">
+                      <i class="pi pi-times text-[10px]"></i>
                     </button>
                   </div>
-                  <pre class="p-2 rounded bg-neutral-900 text-emerald-400 text-[10px] font-mono overflow-x-auto max-h-32">{{ JSON.stringify(toolOutputs[tool.name], null, 2) }}</pre>
+                  <pre class="p-3 rounded-xl bg-slate-950 text-emerald-400 text-xs font-mono overflow-x-auto max-h-40 border border-slate-800">{{ JSON.stringify(toolOutputs[tool.name], null, 2) }}</pre>
                 </div>
               </div>
             </div>
@@ -854,25 +716,24 @@ function handleUninstall(id: string, name: string) {
 
           <!-- 3. CONFIGURATION (ENV) TAB -->
           <div v-else-if="activeDetailTab === 'config'" class="space-y-4">
-            <div class="flex items-center justify-between pb-2 border-b border-[#e5e5e5] dark:border-[#2e2e2e]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div>
                 <h4 class="font-bold text-slate-800 dark:text-slate-100 text-xs flex items-center gap-1.5">
                   <i class="pi pi-sliders-h text-amber-500"></i>
-                  <span>Cấu Hình Biến Môi Trường (Environment Variables)</span>
+                  <span>{{ t('mcpStudio.tabEnv') }}</span>
                 </h4>
-                <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Cấu hình các tham số kết nối, tài khoản, API keys cho MCP {{ pluginStore.selectedPlugin.name }}.
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  .env Sandbox • {{ pluginStore.selectedPlugin.name }}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
                 data-testid="btn-open-config-modal"
-                class="px-3 py-1.5 rounded-lg bg-[#10A37F] hover:bg-[#0e8e6e] text-white font-semibold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+                icon="pi pi-file-edit"
+                :label="t('mcpStudio.configureBtn')"
+                class="!py-2 !px-3 !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-sm cursor-pointer !rounded-xl"
                 @click="openConfigModal(pluginStore.selectedPlugin)"
-              >
-                <i class="pi pi-file-edit text-xs"></i>
-                <span>Chỉnh Sửa Cấu Hình</span>
-              </button>
+              />
             </div>
 
             <!-- Current Values Card List -->
@@ -880,24 +741,24 @@ function handleUninstall(id: string, name: string) {
               <div
                 v-for="req in pluginStore.selectedPlugin.envRequirements"
                 :key="req.key"
-                class="p-3.5 rounded-xl border border-[#e5e5e5] dark:border-[#2e2e2e] bg-[#f9f9f9] dark:bg-[#212121] flex items-center justify-between"
+                class="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between"
               >
                 <div class="space-y-0.5 min-w-0 pr-4">
                   <div class="flex items-center gap-2">
-                    <span class="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
+                    <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
                       {{ req.key }}
                     </span>
-                    <span v-if="req.required" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-500 font-mono">
+                    <span v-if="req.required" class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-500 font-mono font-bold">
                       required
                     </span>
                   </div>
-                  <div class="text-[11px] text-neutral-500 dark:text-neutral-400">
+                  <div class="text-xs text-slate-500 dark:text-slate-400">
                     {{ req.label || req.key }}
                   </div>
                 </div>
 
                 <div class="flex items-center gap-2">
-                  <span class="font-mono text-xs px-2.5 py-1 rounded bg-white dark:bg-[#171717] border border-[#e5e5e5] dark:border-[#333333] text-slate-800 dark:text-slate-200">
+                  <span class="font-mono text-xs px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200">
                     {{ (pluginStore.selectedPlugin.configuredEnv && pluginStore.selectedPlugin.configuredEnv[req.key] !== undefined)
                         ? (req.key.toLowerCase().includes('pass') || req.key.toLowerCase().includes('token') || req.key.toLowerCase().includes('secret')
                             ? '••••••••'
@@ -907,22 +768,17 @@ function handleUninstall(id: string, name: string) {
                 </div>
               </div>
             </div>
-
-            <div class="text-[11px] text-neutral-400 flex items-center gap-1.5 pt-1">
-              <i class="pi pi-info-circle text-xs text-neutral-400"></i>
-              <span>Cấu hình được lưu trực tiếp vào file <code>.env</code> bên trong thư mục sandbox của MCP và áp dụng tức thì.</span>
-            </div>
           </div>
 
           <!-- 4. CHANGELOG TAB -->
           <div v-else-if="activeDetailTab === 'changelog'" class="space-y-3">
-            <div class="p-4 rounded-xl border border-[#e5e5e5] dark:border-[#2e2e2e] bg-[#f9f9f9] dark:bg-[#212121]">
+            <div class="p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
               <div class="flex items-center justify-between mb-2">
-                <span class="font-bold text-slate-800 dark:text-white text-xs">Release Notes</span>
-                <span class="font-mono text-neutral-400 text-[11px]">{{ pluginStore.selectedPlugin.version }}</span>
+                <span class="font-bold text-slate-800 dark:text-white text-xs">Nhật ký cập nhật</span>
+                <span class="font-mono text-slate-400 text-xs">v{{ pluginStore.selectedPlugin.version }}</span>
               </div>
-              <p class="text-[11px] text-neutral-600 dark:text-neutral-300 font-mono leading-relaxed">
-                {{ pluginStore.selectedPlugin.changeNotes || 'Regular maintenance and performance optimizations.' }}
+              <p class="text-xs text-slate-600 dark:text-slate-300 font-mono leading-relaxed">
+                {{ pluginStore.selectedPlugin.changeNotes || 'Tối ưu hóa hiệu năng và kết nối Stdio JSON-RPC.' }}
               </p>
             </div>
           </div>
@@ -934,152 +790,82 @@ function handleUninstall(id: string, name: string) {
     <Dialog
       v-model:visible="pluginStore.showGitImportModal"
       modal
-      header="Import MCP Server từ Git / GitHub"
-      :style="{ width: '560px', maxWidth: '95vw' }"
-      class="!rounded-2xl overflow-hidden shadow-2xl !bg-white dark:!bg-[#1e1e1e] !text-slate-800 dark:!text-[#ececec]"
+      :header="t('mcpStudio.gitModalTitle')"
+      :style="{ width: '540px' }"
+      class="p-dialog-custom"
     >
-      <div class="space-y-3.5 text-xs">
-        <p class="text-neutral-500 dark:text-neutral-400">
-          Dán link repository (GitHub hoặc GitLab). Server sẽ tự động clone, phân tích AST và xuất bản MCP lên Marketplace.
+      <div class="space-y-3.5 text-xs py-2">
+        <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
+          {{ t('mcpStudio.gitModalTitle') }}
         </p>
 
-        <div v-if="gitImportError" class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
+        <div v-if="gitImportError" class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300">
           <i class="pi pi-exclamation-triangle mr-1"></i>
           <span>{{ gitImportError }}</span>
         </div>
 
         <div>
-          <label class="block font-semibold mb-1">Git Repository URL <span class="text-rose-500">*</span></label>
+          <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">Git Repository URL <span class="text-rose-500">*</span></label>
           <InputText
             v-model="gitRepoUrl"
-            class="w-full !text-xs !py-2 !px-3 font-mono !rounded-lg"
+            class="w-full !text-xs !py-2.5 !px-3 font-mono !rounded-xl"
             placeholder="https://github.com/my-org/my-mcp.git"
           />
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block font-semibold mb-1">Branch / Tag</label>
+            <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">Nhánh (Branch) / Tag</label>
             <InputText
               v-model="gitBranch"
-              class="w-full !text-xs !py-2 !px-3 font-mono !rounded-lg"
+              class="w-full !text-xs !py-2.5 !px-3 font-mono !rounded-xl"
               placeholder="main"
             />
           </div>
           <div>
-            <label class="block font-semibold mb-1">Tên Hiển Thị (Tùy chọn)</label>
+            <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">Tên Hiển Thị</label>
             <InputText
               v-model="gitName"
-              class="w-full !text-xs !py-2 !px-3 !rounded-lg"
-              placeholder="VD: My Tool"
+              class="w-full !text-xs !py-2.5 !px-3 !rounded-xl"
+              placeholder="VD: Database Tools"
             />
           </div>
         </div>
 
         <div>
-          <label class="block font-semibold mb-1">Token Xác Thực (Cho Private Repo)</label>
+          <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">Token Xác Thực (Private Repo)</label>
           <InputText
             v-model="gitToken"
             type="password"
-            class="w-full !text-xs !py-2 !px-3 font-mono !rounded-lg"
-            placeholder="ghp_xxxxxxxxxxxx (để trống nếu public)"
+            class="w-full !text-xs !py-2.5 !px-3 font-mono !rounded-xl"
+            placeholder="ghp_xxxx"
           />
         </div>
 
         <div>
-          <label class="block font-semibold mb-1">Mô Tả Ngắn (Tùy chọn)</label>
+          <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">Mô Tả Ngắn</label>
           <InputText
             v-model="gitDesc"
-            class="w-full !text-xs !py-2 !px-3 !rounded-lg"
-            placeholder="VD: Công cụ quản lý đơn hàng nội bộ"
+            class="w-full !text-xs !py-2.5 !px-3 !rounded-xl"
+            placeholder="Mô tả công cụ..."
           />
-        </div>
-
-        <!-- Khai báo / Bổ sung Biến Môi Trường -->
-        <div class="border-t border-[#e5e5e5] dark:border-[#2e2e2e] pt-3">
-          <div class="flex items-center justify-between mb-2">
-            <div>
-              <span class="font-semibold text-xs text-slate-800 dark:text-neutral-200">Khai báo Biến Môi Trường (Tùy chọn)</span>
-              <span class="text-[11px] text-neutral-400 block">Thêm hoặc ghi đè nhãn/loại biến (API Key, URL, Secret...)</span>
-            </div>
-            <button
-              type="button"
-              class="text-[11px] px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-medium transition cursor-pointer flex items-center gap-1 shrink-0"
-              @click="addGitCustomEnv"
-            >
-              <i class="pi pi-plus text-[10px]"></i>
-              <span>Thêm biến</span>
-            </button>
-          </div>
-
-          <div v-if="gitCustomEnvs.length === 0" class="p-2.5 rounded-lg border border-dashed border-neutral-200 dark:border-[#333] text-center text-[11px] text-neutral-400">
-            Hệ thống sẽ tự động quét biến qua AST. Bấm <b>"+ Thêm biến"</b> nếu muốn bổ sung hoặc chỉ định nhãn/mật khẩu riêng.
-          </div>
-
-          <div v-else class="space-y-2 max-h-48 overflow-y-auto pr-1">
-            <div
-              v-for="(item, idx) in gitCustomEnvs"
-              :key="idx"
-              class="p-2 rounded-lg bg-neutral-50 dark:bg-[#252525] border border-neutral-200 dark:border-[#333] space-y-1.5"
-            >
-              <div class="flex items-center gap-2">
-                <InputText
-                  v-model="item.key"
-                  placeholder="Tên biến (VD: GITLAB_TOKEN)"
-                  class="flex-1 !text-xs !py-1.5 !px-2 font-mono !rounded"
-                />
-                <InputText
-                  v-model="item.label"
-                  placeholder="Nhãn (VD: GitLab Access Token)"
-                  class="flex-1 !text-xs !py-1.5 !px-2 !rounded"
-                />
-                <button
-                  type="button"
-                  class="w-6 h-6 rounded flex items-center justify-center text-rose-500 hover:bg-rose-500/10 cursor-pointer"
-                  title="Xóa biến này"
-                  @click="removeGitCustomEnv(idx)"
-                >
-                  <i class="pi pi-trash text-xs"></i>
-                </button>
-              </div>
-              <div class="flex items-center gap-2">
-                <InputText
-                  v-model="item.default"
-                  placeholder="Giá trị mặc định"
-                  class="flex-1 !text-xs !py-1.5 !px-2 !rounded"
-                />
-                <select
-                  v-model="item.type"
-                  class="text-xs py-1 px-2 rounded border border-neutral-300 dark:border-[#383838] bg-white dark:bg-[#1e1e1e] text-slate-700 dark:text-neutral-200"
-                >
-                  <option value="text">Văn bản</option>
-                  <option value="password">Mật khẩu</option>
-                </select>
-                <label class="flex items-center gap-1 text-[11px] cursor-pointer shrink-0">
-                  <input type="checkbox" v-model="item.required" class="rounded accent-emerald-500" />
-                  <span>Bắt buộc</span>
-                </label>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       <template #footer>
-        <div class="flex items-center justify-end gap-2 w-full pt-2">
+        <div class="flex items-center justify-end gap-2 pt-2">
           <Button
-            label="Hủy"
-            text
-            size="small"
-            class="!text-xs"
+            :label="t('common.cancel')"
+            variant="text"
+            class="!text-xs !rounded-xl cursor-pointer"
             :disabled="isGitImporting"
             @click="pluginStore.showGitImportModal = false"
           />
           <Button
-            :label="isGitImporting ? 'Đang Import...' : 'Import & Xuất Bản'"
-            :icon="isGitImporting ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
-            size="small"
-            class="!text-xs !bg-[#24292F] hover:!bg-[#1b1f23] !text-white !font-semibold !rounded-lg !py-1.5 !px-4"
+            :label="isGitImporting ? t('mcpStudio.importing') : t('mcpStudio.submitImportBtn')"
+            icon="pi pi-check"
+            :loading="isGitImporting"
+            class="!text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer !rounded-xl"
             :disabled="!gitRepoUrl.trim() || isGitImporting"
             @click="handleGitImport"
           />
@@ -1091,133 +877,63 @@ function handleUninstall(id: string, name: string) {
     <Dialog
       v-model:visible="pluginStore.showUploadModal"
       modal
-      header="Upload MCP Script hoặc Package ZIP"
-      :style="{ width: '560px', maxWidth: '95vw' }"
-      class="!rounded-2xl overflow-hidden shadow-2xl !bg-white dark:!bg-[#1e1e1e] !text-slate-800 dark:!text-[#ececec]"
+      :header="t('mcpStudio.uploadModalTitle')"
+      :style="{ width: '540px' }"
+      class="p-dialog-custom"
     >
-      <div class="space-y-3.5 text-xs">
-        <p class="text-neutral-500 dark:text-neutral-400">
-          Kéo thả hoặc chọn file script (.py) đơn lẻ hoặc file nén (.zip). Hệ thống sẽ tự động quét hàm và xuất bản.
+      <div class="space-y-3.5 text-xs py-2">
+        <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
+          {{ t('mcpStudio.uploadModalTitle') }}
         </p>
 
-        <div v-if="uploadError" class="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400">
+        <div v-if="uploadError" class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300">
           <i class="pi pi-exclamation-triangle mr-1"></i>
           <span>{{ uploadError }}</span>
         </div>
 
         <div>
-          <label class="block font-semibold mb-1">Chọn Tệp (.py / .zip) <span class="text-rose-500">*</span></label>
+          <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">Chọn Tệp (.py / .zip) <span class="text-rose-500">*</span></label>
           <input
             type="file"
             accept=".py,.zip"
-            class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/10 file:text-emerald-600 hover:file:bg-emerald-500/20 cursor-pointer"
+            class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-500/10 file:text-emerald-600 hover:file:bg-emerald-500/20 cursor-pointer"
             @change="onUploadFileChange"
           />
         </div>
 
         <div>
-          <label class="block font-semibold mb-1">Tên Hiển Thị (Tùy chọn)</label>
+          <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">Tên Hiển Thị</label>
           <InputText
             v-model="uploadName"
-            class="w-full !text-xs !py-2 !px-3 !rounded-lg"
-            placeholder="VD: Custom Script Tool"
+            class="w-full !text-xs !py-2.5 !px-3 !rounded-xl"
+            placeholder="VD: Custom File Server"
           />
         </div>
 
         <div>
-          <label class="block font-semibold mb-1">Mô Tả (Tùy chọn)</label>
+          <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">Mô Tả</label>
           <InputText
             v-model="uploadDesc"
-            class="w-full !text-xs !py-2 !px-3 !rounded-lg"
+            class="w-full !text-xs !py-2.5 !px-3 !rounded-xl"
             placeholder="Mô tả công cụ..."
           />
-        </div>
-
-        <!-- Khai báo / Bổ sung Biến Môi Trường -->
-        <div class="border-t border-[#e5e5e5] dark:border-[#2e2e2e] pt-3">
-          <div class="flex items-center justify-between mb-2">
-            <div>
-              <span class="font-semibold text-xs text-slate-800 dark:text-neutral-200">Khai báo Biến Môi Trường (Tùy chọn)</span>
-              <span class="text-[11px] text-neutral-400 block">Thêm hoặc ghi đè nhãn/loại biến (API Key, URL, Secret...)</span>
-            </div>
-            <button
-              type="button"
-              class="text-[11px] px-2.5 py-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-medium transition cursor-pointer flex items-center gap-1 shrink-0"
-              @click="addUploadCustomEnv"
-            >
-              <i class="pi pi-plus text-[10px]"></i>
-              <span>Thêm biến</span>
-            </button>
-          </div>
-
-          <div v-if="uploadCustomEnvs.length === 0" class="p-2.5 rounded-lg border border-dashed border-neutral-200 dark:border-[#333] text-center text-[11px] text-neutral-400">
-            Hệ thống sẽ tự động quét biến qua AST. Bấm <b>"+ Thêm biến"</b> nếu muốn bổ sung hoặc chỉ định nhãn/mật khẩu riêng.
-          </div>
-
-          <div v-else class="space-y-2 max-h-48 overflow-y-auto pr-1">
-            <div
-              v-for="(item, idx) in uploadCustomEnvs"
-              :key="idx"
-              class="p-2 rounded-lg bg-neutral-50 dark:bg-[#252525] border border-neutral-200 dark:border-[#333] space-y-1.5"
-            >
-              <div class="flex items-center gap-2">
-                <InputText
-                  v-model="item.key"
-                  placeholder="Tên biến (VD: DATABASE_URL)"
-                  class="flex-1 !text-xs !py-1.5 !px-2 font-mono !rounded"
-                />
-                <InputText
-                  v-model="item.label"
-                  placeholder="Nhãn (VD: Kết Nối Cơ Sở Dữ Liệu)"
-                  class="flex-1 !text-xs !py-1.5 !px-2 !rounded"
-                />
-                <button
-                  type="button"
-                  class="w-6 h-6 rounded flex items-center justify-center text-rose-500 hover:bg-rose-500/10 cursor-pointer"
-                  title="Xóa biến này"
-                  @click="removeUploadCustomEnv(idx)"
-                >
-                  <i class="pi pi-trash text-xs"></i>
-                </button>
-              </div>
-              <div class="flex items-center gap-2">
-                <InputText
-                  v-model="item.default"
-                  placeholder="Giá trị mặc định"
-                  class="flex-1 !text-xs !py-1.5 !px-2 !rounded"
-                />
-                <select
-                  v-model="item.type"
-                  class="text-xs py-1 px-2 rounded border border-neutral-300 dark:border-[#383838] bg-white dark:bg-[#1e1e1e] text-slate-700 dark:text-neutral-200"
-                >
-                  <option value="text">Văn bản</option>
-                  <option value="password">Mật khẩu</option>
-                </select>
-                <label class="flex items-center gap-1 text-[11px] cursor-pointer shrink-0">
-                  <input type="checkbox" v-model="item.required" class="rounded accent-emerald-500" />
-                  <span>Bắt buộc</span>
-                </label>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       <template #footer>
-        <div class="flex items-center justify-end gap-2 w-full pt-2">
+        <div class="flex items-center justify-end gap-2 pt-2">
           <Button
-            label="Hủy"
-            text
-            size="small"
-            class="!text-xs"
+            :label="t('common.cancel')"
+            variant="text"
+            class="!text-xs !rounded-xl cursor-pointer"
             :disabled="isUploading"
             @click="pluginStore.showUploadModal = false"
           />
           <Button
-            :label="isUploading ? 'Đang Xử Lý...' : 'Upload & Xuất Bản'"
-            :icon="isUploading ? 'pi pi-spin pi-spinner' : 'pi pi-upload'"
-            size="small"
-            class="!text-xs !bg-[#10A37F] hover:!bg-[#0e8f6f] !text-white !font-semibold !rounded-lg !py-1.5 !px-4"
+            :label="isUploading ? t('mcpStudio.uploading') : t('mcpStudio.submitUploadBtn')"
+            icon="pi pi-upload"
+            :loading="isUploading"
+            class="!text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer !rounded-xl"
             :disabled="!uploadFile || isUploading"
             @click="handleUploadSubmit"
           />
@@ -1225,49 +941,47 @@ function handleUninstall(id: string, name: string) {
       </template>
     </Dialog>
 
-    <!-- Environment Variables Config Dialog (Install & Edit) -->
+    <!-- Environment Variables Config Dialog -->
     <Dialog
       v-model:visible="showEnvConfigModal"
       modal
-      :header="(isEditingInstalledConfig ? 'Chỉnh sửa cấu hình MCP: ' : 'Cấu hình môi trường: ') + (pendingMcpPlugin?.name || '')"
+      :header="t('mcpStudio.envModalTitle') + ': ' + (pendingMcpPlugin?.name || '')"
       :style="{ width: '500px' }"
-      class="!rounded-2xl overflow-hidden shadow-2xl !bg-white dark:!bg-[#1e1e1e] !text-slate-800 dark:!text-[#ececec]"
+      class="p-dialog-custom"
     >
-      <div v-if="pendingMcpPlugin" class="space-y-3.5 text-xs">
-        <p class="text-neutral-500 dark:text-neutral-400">
+      <div v-if="pendingMcpPlugin" class="space-y-3.5 text-xs py-2">
+        <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
           {{ isEditingInstalledConfig
-              ? 'Cập nhật lại các biến môi trường cho MCP server này. Sau khi lưu, thông tin sẽ được cập nhật trực tiếp vào file .env và áp dụng tức thì:'
-              : 'MCP này yêu cầu các biến môi trường để hoạt động. Vui lòng xác nhận thông tin bên dưới:' }}
+              ? 'Cập nhật lại các biến môi trường cho MCP server này (.env):'
+              : 'MCP này yêu cầu các biến môi trường để hoạt động. Vui lòng xác nhận:' }}
         </p>
 
         <div v-for="req in pendingMcpPlugin.envRequirements" :key="req.key">
-          <label class="block font-semibold mb-1">
+          <label class="block font-bold mb-1 text-slate-700 dark:text-slate-300">
             {{ req.label || req.key }}
             <span v-if="req.required" class="text-rose-500">*</span>
           </label>
           <InputText
             v-model="envConfigValues[req.key]"
             :type="req.key.toLowerCase().includes('token') || req.key.toLowerCase().includes('key') || req.key.toLowerCase().includes('pass') ? 'password' : 'text'"
-            class="w-full !text-xs !py-2 !px-3 font-mono !rounded-lg"
+            class="w-full !text-xs !py-2.5 !px-3 font-mono !rounded-xl"
             :placeholder="req.default || req.key"
           />
         </div>
       </div>
 
       <template #footer>
-        <div class="flex items-center justify-end gap-2 w-full pt-2">
+        <div class="flex items-center justify-end gap-2 pt-2">
           <Button
-            label="Hủy"
-            text
-            size="small"
-            class="!text-xs"
+            :label="t('common.cancel')"
+            variant="text"
+            class="!text-xs !rounded-xl cursor-pointer"
             @click="showEnvConfigModal = false"
           />
           <Button
-            :label="isEditingInstalledConfig ? 'Lưu Thay Đổi' : 'Lưu & Kích Hoạt MCP'"
+            :label="t('mcpStudio.saveEnvBtn')"
             icon="pi pi-check"
-            size="small"
-            class="!text-xs !bg-[#10A37F] hover:!bg-[#0e8f6f] !text-white !font-semibold !rounded-lg !py-1.5 !px-4"
+            class="!text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer !rounded-xl"
             @click="confirmEnvConfigInstall"
           />
         </div>

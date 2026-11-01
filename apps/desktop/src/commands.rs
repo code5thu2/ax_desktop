@@ -1,7 +1,7 @@
-use ax_core::client::AxClient;
-use ax_core::skill_manager::SkillManager;
-use ax_core::storage::{normalize_path, read_json_safe, write_json_atomic};
-use ax_core::updater::check_github_release_available;
+use skill_core::client::AxClient;
+use skill_core::skill_manager::SkillManager;
+use skill_core::storage::{normalize_path, read_json_safe, write_json_atomic};
+use skill_core::updater::check_github_release_available;
 use mcp_core::catalog::CatalogManager;
 use mcp_core::mock_runner::MockServerScanner;
 use serde::Deserialize;
@@ -29,15 +29,18 @@ impl AppState {
     pub fn new() -> Self {
         let root = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
         let catalog_path = root.join("storage").join("catalog.json");
-        let external_mock_dir = std::env::var("MCP_SERVERS_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| PathBuf::from("D:/AI_MCP/servers"));
 
         let appdata = std::env::var("APPDATA")
             .map(PathBuf::from)
             .unwrap_or_else(|_| root.join("storage"));
         let ax_dir = appdata.join("ax-desktop");
         let _ = std::fs::create_dir_all(&ax_dir);
+
+        let external_mock_dir = std::env::var("MCP_SERVERS_DIR")
+            .map(PathBuf::from)
+            .ok()
+            .filter(|p| p.exists())
+            .unwrap_or_else(|| ax_dir.join("servers"));
 
         let user_profile = std::env::var("USERPROFILE")
             .map(PathBuf::from)
@@ -56,9 +59,10 @@ impl AppState {
             global_config,
         );
 
+        let is_live = std::env::var("AX_LIVE_API").map(|v| v == "1" || v == "true").unwrap_or(false);
         let client = AxClient::new(
             "http://ax-portal.gafc.vn/api/v1".to_string(),
-            true, // Default to MockEngine offline mode for instant dev testing
+            !is_live,
         );
 
         Self {
@@ -121,8 +125,9 @@ pub fn verify_register_otp(state: State<'_, AppState>, email: String, otp: Strin
 
 #[tauri::command]
 pub fn register(state: State<'_, AppState>, payload: serde_json::Value) -> Result<serde_json::Value, String> {
-    let email = payload.get("email").and_then(|v| v.as_str()).unwrap_or("user@example.com");
-    let tokens = state.client.login(email, "secret")?;
+    let email = payload.get("email").and_then(|v| v.as_str()).ok_or("Email is required")?;
+    let password = payload.get("password").and_then(|v| v.as_str()).unwrap_or("UserDefaultPass123!");
+    let tokens = state.client.login(email, password)?;
     write_json_atomic(&state.auth_path, &tokens).map_err(|e| e.to_string())?;
     Ok(serde_json::json!({ "ok": true }))
 }
@@ -141,8 +146,9 @@ pub fn verify_forgot_otp(state: State<'_, AppState>, email: String, otp: String)
 
 #[tauri::command]
 pub fn reset_password(state: State<'_, AppState>, payload: serde_json::Value) -> Result<serde_json::Value, String> {
-    let email = payload.get("email").and_then(|v| v.as_str()).unwrap_or("user@example.com");
-    let tokens = state.client.login(email, "newpass")?;
+    let email = payload.get("email").and_then(|v| v.as_str()).ok_or("Email is required")?;
+    let password = payload.get("password").and_then(|v| v.as_str()).unwrap_or("ResetPass123!");
+    let tokens = state.client.login(email, password)?;
     write_json_atomic(&state.auth_path, &tokens).map_err(|e| e.to_string())?;
     Ok(serde_json::json!({ "ok": true }))
 }
@@ -213,9 +219,10 @@ pub fn fetch_skills(
         }
     }
 
+    let total = skills.len();
     serde_json::json!({
         "items": skills,
-        "totalCount": skills.len()
+        "totalCount": total
     })
 }
 
@@ -348,40 +355,45 @@ pub fn open_studio() -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
-pub fn select_folder() -> Result<serde_json::Value, String> {
-    match win11_platform::folder_picker::pick_folder(Some("Chọn thư mục dự án")) {
-        Some(path) => {
-            let path_str = path.to_string_lossy().to_string();
-            Ok(serde_json::json!({
-                "ok": true,
-                "path": normalize_path(&path_str)
-            }))
+pub async fn select_folder() -> Result<serde_json::Value, String> {
+    tokio::task::spawn_blocking(|| {
+        match win11_platform::folder_picker::pick_folder(Some("Chọn thư mục dự án")) {
+            Some(path) => {
+                let path_str = path.to_string_lossy().to_string();
+                Ok(serde_json::json!({
+                    "ok": true,
+                    "path": normalize_path(&path_str)
+                }))
+            }
+            None => Ok(serde_json::json!({
+                "ok": false,
+                "cancelled": true
+            })),
         }
-        None => Ok(serde_json::json!({
-            "ok": false,
-            "cancelled": true
-        })),
-    }
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
 pub async fn check_for_update() -> Result<serde_json::Value, String> {
-    let releases = ax_core::updater::fetch_github_releases("code5thu2/ax_desktop").await
+    let current_version = env!("CARGO_PKG_VERSION");
+    let releases = skill_core::updater::fetch_github_releases("code5thu2/ax_desktop").await
         .unwrap_or_default();
 
-    let update = check_github_release_available(&releases, "1.0.0");
+    let update = check_github_release_available(&releases, current_version);
     match update {
         Some(rel) => Ok(serde_json::json!({
             "status": "success",
             "updateAvailable": true,
             "latestVersion": rel.tag_name,
-            "currentVersion": "1.0.0",
+            "currentVersion": current_version,
             "downloadUrl": rel.assets.first().map(|a| a.browser_download_url.clone())
         })),
         None => Ok(serde_json::json!({
             "status": "success",
             "updateAvailable": false,
-            "currentVersion": "1.0.0"
+            "currentVersion": current_version
         })),
     }
 }
@@ -441,7 +453,7 @@ pub fn save_recent_project(state: State<'_, AppState>, path: String) -> Result<s
 
 #[tauri::command]
 pub fn remember_project_path(state: State<'_, AppState>, path: String) -> Result<(), String> {
-    let _ = save_recent_project(state, path);
+    save_recent_project(state, path)?;
     Ok(())
 }
 
@@ -470,7 +482,7 @@ pub fn show_window(window: Window) -> Result<(), String> {
 pub fn get_app_info() -> serde_json::Value {
     serde_json::json!({
         "name": "AX Desktop",
-        "version": "1.0.0",
+        "version": env!("CARGO_PKG_VERSION"),
         "platform": "Tauri v2 Native Rust",
         "engine": "Rust 1.90.0 + Edge WebView2",
         "mode": "Skill Marketplace + MCP Protocol Studio"
@@ -500,7 +512,7 @@ pub fn get_catalog(
         });
     }
 
-    let mut catalog_opt = state.cached_catalog.lock().unwrap();
+    let mut catalog_opt = state.cached_catalog.lock().unwrap_or_else(|e| e.into_inner());
     if catalog_opt.is_none() {
         let cm = CatalogManager::load_from_file(&state.catalog_path)?;
         *catalog_opt = Some(cm);

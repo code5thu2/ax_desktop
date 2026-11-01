@@ -267,20 +267,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
-name = "ax-core"
-version = "0.1.0"
-dependencies = [
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "shared-types",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "zip",
-]
-
-[[package]]
 name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -827,11 +813,11 @@ dependencies = [
 name = "desktop"
 version = "0.1.0"
 dependencies = [
- "ax-core",
  "mcp-core",
  "serde",
  "serde_json",
  "shared-types",
+ "skill-core",
  "tauri",
  "tauri-build",
  "tokio",
@@ -3545,6 +3531,21 @@ name = "siphasher"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33f4fe9184a62d842c9ef383018f3306d8ba224fd9d836f56d7288308847c256"
+
+[[package]]
+name = "skill-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "shared-types",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "zip",
+]
 
 [[package]]
 name = "slab"

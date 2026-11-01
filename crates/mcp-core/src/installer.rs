@@ -55,7 +55,11 @@ impl ClientInstaller {
         let server_dir = self.get_server_dir(server_id);
         let mut content = String::new();
         for (k, v) in env_vars {
-            content.push_str(&format!("{}={}\n", k, v));
+            let clean_k = k.replace(['\r', '\n'], "");
+            let clean_v = v.replace(['\r', '\n'], "");
+            if !clean_k.is_empty() {
+                content.push_str(&format!("{}={}\n", clean_k, clean_v));
+            }
         }
 
         let env_path = server_dir.join(".env");

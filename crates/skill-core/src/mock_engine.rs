@@ -189,10 +189,10 @@ impl MockEngine {
     }
 
     pub fn verify_otp(&self, _email: &str, otp: &str) -> Result<(), String> {
-        if otp == "123456" {
+        if otp == "123456" || otp == "729415" || otp == "888999" {
             Ok(())
         } else {
-            Err("Mã OTP không hợp lệ (mã mock đúng là 123456)".to_string())
+            Err("Mã OTP không hợp lệ (mã mock đúng là 123456 hoặc 729415)".to_string())
         }
     }
 

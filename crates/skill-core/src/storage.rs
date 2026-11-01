@@ -120,19 +120,29 @@ pub fn extract_zip_safe(zip_bytes: &[u8], dest_dir: &Path) -> Result<(), AxStora
 
         if file.is_dir() {
             fs::create_dir_all(&outpath)?;
+            let canonical_out = fs::canonicalize(&outpath).map_err(|_| AxStorageError::ZipSlip(raw_name.clone()))?;
+            if !canonical_out.starts_with(&canonical_dest) {
+                let _ = fs::remove_dir_all(&outpath);
+                return Err(AxStorageError::ZipSlip(raw_name));
+            }
         } else {
             if let Some(p) = outpath.parent() {
                 fs::create_dir_all(p)?;
+                let canonical_parent = fs::canonicalize(p).map_err(|_| AxStorageError::ZipSlip(raw_name.clone()))?;
+                if !canonical_parent.starts_with(&canonical_dest) {
+                    return Err(AxStorageError::ZipSlip(raw_name));
+                }
             }
             let mut outfile = File::create(&outpath)?;
             let mut buffer = Vec::new();
             file.read_to_end(&mut buffer)?;
             outfile.write_all(&buffer)?;
-        }
 
-        let canonical_out = fs::canonicalize(&outpath).unwrap_or(outpath);
-        if !canonical_out.starts_with(&canonical_dest) {
-            return Err(AxStorageError::ZipSlip(raw_name));
+            let canonical_out = fs::canonicalize(&outpath).unwrap_or_else(|_| outpath.clone());
+            if !canonical_out.starts_with(&canonical_dest) {
+                let _ = fs::remove_file(&outpath);
+                return Err(AxStorageError::ZipSlip(raw_name));
+            }
         }
     }
 

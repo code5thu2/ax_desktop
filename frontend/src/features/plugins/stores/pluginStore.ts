@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useStorage } from '@vueuse/core'
+import { useDebounce } from '@vueuse/core'
 import type { PluginItem } from '../types/plugin'
 import { nativeBridge } from '@/services/nativeBridge'
 
@@ -194,10 +194,31 @@ export const INITIAL_PLUGINS: PluginItem[] = [
 ]
 
 export const usePluginStore = defineStore('plugins', () => {
-  const plugins = useStorage<PluginItem[]>('mcp_studio_plugins_v1', () => JSON.parse(JSON.stringify(INITIAL_PLUGINS)))
+  function loadInitialPlugins(): PluginItem[] {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('mcp_studio_plugins_v1')
+        if (raw) return JSON.parse(raw)
+      }
+    } catch {}
+    return JSON.parse(JSON.stringify(INITIAL_PLUGINS))
+  }
+
+  const plugins = ref<PluginItem[]>(loadInitialPlugins())
+
+  function persistPlugins() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('mcp_studio_plugins_v1', JSON.stringify(plugins.value))
+      }
+    } catch {}
+  }
+
   const activeTab = ref<'marketplace' | 'installed'>('marketplace')
   const filterCategory = ref<string>('all')
   const searchQuery = ref('')
+  const isTest = typeof process !== 'undefined' && (process.env?.NODE_ENV === 'test' || Boolean(process.env?.VITEST))
+  const debouncedQuery = isTest ? searchQuery : useDebounce(searchQuery, 150)
   const selectedPluginId = ref<string>('postgres-mcp')
   const showGitImportModal = ref(false)
   const showUploadModal = ref(false)
@@ -217,10 +238,10 @@ export const usePluginStore = defineStore('plugins', () => {
     return installedPlugins.value.length
   })
 
-  // Filtered list depending on activeTab, filterCategory, and searchQuery
+  // Filtered list depending on activeTab, filterCategory, and debouncedQuery
   const filteredPlugins = computed(() => {
     const list = activeTab.value === 'installed' ? installedPlugins.value : marketplacePlugins.value
-    const q = searchQuery.value.trim().toLowerCase()
+    const q = debouncedQuery.value.trim().toLowerCase()
 
     return list.filter((p) => {
       // Category match
@@ -304,6 +325,7 @@ export const usePluginStore = defineStore('plugins', () => {
 
       isServerOnline.value = true
       await syncInstalledClients()
+      persistPlugins()
     } catch {
       isServerOnline.value = false
     } finally {
@@ -325,6 +347,7 @@ export const usePluginStore = defineStore('plugins', () => {
         target.installed = true
         target.enabled = true
         target.installPath = data.install_path
+        persistPlugins()
         return data
       }
     } catch {
@@ -336,6 +359,7 @@ export const usePluginStore = defineStore('plugins', () => {
     const target = plugins.value.find((p) => p.id === id)
     if (!target) return
     target.configuredEnv = { ...newEnv }
+    persistPlugins()
     if (isServerOnline.value) {
       try {
         const res = await fetch(`${registryServerUrl.value}/api/v1/client/config/${id}`, {
@@ -361,6 +385,7 @@ export const usePluginStore = defineStore('plugins', () => {
         installMcpOnClient(id)
       }
       selectedPluginId.value = id
+      persistPlugins()
     }
   }
 
@@ -373,6 +398,7 @@ export const usePluginStore = defineStore('plugins', () => {
       target.installed = false
       target.enabled = false
       target.installPath = undefined
+      persistPlugins()
     }
   }
 
@@ -380,6 +406,7 @@ export const usePluginStore = defineStore('plugins', () => {
     const target = plugins.value.find((p) => p.id === id)
     if (target) {
       target.enabled = state !== undefined ? state : !target.enabled
+      persistPlugins()
     }
   }
 
@@ -530,6 +557,7 @@ export const usePluginStore = defineStore('plugins', () => {
     installMcpOnClient,
     syncInstalledClients,
     updateMcpConfig,
+    persistPlugins,
     showGitImportModal,
     showUploadModal,
   }

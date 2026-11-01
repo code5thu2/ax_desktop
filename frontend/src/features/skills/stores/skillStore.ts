@@ -44,8 +44,65 @@ export const useSkillStore = defineStore('skills', () => {
 
   // Computed Properties
   const selectedSkill = computed<SkillItem | null>(() => {
-    if (!selectedSkillName.value) return skills.value[0] || null
-    return skills.value.find((s) => s.name === selectedSkillName.value) || null
+    if (!selectedSkillName.value) {
+      if (skills.value.length > 0) return skills.value[0]
+      if (installedSkills.value.length > 0) {
+        const inst = installedSkills.value[0]
+        return {
+          id: inst.id,
+          name: inst.name,
+          description: skillDetail.value?.description || `Skill cài đặt: ${inst.name}`,
+          creatorName: 'AIPRO Community',
+          createdAt: inst.installedAt,
+          status: 'APPROVED',
+          scope: inst.scope.toUpperCase(),
+          categories: ['General'],
+          stages: ['Production'],
+          viewCount: BigInt(100) as unknown as bigint,
+          avgRating: 5.0,
+          ratingCount: BigInt(1) as unknown as bigint,
+          subscribed: false,
+          installed: true,
+          enabled: inst.enabled,
+          installScope: inst.scope,
+          installedProjects: inst.projectPath ? [inst.projectPath] : [],
+          projectStates: {},
+          installedVersion: inst.version,
+        }
+      }
+      return null
+    }
+
+    const found = skills.value.find((s) => s.name === selectedSkillName.value)
+    if (found) return found
+
+    // Fallback: look up in installedSkills
+    const inst = installedSkills.value.find((s) => s.name === selectedSkillName.value)
+    if (inst) {
+      return {
+        id: inst.id,
+        name: inst.name,
+        description: skillDetail.value?.description || `Skill cài đặt: ${inst.name}`,
+        creatorName: 'AIPRO Community',
+        createdAt: inst.installedAt,
+        status: 'APPROVED',
+        scope: inst.scope.toUpperCase(),
+        categories: ['General'],
+        stages: ['Production'],
+        viewCount: BigInt(100) as unknown as bigint,
+        avgRating: 5.0,
+        ratingCount: BigInt(1) as unknown as bigint,
+        subscribed: false,
+        installed: true,
+        enabled: inst.enabled,
+        installScope: inst.scope,
+        installedProjects: inst.projectPath ? [inst.projectPath] : [],
+        projectStates: {},
+        installedVersion: inst.version,
+      }
+    }
+
+    return skills.value[0] || null
   })
 
   const filteredMarketplaceSkills = computed<SkillItem[]>(() => {
@@ -95,13 +152,16 @@ export const useSkillStore = defineStore('skills', () => {
   // Actions
   async function loadPortalStatus() {
     try {
-      const status = await nativeBridge.getStatus()
+      const [status, isAuto] = await Promise.all([
+        nativeBridge.getStatus(),
+        nativeBridge.isAutostartEnabled().catch(() => false)
+      ])
       installedSkills.value = status.installed || []
       recentProjects.value = status.recentProjects || []
       if (!currentProject.value && recentProjects.value.length > 0) {
         currentProject.value = recentProjects.value[0]
       }
-      autostartEnabled.value = await nativeBridge.isAutostartEnabled()
+      autostartEnabled.value = isAuto
     } catch (e) {
       console.warn('Failed to load portal status:', e)
     }
@@ -123,22 +183,35 @@ export const useSkillStore = defineStore('skills', () => {
     }
   }
 
+  let lastRequestedSkillId: number | bigint | null = null
+
   async function fetchSkillDetail(id: number | bigint) {
+    lastRequestedSkillId = id
     try {
       const [detail, versions] = await Promise.all([
         nativeBridge.getSkillDetail(id),
         nativeBridge.getSkillVersions(id),
       ])
+      // Discard response if another skill was selected in the meantime
+      if (lastRequestedSkillId !== id) return
+
       skillDetail.value = detail
       skillVersions.value = versions
     } catch (e) {
-      console.error(`Failed to fetch skill detail for ${id}:`, e)
+      if (lastRequestedSkillId === id) {
+        console.error(`Failed to fetch skill detail for ${id}:`, e)
+      }
     }
   }
 
   function selectSkill(skill: SkillItem) {
     selectedSkillName.value = skill.name
     fetchSkillDetail(skill.id)
+  }
+
+  function selectInstalledSkill(inst: InstalledPlugin) {
+    selectedSkillName.value = inst.name
+    fetchSkillDetail(inst.id)
   }
 
   async function installSkill(
@@ -224,6 +297,7 @@ export const useSkillStore = defineStore('skills', () => {
       if (!recentProjects.value.includes(targetProject)) {
         recentProjects.value.unshift(targetProject)
       }
+      await loadPortalStatus()
       return cloned
     } finally {
       isLoading.value = false
@@ -319,6 +393,7 @@ export const useSkillStore = defineStore('skills', () => {
     fetchMarketplaceSkills,
     fetchSkillDetail,
     selectSkill,
+    selectInstalledSkill,
     installSkill,
     uninstallSkill,
     toggleSkill,

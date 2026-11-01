@@ -5,9 +5,11 @@ import Tag from 'primevue/tag'
 import InputSwitch from 'primevue/inputswitch'
 import { useSkillStore } from '../stores/skillStore'
 import { useConfirm } from 'primevue/useconfirm'
+import { useI18n } from '@/i18n'
 
 const store = useSkillStore()
 const confirm = useConfirm()
+const { t } = useI18n()
 
 const activeDetailTab = ref<'overview' | 'files' | 'versions'>('overview')
 
@@ -28,12 +30,12 @@ function handleUninstall() {
   if (!store.selectedSkill) return
 
   confirm.require({
-    message: `Bạn có chắc chắn muốn gỡ cài đặt skill "${store.selectedSkill.name}" không?`,
-    header: 'Xác nhận Gỡ cài đặt',
+    message: t('portal.confirmUninstallMsg', { name: store.selectedSkill.name }),
+    header: t('portal.confirmUninstallTitle'),
     icon: 'pi pi-exclamation-triangle',
     acceptClass: 'p-button-danger',
-    acceptLabel: 'Gỡ cài đặt',
-    rejectLabel: 'Hủy',
+    acceptLabel: t('portal.uninstallBtn'),
+    rejectLabel: t('common.cancel'),
     accept: () => {
       if (store.selectedSkill) {
         store.uninstallSkill(store.selectedSkill.name)
@@ -47,7 +49,7 @@ function handleUninstall() {
   <div class="h-full flex flex-col p-6 overflow-hidden bg-slate-50/50 dark:bg-slate-950/40">
     <div v-if="!store.selectedSkill" class="flex-1 flex flex-col items-center justify-center text-slate-400">
       <i class="pi pi-box text-4xl mb-3 text-slate-300 dark:text-slate-700"></i>
-      <p class="text-sm">Chọn một Skill từ danh sách để xem thông tin chi tiết</p>
+      <p class="text-sm">{{ t('portal.selectSkillHint') }}</p>
     </div>
 
     <div v-else class="h-full flex flex-col space-y-5 overflow-hidden">
@@ -67,9 +69,9 @@ function handleUninstall() {
             </div>
 
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
-              <span>Tác giả: <strong class="text-slate-700 dark:text-slate-300">{{ store.selectedSkill.creatorName }}</strong></span>
+              <span>{{ t('portal.authorLabel') }}: <strong class="text-slate-700 dark:text-slate-300">{{ store.selectedSkill.creatorName }}</strong></span>
               <span>&bull;</span>
-              <span>Phiên bản: <strong class="text-slate-700 dark:text-slate-300">v{{ store.selectedSkill.installedVersion || 1 }}</strong></span>
+              <span>{{ t('portal.versionLabel') }}: <strong class="text-slate-700 dark:text-slate-300">v{{ store.selectedSkill.installedVersion || 1 }}</strong></span>
             </p>
 
             <div class="flex items-center gap-3 mt-2 text-xs text-slate-500">
@@ -78,7 +80,7 @@ function handleUninstall() {
                 {{ store.selectedSkill.avgRating || 5.0 }} ({{ String(store.selectedSkill.ratingCount || 0) }})
               </span>
               <span>&bull;</span>
-              <span>{{ String(store.selectedSkill.viewCount || 0) }} lượt xem</span>
+              <span>{{ String(store.selectedSkill.viewCount || 0) }} {{ t('portal.views') }}</span>
             </div>
           </div>
         </div>
@@ -88,7 +90,7 @@ function handleUninstall() {
           <template v-if="!store.selectedSkill.installed">
             <Button
               type="button"
-              label="Cài đặt Skill"
+              :label="t('portal.installSkillBtn')"
               icon="pi pi-download"
               class="!py-2.5 !px-4 !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/25 cursor-pointer !rounded-xl"
               @click="handleInstall"
@@ -97,7 +99,7 @@ function handleUninstall() {
           <template v-else>
             <div class="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
               <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                {{ store.selectedSkill.enabled ? 'Đang kích hoạt' : 'Đã vô hiệu hóa' }}
+                {{ store.selectedSkill.enabled ? t('portal.activeStatus') : t('portal.disabledStatus') }}
               </span>
               <InputSwitch
                 :modelValue="store.selectedSkill.enabled"
@@ -107,7 +109,7 @@ function handleUninstall() {
             <Button
               type="button"
               icon="pi pi-trash"
-              label="Gỡ cài đặt"
+              :label="t('portal.uninstallBtn')"
               variant="outlined"
               severity="danger"
               class="!py-2.5 !px-3 !text-xs !rounded-xl cursor-pointer"
@@ -126,10 +128,10 @@ function handleUninstall() {
           <i class="pi pi-info-circle text-emerald-600 dark:text-emerald-400 text-sm"></i>
           <div>
             <span class="font-bold text-slate-900 dark:text-white">
-              Phạm vi cài đặt: {{ store.selectedSkill.installScope === 'project' ? 'Theo Dự án (Project)' : 'Toàn cục (Global)' }}
+              {{ t('portal.scopeInfoTitle') }} {{ store.selectedSkill.installScope === 'project' ? t('portal.project') : t('portal.global') }}
             </span>
             <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Tự động đồng bộ cờ <code class="font-mono bg-white dark:bg-slate-900 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-800">disabledSkills</code> vào file config của AIPRO.
+              {{ t('portal.scopeInfoDesc') }}
             </span>
           </div>
         </div>
@@ -149,7 +151,7 @@ function handleUninstall() {
           @click="activeDetailTab = 'overview'"
         >
           <i class="pi pi-file-edit text-xs"></i>
-          <span>Tổng quan (Overview)</span>
+          <span>{{ t('portal.tabOverview') }}</span>
         </button>
 
         <button
@@ -159,7 +161,7 @@ function handleUninstall() {
           @click="activeDetailTab = 'files'"
         >
           <i class="pi pi-folder text-xs"></i>
-          <span>Tệp đính kèm (Files)</span>
+          <span>{{ t('portal.tabFiles') }}</span>
         </button>
 
         <button
@@ -169,7 +171,7 @@ function handleUninstall() {
           @click="activeDetailTab = 'versions'"
         >
           <i class="pi pi-history text-xs"></i>
-          <span>Phiên bản (What's New)</span>
+          <span>{{ t('portal.tabVersions') }}</span>
         </button>
       </div>
 
@@ -178,10 +180,10 @@ function handleUninstall() {
         <!-- Overview Tab -->
         <div v-if="activeDetailTab === 'overview'" class="space-y-4">
           <div class="prose dark:prose-invert max-w-none text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-            <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">Mô tả Skill</h3>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">{{ t('portal.skillDescTitle') }}</h3>
             <p>{{ store.selectedSkill.description }}</p>
 
-            <h3 class="text-sm font-bold text-slate-900 dark:text-white mt-4 mb-2">Tài liệu đặc tả (SKILL.md)</h3>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white mt-4 mb-2">{{ t('portal.skillSpecTitle') }}</h3>
             <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 font-mono text-[11px] whitespace-pre-wrap">
               {{ store.skillDetail?.description || `# ${store.selectedSkill.name}\n\nSkill được đóng gói sẵn cho AIPRO Studio với quy trình kiểm thử nghiêm ngặt.` }}
             </div>
@@ -223,14 +225,14 @@ function handleUninstall() {
             <Button
               v-if="store.selectedSkill.installedVersion !== ver.version"
               type="button"
-              label="Cài bản này"
+              :label="t('portal.installThisVersion')"
               icon="pi pi-download"
               variant="outlined"
               class="!py-1.5 !px-3 !text-xs !rounded-xl cursor-pointer flex-shrink-0"
               @click="handleInstall"
             />
             <span v-else class="text-xs font-bold text-emerald-500 flex items-center gap-1 flex-shrink-0">
-              <i class="pi pi-check"></i> Bản đang cài
+              <i class="pi pi-check"></i> {{ t('portal.currentInstalledVersion') }}
             </span>
           </div>
         </div>

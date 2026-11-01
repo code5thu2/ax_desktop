@@ -89,7 +89,7 @@ impl SkillManager {
             name: name.to_string(),
             version,
             enabled: true,
-            installed_at: "2026-11-02T02:00:00Z".to_string(),
+            installed_at: chrono::Utc::now().to_rfc3339(),
             scope: scope.to_string(),
             project_path: norm_proj.clone(),
         });
@@ -112,11 +112,17 @@ impl SkillManager {
         let mut list = self.list_installed();
         let mut target_dir_opt = None;
 
+        let mut found = false;
         for item in list.iter_mut() {
             if item.id == id && item.scope == scope && item.project_path == norm_proj {
                 item.enabled = enabled;
                 target_dir_opt = self.resolve_target_dir(id, scope, project_path).ok();
+                found = true;
             }
+        }
+
+        if !found {
+            return Err(format!("Installed skill with id {} not found", id));
         }
 
         self.save_installed(&list)?;
@@ -182,6 +188,9 @@ impl SkillManager {
             for entry in fs::read_dir(src)? {
                 let entry = entry?;
                 let file_type = entry.file_type()?;
+                if file_type.is_symlink() {
+                    continue;
+                }
                 if file_type.is_dir() {
                     copy_dir_all(&entry.path(), &dst.join(entry.file_name()))?;
                 } else {
@@ -207,7 +216,7 @@ impl SkillManager {
             name,
             version,
             enabled: true,
-            installed_at: "2026-11-02T02:00:00Z".to_string(),
+            installed_at: chrono::Utc::now().to_rfc3339(),
             scope: "project".to_string(),
             project_path: Some(norm_dst),
         });

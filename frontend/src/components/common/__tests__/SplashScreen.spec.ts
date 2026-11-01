@@ -18,8 +18,8 @@ describe('SplashScreen', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('MCP PROTOCOL STUDIO')
-    expect(wrapper.text()).toContain('ENTERPRISE')
+    expect(wrapper.text()).toContain('AX Desktop')
+    expect(wrapper.text()).toContain('AIPRO SUPER STUDIO')
     expect(wrapper.find('[data-testid="splash-screen"]').exists()).toBe(true)
   })
 

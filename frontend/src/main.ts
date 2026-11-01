@@ -29,33 +29,3 @@ app.use(ToastService)
 app.use(ConfirmationService)
 
 app.mount('#app')
-
-// When Vue app and router are fully initialized, notify native desktop host
-router.isReady().then(() => {
-  /**
-   * Dispatches a readiness signal to the PyWebView desktop host to close splash and reveal the window.
-   */
-  function notifyReady(): boolean {
-    if (typeof window !== 'undefined' && (window as any).pywebview?.api?.notify_main_ready) {
-      try {
-        (window as any).pywebview.api.notify_main_ready()
-        return true
-      } catch {
-        return false
-      }
-    }
-    return false
-  }
-
-  if (!notifyReady()) {
-    if (typeof window !== 'undefined') {
-      window.addEventListener('pywebviewready', notifyReady)
-      const interval = setInterval(() => {
-        if (notifyReady()) {
-          clearInterval(interval)
-        }
-      }, 200)
-      setTimeout(() => clearInterval(interval), 3000)
-    }
-  }
-})

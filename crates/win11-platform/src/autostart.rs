@@ -42,6 +42,12 @@ pub fn is_run_at_startup_configured(app_name: &str) -> bool {
 }
 
 pub fn set_run_at_startup(app_name: &str, enable: bool) -> Result<(), String> {
+    let current_exe = if enable {
+        Some(std::env::current_exe().map_err(|e| e.to_string())?)
+    } else {
+        None
+    };
+
     let wide_key = to_wide_null(RUN_KEY_PATH);
     let wide_name = to_wide_null(app_name);
 
@@ -53,9 +59,8 @@ pub fn set_run_at_startup(app_name: &str, enable: bool) -> Result<(), String> {
             return Err("Failed to open HKCU Run registry key for writing".to_string());
         }
 
-        let result = if enable {
-            let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
-            let exe_str = format!("\"{}\" --autostart", current_exe.to_string_lossy());
+        let result = if let Some(exe) = current_exe {
+            let exe_str = format!("\"{}\" --autostart", exe.to_string_lossy());
             let wide_val = to_wide_null(&exe_str);
 
             let res = RegSetValueExW(

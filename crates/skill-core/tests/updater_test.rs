@@ -1,4 +1,4 @@
-use ax_core::updater::{check_github_release_available, version_gt};
+use skill_core::updater::{check_github_release_available, version_gt};
 use shared_types::models::{GithubAsset, GithubRelease};
 
 #[test]

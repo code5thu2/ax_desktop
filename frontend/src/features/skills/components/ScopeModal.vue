@@ -7,8 +7,10 @@ import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import { useSkillStore } from '../stores/skillStore'
 import { nativeBridge } from '@/services/nativeBridge'
+import { useI18n } from '@/i18n'
 
 const store = useSkillStore()
+const { t } = useI18n()
 
 const scopeType = ref<'global' | 'project'>('global')
 const selectedProject = ref<string>('')
@@ -58,7 +60,7 @@ function handleClose() {
   <Dialog
     v-model:visible="store.showScopeModal"
     modal
-    header="Chọn phạm vi cài đặt Skill"
+    :header="t('scopeModal.title')"
     :style="{ width: '480px' }"
     :closable="!isInstalling"
     class="p-dialog-custom"
@@ -73,7 +75,7 @@ function handleClose() {
             {{ store.pendingInstallSkill.name }}
           </h4>
           <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
-            Tác giả: {{ store.pendingInstallSkill.creatorName }} &bull; Phiên bản: {{ store.pendingInstallSkill.installedVersion || 1 }}
+            {{ t('scopeModal.authorLabel') }}: {{ store.pendingInstallSkill.creatorName }} &bull; {{ t('scopeModal.versionLabel') }}: {{ store.pendingInstallSkill.installedVersion || 1 }}
           </p>
         </div>
       </div>
@@ -81,7 +83,7 @@ function handleClose() {
       <!-- Scope selection -->
       <div class="space-y-3">
         <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Phạm vi áp dụng
+          {{ t('scopeModal.scopeTitle') }}
         </label>
 
         <!-- Global Option -->
@@ -93,10 +95,10 @@ function handleClose() {
           <RadioButton v-model="scopeType" value="global" inputId="scope-global" class="mt-0.5" />
           <div class="flex-1 text-xs">
             <label for="scope-global" class="font-bold text-slate-900 dark:text-white block cursor-pointer">
-              Toàn cục (Global)
+              {{ t('scopeModal.globalTitle') }}
             </label>
             <p class="text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-              Cài vào thư mục hệ thống <code class="font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">~/.aipro/skills</code>, dùng chung cho tất cả các dự án.
+              {{ t('scopeModal.globalDesc') }}
             </p>
           </div>
         </div>
@@ -110,10 +112,10 @@ function handleClose() {
           <RadioButton v-model="scopeType" value="project" inputId="scope-project" class="mt-0.5" />
           <div class="flex-1 text-xs">
             <label for="scope-project" class="font-bold text-slate-900 dark:text-white block cursor-pointer">
-              Theo Dự án (Project Workspace)
+              {{ t('scopeModal.projectTitle') }}
             </label>
             <p class="text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-              Cài cục bộ vào thư mục <code class="font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">&lt;project&gt;/.aipro/skills</code> để đóng gói độc lập theo repo.
+              {{ t('scopeModal.projectDesc') }}
             </p>
           </div>
         </div>
@@ -122,7 +124,7 @@ function handleClose() {
       <!-- Project Picker (Only shown when project scope selected) -->
       <div v-if="scopeType === 'project'" class="space-y-2 pt-1 animate-fadeIn">
         <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-          Thư mục Dự án đích
+          {{ t('scopeModal.targetFolderLabel') }}
         </label>
 
         <div v-if="projectOptions.length > 0" class="mb-2">
@@ -131,7 +133,7 @@ function handleClose() {
             :options="projectOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="Chọn từ danh sách gần đây"
+            :placeholder="t('scopeModal.recentProjectsPlaceholder')"
             class="w-full !rounded-xl !text-xs"
           />
         </div>
@@ -139,13 +141,13 @@ function handleClose() {
         <div class="flex gap-2">
           <InputText
             v-model="customProjectPath"
-            placeholder="Hoặc nhập đường dẫn dự án (VD: D:/AI_Projects/MyApp)"
+            :placeholder="t('scopeModal.customPathPlaceholder')"
             class="flex-1 !rounded-xl !text-xs"
           />
           <Button
             type="button"
             icon="pi pi-folder-open"
-            label="Chọn..."
+            :label="t('scopeModal.browseBtn')"
             variant="outlined"
             class="!rounded-xl !text-xs cursor-pointer flex-shrink-0"
             @click="handleBrowseFolder"
@@ -158,7 +160,7 @@ function handleClose() {
       <div class="flex items-center justify-end gap-2 pt-2">
         <Button
           type="button"
-          label="Hủy bỏ"
+          :label="t('scopeModal.cancelBtn')"
           variant="text"
           :disabled="isInstalling"
           class="!rounded-xl !text-xs cursor-pointer"
@@ -166,7 +168,7 @@ function handleClose() {
         />
         <Button
           type="button"
-          label="Xác nhận Cài đặt"
+          :label="isInstalling ? t('scopeModal.installingBtn') : t('scopeModal.confirmBtn')"
           icon="pi pi-check"
           :loading="isInstalling"
           class="!rounded-xl !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer"

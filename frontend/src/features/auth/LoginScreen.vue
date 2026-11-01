@@ -5,7 +5,6 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Checkbox from 'primevue/checkbox'
 import Button from 'primevue/button'
-import Divider from 'primevue/divider'
 import type { AuthScreen } from './types'
 import { nativeBridge } from '@/services/nativeBridge'
 
@@ -24,7 +23,6 @@ const isLoading = ref(false)
 
 const formError = ref<string | null>(null)
 const formSuccess = ref<string | null>(null)
-const socialNotice = ref<string | null>(null)
 
 const errors = reactive({
   identifier: '',
@@ -45,7 +43,6 @@ onMounted(async () => {
 function clearError(field: keyof typeof errors) {
   errors[field] = ''
   formError.value = null
-  socialNotice.value = null
 }
 
 function validate(): boolean {
@@ -53,7 +50,6 @@ function validate(): boolean {
   errors.identifier = ''
   errors.password = ''
   formError.value = null
-  socialNotice.value = null
 
   if (!identifier.value.trim()) {
     errors.identifier = t('login.errorIdentifier')
@@ -95,13 +91,6 @@ async function handleLogin() {
   } finally {
     isLoading.value = false
   }
-}
-
-function handleSocialLogin(provider: string) {
-  socialNotice.value = t('login.socialConnecting', { provider })
-  setTimeout(() => {
-    socialNotice.value = null
-  }, 2500)
 }
 
 function handleGuestMode() {
@@ -149,38 +138,6 @@ function handleGuestMode() {
             <div class="text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300">{{ formSuccess }}</div>
           </div>
         </div>
-
-        <div
-          v-if="socialNotice"
-          class="mb-4 p-3 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 text-xs text-sky-700 dark:text-sky-300 flex items-center gap-2 animate-slide-down"
-        >
-          <i class="pi pi-spin pi-spinner text-sky-500 text-xs"></i>
-          <span>{{ socialNotice }}</span>
-        </div>
-
-        <!-- Social Logins -->
-        <div class="grid grid-cols-2 gap-3 mb-5">
-          <button
-            type="button"
-            class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs"
-            @click="handleSocialLogin('Google')"
-          >
-            <i class="pi pi-google text-red-500"></i>
-            <span>Google</span>
-          </button>
-          <button
-            type="button"
-            class="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white hover:bg-slate-50 dark:bg-slate-800/50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs"
-            @click="handleSocialLogin('GitHub')"
-          >
-            <i class="pi pi-github text-slate-900 dark:text-white"></i>
-            <span>GitHub</span>
-          </button>
-        </div>
-
-        <Divider align="center" class="my-5">
-          <span class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">{{ t('login.orEmail') }}</span>
-        </Divider>
 
         <!-- Form -->
         <form @submit.prevent="handleLogin" class="space-y-4">

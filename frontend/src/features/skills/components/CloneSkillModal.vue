@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import Checkbox from 'primevue/checkbox'
+import InputText from 'primevue/inputtext'
 import { useSkillStore } from '../stores/skillStore'
+import { nativeBridge } from '@/services/nativeBridge'
+import { useI18n } from '@/i18n'
 
 const store = useSkillStore()
+const { t } = useI18n()
 
 const sourceProject = ref<string>(store.currentProject || '')
 const targetProject = ref<string>('')
@@ -18,28 +22,50 @@ const projectOptions = computed(() => {
   return store.recentProjects.map((p) => ({ label: p, value: p }))
 })
 
-// Filter installed skills belonging to source project (or global)
+// Strictly filter ONLY project-scoped skills belonging to the selected source project.
+// Global skills are strictly excluded per requirement.
 const availableSkillsToClone = computed(() => {
-  return store.installedSkills.map((s) => s.name)
+  if (!sourceProject.value) return []
+  const normSource = sourceProject.value.replace(/\\/g, '/').toLowerCase()
+  return store.installedSkills
+    .filter(
+      (s) =>
+        s.scope === 'project' &&
+        s.projectPath &&
+        s.projectPath.replace(/\\/g, '/').toLowerCase() === normSource
+    )
+    .map((s) => s.name)
 })
+
+watch(sourceProject, () => {
+  selectedSkillNames.value = []
+})
+
+async function handleBrowseTargetFolder() {
+  const res = await nativeBridge.selectFolder()
+  if (res.ok && res.path) {
+    targetProject.value = res.path
+    store.addProject(res.path)
+  }
+}
 
 async function handleConfirmClone() {
   errorMsg.value = null
 
   if (!sourceProject.value) {
-    errorMsg.value = 'Vui lòng chọn Dự án nguồn'
+    errorMsg.value = t('cloneModal.errorSourceEmpty')
     return
   }
   if (!targetProject.value) {
-    errorMsg.value = 'Vui lòng chọn hoặc nhập Dự án đích'
+    errorMsg.value = t('cloneModal.errorTargetEmpty')
     return
   }
-  if (sourceProject.value === targetProject.value) {
-    errorMsg.value = 'Dự án nguồn và dự án đích không được trùng nhau'
+  if (sourceProject.value.replace(/\\/g, '/').toLowerCase() === targetProject.value.replace(/\\/g, '/').toLowerCase()) {
+    errorMsg.value = t('cloneModal.errorSameProject')
     return
   }
   if (selectedSkillNames.value.length === 0) {
-    errorMsg.value = 'Vui lòng chọn ít nhất một skill để sao chép'
+    errorMsg.value = t('cloneModal.errorNoSkillsSelected')
     return
   }
 
@@ -66,26 +92,27 @@ function handleClose() {
   <Dialog
     v-model:visible="store.showCloneSkillModal"
     modal
-    header="Sao chép Skill giữa các Dự án"
-    :style="{ width: '500px' }"
+    :header="t('cloneModal.title')"
+    :style="{ width: '520px' }"
   >
     <div class="space-y-4 py-2">
-      <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-        Nhân bản các Skill đã cấu hình từ workspace nguồn sang workspace đích mà không cần tải lại từ máy chủ.
-      </p>
+      <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 text-xs text-sky-800 dark:text-sky-300 leading-relaxed flex items-start gap-2">
+        <i class="pi pi-info-circle text-sky-500 mt-0.5 flex-shrink-0"></i>
+        <span>{{ t('cloneModal.banner') }}</span>
+      </div>
 
       <div class="space-y-3">
         <!-- Source project -->
         <div>
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-            Dự án Nguồn (Source)
+            {{ t('cloneModal.sourceProjectLabel') }}
           </label>
           <Dropdown
             v-model="sourceProject"
             :options="projectOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="Chọn dự án nguồn"
+            :placeholder="t('cloneModal.sourceProjectPlaceholder')"
             class="w-full !rounded-xl !text-xs"
           />
         </div>
@@ -93,40 +120,74 @@ function handleClose() {
         <!-- Target project -->
         <div>
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-            Dự án Đích (Target)
+            {{ t('cloneModal.targetProjectLabel') }}
           </label>
-          <Dropdown
-            v-model="targetProject"
-            :options="projectOptions.filter(p => p.value !== sourceProject)"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Chọn dự án đích"
-            class="w-full !rounded-xl !text-xs"
-          />
+          <div class="flex gap-2">
+            <InputText
+              v-model="targetProject"
+              :placeholder="t('cloneModal.targetProjectPlaceholder')"
+              class="flex-1 !rounded-xl !text-xs"
+            />
+            <Button
+              type="button"
+              icon="pi pi-folder-open"
+              :label="t('scopeModal.browseBtn')"
+              variant="outlined"
+              class="!rounded-xl !text-xs cursor-pointer flex-shrink-0"
+              @click="handleBrowseTargetFolder"
+            />
+          </div>
         </div>
 
         <!-- Skills to clone -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            Chọn Skill cần sao chép
-          </label>
-          <div class="max-h-40 overflow-y-auto space-y-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {{ t('cloneModal.availableSkillsLabel', { count: availableSkillsToClone.length }) }}
+            </label>
+            <button
+              v-if="availableSkillsToClone.length > 0"
+              type="button"
+              class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+              @click="selectedSkillNames = selectedSkillNames.length === availableSkillsToClone.length ? [] : [...availableSkillsToClone]"
+            >
+              {{ selectedSkillNames.length === availableSkillsToClone.length ? t('cloneModal.deselectAll') : t('cloneModal.selectAll') }}
+            </button>
+          </div>
+
+          <div class="max-h-48 overflow-y-auto space-y-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
             <div
               v-for="skillName in availableSkillsToClone"
               :key="skillName"
-              class="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer"
+              class="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              @click="selectedSkillNames = selectedSkillNames.includes(skillName) ? selectedSkillNames.filter(n => n !== skillName) : [...selectedSkillNames, skillName]"
             >
-              <Checkbox
-                v-model="selectedSkillNames"
-                :value="skillName"
-                :inputId="`clone-${skillName}`"
-              />
-              <label :for="`clone-${skillName}`" class="cursor-pointer font-medium select-none truncate">
-                {{ skillName }}
-              </label>
+              <div class="flex items-center gap-2.5 min-w-0">
+                <Checkbox
+                  :modelValue="selectedSkillNames.includes(skillName)"
+                  :binary="true"
+                  :inputId="`clone-${skillName}`"
+                  @click.stop
+                  @update:modelValue="(val) => {
+                    if (val && !selectedSkillNames.includes(skillName)) selectedSkillNames.push(skillName)
+                    else if (!val) selectedSkillNames = selectedSkillNames.filter(n => n !== skillName)
+                  }"
+                />
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate select-none">
+                  {{ skillName }}
+                </span>
+              </div>
+              <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                Project Scope
+              </span>
             </div>
-            <div v-if="availableSkillsToClone.length === 0" class="text-xs text-slate-400 text-center py-2">
-              Không có skill khả dụng để sao chép
+
+            <div v-if="!sourceProject" class="text-xs text-slate-400 text-center py-4">
+              {{ t('cloneModal.selectSourcePrompt') }}
+            </div>
+            <div v-else-if="availableSkillsToClone.length === 0" class="text-xs text-amber-600 dark:text-amber-400 text-center py-4 leading-relaxed font-medium">
+              <i class="pi pi-exclamation-circle text-base block mb-1"></i>
+              {{ t('cloneModal.noAvailableSkills') }}
             </div>
           </div>
         </div>
@@ -141,7 +202,7 @@ function handleClose() {
       <div class="flex items-center justify-end gap-2 pt-2">
         <Button
           type="button"
-          label="Hủy"
+          :label="t('cloneModal.cancelBtn')"
           variant="text"
           :disabled="isCloning"
           class="!rounded-xl !text-xs cursor-pointer"
@@ -149,7 +210,7 @@ function handleClose() {
         />
         <Button
           type="button"
-          label="Sao chép ngay"
+          :label="isCloning ? t('cloneModal.cloningBtn') : t('cloneModal.cloneBtn', { count: selectedSkillNames.length })"
           icon="pi pi-copy"
           :loading="isCloning"
           :disabled="selectedSkillNames.length === 0"

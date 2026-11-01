@@ -4,8 +4,10 @@ import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import InputSwitch from 'primevue/inputswitch'
 import { useSkillStore } from '../stores/skillStore'
+import { useI18n } from '@/i18n'
 
 const store = useSkillStore()
+const { t } = useI18n()
 
 const currentProjectSkills = computed(() => {
   if (!store.currentProject) return []
@@ -46,10 +48,10 @@ function handleOpenClone() {
     <div class="flex items-center justify-between gap-4">
       <div>
         <h2 class="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Quản lý Dự án & Workspace
+          {{ t('projects.title') }}
         </h2>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-          Quản lý và đồng bộ các Skill cài đặt cục bộ cho từng thư mục dự án
+          {{ t('projects.subtitle') }}
         </p>
       </div>
 
@@ -57,7 +59,7 @@ function handleOpenClone() {
         <Button
           type="button"
           icon="pi pi-copy"
-          label="Sao chép Skill"
+          :label="t('projects.cloneBtn')"
           variant="outlined"
           class="!rounded-xl !text-xs !font-semibold cursor-pointer"
           @click="handleOpenClone"
@@ -65,7 +67,7 @@ function handleOpenClone() {
         <Button
           type="button"
           icon="pi pi-plus"
-          label="Thêm Dự án"
+          :label="t('projects.addBtn')"
           class="!rounded-xl !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer"
           @click="handleAddProject"
         />
@@ -78,7 +80,7 @@ function handleOpenClone() {
       <div class="col-span-5 flex flex-col bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 overflow-hidden">
         <div class="flex items-center justify-between mb-3 px-1">
           <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Dự án gần đây ({{ store.recentProjects.length }})
+            {{ t('projects.recentTitle', { count: store.recentProjects.length }) }}
           </span>
         </div>
 
@@ -105,7 +107,7 @@ function handleOpenClone() {
             <button
               type="button"
               class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer"
-              title="Xóa khỏi danh sách"
+              :title="t('projects.removeTooltip')"
               @click="handleRemoveProject(projPath, $event)"
             >
               <i class="pi pi-trash text-xs"></i>
@@ -114,7 +116,7 @@ function handleOpenClone() {
 
           <div v-if="store.recentProjects.length === 0" class="text-center py-10 text-xs text-slate-400">
             <i class="pi pi-folder text-3xl mb-2 text-slate-300 dark:text-slate-700 block"></i>
-            Chưa có dự án nào. Bấm "Thêm Dự án" để bắt đầu.
+            {{ t('projects.noProjects') }}
           </div>
         </div>
       </div>
@@ -124,10 +126,10 @@ function handleOpenClone() {
         <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
             <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-              Skill trong workspace hiện tại
+              {{ t('projects.workspaceTitle') }}
             </span>
             <div class="text-sm font-extrabold text-slate-900 dark:text-white font-mono truncate mt-0.5">
-              {{ store.currentProject || 'Chưa chọn dự án' }}
+              {{ store.currentProject || t('projects.noProjectSelected') }}
             </div>
           </div>
           <Tag :value="`${currentProjectSkills.length} skills`" severity="success" class="!text-[11px] !font-bold" />
@@ -150,7 +152,7 @@ function handleOpenClone() {
                 <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                   <span>v{{ skill.version }}</span>
                   <span>&bull;</span>
-                  <span>Cài ngày: {{ new Date(skill.installedAt).toLocaleDateString() }}</span>
+                  <span>{{ t('portal.installedAt') }}: {{ new Date(skill.installedAt).toLocaleDateString() }}</span>
                 </div>
               </div>
             </div>
@@ -163,7 +165,7 @@ function handleOpenClone() {
               <button
                 type="button"
                 class="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                title="Gỡ cài đặt khỏi dự án này"
+                :title="t('projects.uninstallBtn')"
                 @click="handleUninstall(skill.name)"
               >
                 <i class="pi pi-trash text-xs"></i>
@@ -173,8 +175,8 @@ function handleOpenClone() {
 
           <div v-if="currentProjectSkills.length === 0" class="text-center py-14 text-xs text-slate-400">
             <i class="pi pi-box text-3xl mb-2 text-slate-300 dark:text-slate-700 block"></i>
-            Dự án này chưa có Skill cục bộ nào.<br />
-            Bạn có thể chuyển sang tab <span class="font-bold text-emerald-500 cursor-pointer" @click="store.setActiveTab('marketplace')">Marketplace</span> để cài đặt skill theo phạm vi dự án.
+            {{ t('projects.noSkillsInWorkspace') }}<br />
+            {{ t('projects.goToMarketplace') }}
           </div>
         </div>
       </div>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { usePluginStore } from '@/features/plugins/stores/pluginStore'
+import { nativeBridge } from '@/services/nativeBridge'
+import { useI18n } from '@/i18n'
 
 interface Props {
   visible: boolean
@@ -21,16 +23,17 @@ const emit = defineEmits<{
 
 const settingsStore = useSettingsStore()
 const pluginStore = usePluginStore()
+const { t } = useI18n()
 
 const activeTab = ref<'general' | 'clients' | 'about'>('general')
 
-const tabs = [
-  { id: 'general' as const, label: 'Chung (General)', icon: 'pi pi-cog' },
-  { id: 'clients' as const, label: 'AI Clients & IDEs', icon: 'pi pi-desktop' },
-  { id: 'about' as const, label: 'Thông tin', icon: 'pi pi-info-circle' },
-]
+const tabs = computed(() => [
+  { id: 'general' as const, label: t('settings.tabGeneral'), icon: 'pi pi-cog' },
+  { id: 'clients' as const, label: t('settings.tabClients'), icon: 'pi pi-desktop' },
+  { id: 'about' as const, label: t('settings.tabAbout'), icon: 'pi pi-info-circle' },
+])
 
-function handleTabClick(tabId: typeof tabs[number]['id']) {
+function handleTabClick(tabId: 'general' | 'clients' | 'about') {
   activeTab.value = tabId
 }
 
@@ -43,14 +46,10 @@ const jsonCopied = ref(false)
 
 async function checkAutostartStatus() {
   try {
-    if (typeof window !== 'undefined' && (window as any).pywebview?.api?.is_autostart_enabled) {
-      isAutostartEnabled.value = await (window as any).pywebview.api.is_autostart_enabled()
-    } else {
-      const saved = localStorage.getItem('mcp_studio_autostart')
-      isAutostartEnabled.value = saved === 'true'
-    }
+    isAutostartEnabled.value = await nativeBridge.isAutostartEnabled()
   } catch (e) {
-    console.error('Failed to check autostart:', e)
+    const saved = localStorage.getItem('mcp_studio_autostart')
+    isAutostartEnabled.value = saved === 'true'
   }
 }
 
@@ -58,9 +57,7 @@ async function toggleAutostart() {
   const next = !isAutostartEnabled.value
   isAutostartEnabled.value = next
   try {
-    if (typeof window !== 'undefined' && (window as any).pywebview?.api?.set_autostart) {
-      await (window as any).pywebview.api.set_autostart(next)
-    }
+    await nativeBridge.setAutostart(next)
     localStorage.setItem('mcp_studio_autostart', String(next))
   } catch (e) {
     console.error('Failed to set autostart:', e)
@@ -138,7 +135,7 @@ function resetDefaults() {
     :visible="props.visible"
     :appendTo="props.appendTo"
     modal
-    header="Cài đặt (Settings)"
+    :header="t('settings.title')"
     :style="{ width: '680px', maxWidth: '95vw' }"
     :breakpoints="{ '1024px': '95vw', '768px': '98vw' }"
     class="!bg-white dark:!bg-[#171717] !border !border-[#e5e5e5] dark:!border-[#2e2e2e] !text-[#0d0d0d] dark:!text-[#ececec] !rounded-2xl shadow-2xl overflow-hidden transition-all duration-200"
@@ -185,11 +182,8 @@ function resetDefaults() {
           <!-- Theme Selection -->
           <div class="pb-4 border-b border-[#e5e5e5] dark:border-[#2e2e2e]">
             <label class="block text-xs font-semibold text-slate-800 dark:text-[#ececec] mb-1.5">
-              Giao diện hiển thị (Theme Mode)
+              {{ t('settings.appearanceLabel') }}
             </label>
-            <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mb-2.5">
-              Chọn phong cách giao diện sáng hoặc tối cho MCP Protocol Studio.
-            </p>
             <div class="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#f0f0f0] dark:bg-[#212121] border border-[#e5e5e5] dark:border-[#2e2e2e]">
               <button
                 type="button"
@@ -203,7 +197,7 @@ function resetDefaults() {
                 @click="tempDarkMode = false"
               >
                 <i class="pi pi-sun text-amber-500 text-xs"></i>
-                <span>Giao diện Sáng (Light)</span>
+                <span>{{ t('settings.themeLight') }}</span>
               </button>
 
               <button
@@ -218,7 +212,7 @@ function resetDefaults() {
                 @click="tempDarkMode = true"
               >
                 <i class="pi pi-moon text-teal-400 text-xs"></i>
-                <span>Giao diện Tối (Dark)</span>
+                <span>{{ t('settings.themeDark') }}</span>
               </button>
             </div>
           </div>
@@ -231,10 +225,10 @@ function resetDefaults() {
               </div>
               <div class="flex flex-col min-w-0">
                 <span class="text-xs font-semibold text-slate-800 dark:text-[#ececec]">
-                  Khởi động cùng Windows (Chạy ẩn Tray)
+                  {{ t('settings.autostartLabel') }}
                 </span>
                 <span class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  Tự động khởi động khi bật máy và thu nhỏ chạy ngầm dưới khay hệ thống (System Tray).
+                  {{ t('settings.autostartDesc') }}
                 </span>
               </div>
             </div>
@@ -245,7 +239,7 @@ function resetDefaults() {
               :class="isAutostartEnabled ? 'bg-[#10A37F] text-white' : 'bg-[#e5e5e5] dark:bg-[#2f2f2f] text-neutral-600 dark:text-neutral-400'"
               @click="toggleAutostart"
             >
-              {{ isAutostartEnabled ? 'Đang bật' : 'Đã tắt' }}
+              {{ isAutostartEnabled ? t('projects.activeStatus') : t('projects.disabledStatus') }}
             </button>
           </div>
 
@@ -253,7 +247,7 @@ function resetDefaults() {
           <div class="p-3.5 rounded-xl bg-[#f9f9f9] dark:bg-[#212121] border border-[#e5e5e5] dark:border-[#2e2e2e] space-y-2.5">
             <div class="flex items-center justify-between">
               <label class="block font-semibold text-slate-800 dark:text-[#ececec]">
-                Địa chỉ MCP Gateway & Registry Server
+                {{ t('settings.apiUrlLabel') }}
               </label>
               <button
                 type="button"
@@ -261,7 +255,7 @@ function resetDefaults() {
                 @click="testGatewayPing"
               >
                 <i class="pi pi-bolt text-[10px]" :class="{ 'animate-spin': pingStatus === 'checking' }"></i>
-                <span>{{ pingStatus === 'checking' ? 'Đang kiểm tra...' : (pingStatus === 'online' ? '● Online (Hoạt động)' : (pingStatus === 'offline' ? '✕ Mất kết nối' : 'Kiểm tra Ping')) }}</span>
+                <span>{{ pingStatus === 'checking' ? t('settings.pingChecking') : (pingStatus === 'online' ? t('settings.pingOnline') : (pingStatus === 'offline' ? t('settings.pingOffline') : t('settings.testPingBtn'))) }}</span>
               </button>
             </div>
             <InputText
@@ -270,7 +264,7 @@ function resetDefaults() {
               class="w-full !text-xs !py-2 !px-3 font-mono !rounded-lg"
             />
             <p class="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              Cổng HTTP nơi FastMCP Gateway và In-House Registry đang lắng nghe các lệnh JSON-RPC.
+              {{ t('settings.sectionGateway') }}
             </p>
           </div>
         </div>
@@ -279,10 +273,10 @@ function resetDefaults() {
         <div v-if="activeTab === 'clients'" class="space-y-4">
           <div class="pb-3 border-b border-[#e5e5e5] dark:border-[#2e2e2e]">
             <h3 class="text-xs font-bold text-slate-900 dark:text-white">
-              Kết nối MCP Server vào AI Clients & IDEs
+              {{ t('settings.tabClients') }}
             </h3>
             <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Sử dụng endpoint HTTP duy nhất để cung cấp toàn bộ công cụ In-House cho các AI Assistant.
+              Claude Desktop, Cursor, Windsurf, JetBrains, Cline...
             </p>
           </div>
 
@@ -299,11 +293,11 @@ function resetDefaults() {
                 @click="copyClaudeConfig"
               >
                 <i class="pi pi-copy text-[10px]"></i>
-                <span>{{ jsonCopied ? 'Đã sao chép!' : 'Sao chép JSON' }}</span>
+                <span>{{ jsonCopied ? t('settings.copiedSuccess') : t('settings.copyConfigBtn') }}</span>
               </button>
             </div>
             <p class="text-[11px] text-neutral-500 dark:text-neutral-400">
-              Dán đoạn cấu hình này vào file <code class="font-mono bg-neutral-200 dark:bg-[#2a2a2a] px-1 py-0.5 rounded text-[10px]">claude_desktop_config.json</code>:
+              claude_desktop_config.json:
             </p>
             <pre class="p-2.5 rounded-lg bg-neutral-100 dark:bg-[#151515] text-[11px] font-mono text-slate-800 dark:text-emerald-400 overflow-x-auto border border-neutral-200 dark:border-[#2b2b2b]">{
   "mcpServers": {
@@ -321,8 +315,7 @@ function resetDefaults() {
               Cursor & Windsurf IDE
             </span>
             <p class="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
-              Mở <b>Cursor Settings → Features → MCP Servers → Add New MCP Server</b>:<br/>
-              • Type: <b>sse</b> hoặc <b>http</b><br/>
+              • Type: <b>sse</b> / <b>http</b><br/>
               • Server URL: <code class="font-mono bg-neutral-200 dark:bg-[#2a2a2a] px-1 py-0.5 rounded text-[10px]">{{ settingsStore.apiBaseUrl }}/mcp</code>
             </p>
           </div>
@@ -336,39 +329,20 @@ function resetDefaults() {
             </div>
             <div>
               <h2 class="text-sm font-bold text-slate-900 dark:text-white">
-                MCP PROTOCOL STUDIO
+                AX Desktop &bull; MCP PROTOCOL STUDIO
               </h2>
               <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                In-House MCP Server Registry & Stateless Pure HTTP Gateway
+                {{ t('settings.aboutDesc') }}
               </p>
               <div class="flex items-center gap-2 mt-2">
                 <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
                   v1.0.0 Release
                 </span>
                 <span class="text-[10px] px-2 py-0.5 rounded bg-neutral-200 dark:bg-[#333333] text-neutral-600 dark:text-neutral-300 font-mono">
-                  JSON-RPC 2.0
+                  Tauri v2 Native Rust
                 </span>
               </div>
             </div>
-          </div>
-
-          <div class="space-y-2 text-neutral-600 dark:text-neutral-400 text-[11px] leading-relaxed">
-            <p>
-              • <b>Registry Server:</b> Quản lý, đóng gói và xuất bản MCP Server nội bộ (PostgreSQL, Docker, Puppeteer, Filesystem, Documents...).
-            </p>
-            <p>
-              • <b>Pure HTTP Gateway:</b> Chuyển đổi linh hoạt giữa giao thức MCP JSON-RPC tiêu chuẩn và REST API trực tiếp.
-            </p>
-            <p>
-              • <b>Interactive Swagger Docs:</b>
-              <a
-                :href="`${settingsStore.apiBaseUrl}/docs`"
-                target="_blank"
-                class="text-[#10A37F] hover:underline ml-1 font-mono"
-              >
-                {{ settingsStore.apiBaseUrl }}/docs
-              </a>
-            </p>
           </div>
         </div>
       </div>
@@ -378,7 +352,7 @@ function resetDefaults() {
     <template #footer>
       <div class="flex items-center justify-between w-full">
         <Button
-          label="Mặc định"
+          :label="t('settings.resetDefaultsBtn')"
           text
           size="small"
           class="!text-xs !text-neutral-500 hover:!text-slate-800 dark:hover:!text-white"
@@ -386,14 +360,14 @@ function resetDefaults() {
         />
         <div class="flex items-center gap-2">
           <Button
-            label="Hủy"
+            :label="t('common.cancel')"
             text
             size="small"
             class="!text-xs"
             @click="emit('update:visible', false)"
           />
           <Button
-            label="Lưu cài đặt"
+            :label="t('settings.saveBtn')"
             size="small"
             class="!text-xs !bg-[#10A37F] hover:!bg-[#0e8f6f] !text-white !font-semibold !rounded-lg !py-1.5 !px-4"
             @click="saveSettings"

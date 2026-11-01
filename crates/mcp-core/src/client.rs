@@ -42,14 +42,19 @@ impl StdioMcpClient {
             .write_all(req_str.as_bytes())
             .await
             .map_err(|e| format!("Failed to write to stdin: {}", e))?;
+        drop(stdin);
 
         let mut reader = BufReader::new(stdout).lines();
-        // Wait for response line with a timeout
-        let response_line = tokio::time::timeout(std::time::Duration::from_secs(10), reader.next_line())
-            .await
-            .map_err(|_| "MCP tool execution timed out (10s)".to_string())?
-            .map_err(|e| format!("Failed to read stdout: {}", e))?
-            .ok_or("MCP server closed stdout without responding")?;
+        // Wait for response line with a timeout, killing child process on timeout
+        let response_line = match tokio::time::timeout(std::time::Duration::from_secs(10), reader.next_line()).await {
+            Ok(res) => res
+                .map_err(|e| format!("Failed to read stdout: {}", e))?
+                .ok_or("MCP server closed stdout without responding")?,
+            Err(_) => {
+                let _ = child.kill().await;
+                return Err("MCP tool execution timed out (10s)".to_string());
+            }
+        };
 
         let resp_json: serde_json::Value =
             serde_json::from_str(&response_line).map_err(|e| format!("Invalid JSON response: {}", e))?;

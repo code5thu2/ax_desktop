@@ -1,5 +1,5 @@
 [package]
-name = "ax-core"
+name = "skill-core"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,6 +11,7 @@ tokio = { workspace = true }
 thiserror = { workspace = true }
 reqwest = { workspace = true }
 zip = { workspace = true }
+chrono = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

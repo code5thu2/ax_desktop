@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { watch, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { nativeBridge } from '@/services/nativeBridge'
 import AuthScreens from '@/features/auth/AuthScreens.vue'
+import SplashScreen from '@/components/common/SplashScreen.vue'
 
 const settingsStore = useSettingsStore()
 const authStore = useAuthStore()
+
+const isTest = typeof process !== 'undefined' && (process.env?.NODE_ENV === 'test' || Boolean(process.env?.VITEST))
+const showSplash = ref(!isTest)
 
 function syncTheme(isDark: boolean) {
   if (typeof document === 'undefined') return
@@ -35,6 +39,10 @@ onMounted(async () => {
   syncTheme(settingsStore.darkMode)
   await authStore.checkAuthStatus()
 })
+
+function handleSplashComplete() {
+  showSplash.value = false
+}
 </script>
 
 <template>
@@ -42,22 +50,16 @@ onMounted(async () => {
     <Toast position="bottom-right" />
     <ConfirmDialog />
 
-    <!-- Loading Gate -->
-    <div
-      v-if="!authStore.isInitialized"
-      class="flex-1 flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-slate-950"
-    >
-      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/25">
-        <i class="pi pi-bolt text-2xl font-bold animate-pulse"></i>
-      </div>
-      <div class="text-sm font-semibold text-slate-600 dark:text-slate-300">
-        Khởi tạo AX Desktop...
-      </div>
-    </div>
+    <!-- Unified Global Splash Screen (Hiển thị ít nhất 1.5s) -->
+    <SplashScreen
+      v-if="showSplash || (!isTest && !authStore.isInitialized)"
+      :duration="1500"
+      @complete="handleSplashComplete"
+    />
 
     <!-- Auth Gate -->
     <AuthScreens
-      v-else-if="!authStore.isLoggedIn"
+      v-if="!showSplash && authStore.isInitialized && !authStore.isLoggedIn"
       :user="authStore.currentUser"
       @login-success="authStore.setAuthenticated"
       @guest-mode="authStore.setGuestMode"
@@ -65,7 +67,7 @@ onMounted(async () => {
     />
 
     <!-- Main Application View -->
-    <div v-else class="relative z-10 flex-1 flex flex-col min-h-0">
+    <div v-else-if="!showSplash && authStore.isInitialized && authStore.isLoggedIn" class="relative z-10 flex-1 flex flex-col min-h-0">
       <router-view v-slot="{ Component }">
         <Transition name="page-fade" mode="out-in">
           <component :is="Component" />

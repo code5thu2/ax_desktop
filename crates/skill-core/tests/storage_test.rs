@@ -1,4 +1,4 @@
-use ax_core::storage::{normalize_path, read_json_safe, write_json_atomic, extract_zip_safe};
+use skill_core::storage::{normalize_path, read_json_safe, write_json_atomic, extract_zip_safe};
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use tempfile::tempdir;

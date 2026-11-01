@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, getCurrentInstance } from 'vue'
 
 export type LogoVariant =
   | 'network'     // 1. Quỹ đạo nốt giao thức (Orbit Nodes)
@@ -26,8 +26,9 @@ const props = withDefaults(defineProps<Props>(), {
   ambient: false,
 })
 
-// Dynamic unique ID for SVG definitions to avoid collisions
-const uid = Math.random().toString(36).substring(2, 9)
+// Dynamic unique ID for SVG definitions per component instance to avoid collisions
+const instance = getCurrentInstance()
+const uid = instance ? String(instance.uid) : Math.random().toString(36).substring(2, 9)
 const gradId = `mcp-grad-${uid}`
 const gradUpperId = `mcp-upper-${uid}`
 const gradLowerId = `mcp-lower-${uid}`
@@ -428,9 +429,11 @@ const sizeStyle = computed(() => {
 
 .svg-breathing {
   animation: logoPulseBreathing 2.6s ease-in-out infinite;
+  will-change: transform, filter;
 }
 
 .aura-breathing {
   animation: auraBreathing 2.6s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 </style>

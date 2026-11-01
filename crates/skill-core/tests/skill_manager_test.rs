@@ -1,5 +1,5 @@
-use ax_core::skill_manager::SkillManager;
-use ax_core::synchronizer::{read_skill_name_from_md, sync_disabled_skills};
+use skill_core::skill_manager::SkillManager;
+use skill_core::synchronizer::{read_skill_name_from_md, sync_disabled_skills};
 use tempfile::tempdir;
 use std::fs;
 
