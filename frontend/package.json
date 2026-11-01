@@ -13,9 +13,7 @@
     "mock": "node mock-server.cjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
-    "build:desktop": "build_desktop.bat",
-    "build:installer": "build_installer.bat"
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.10.0",
