@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MCP Protocol Studio",
+  "productName": "AX Desktop",
   "version": "1.0.0",
-  "identifier": "com.aipro.mcp-protocol-studio",
+  "identifier": "com.aipro.ax-desktop",
   "build": {
     "beforeDevCommand": "",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "MCP Protocol Studio",
+        "title": "AX Desktop",
         "width": 1280,
         "height": 820,
         "minWidth": 900,
