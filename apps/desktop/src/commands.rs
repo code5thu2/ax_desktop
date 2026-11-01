@@ -349,21 +349,18 @@ pub fn open_studio() -> Result<serde_json::Value, String> {
 
 #[tauri::command]
 pub fn select_folder() -> Result<serde_json::Value, String> {
-    // Open Windows native FolderBrowserDialog via PowerShell
-    let output = std::process::Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            "Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.FolderBrowserDialog; $d.Description = 'Chọn thư mục dự án'; if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $d.SelectedPath }",
-        ])
-        .output()
-        .map_err(|e| format!("Folder picker failed: {}", e))?;
-
-    let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if path_str.is_empty() {
-        Ok(serde_json::json!({ "ok": false, "cancelled": true }))
-    } else {
-        Ok(serde_json::json!({ "ok": true, "path": normalize_path(&path_str) }))
+    match win11_platform::folder_picker::pick_folder(Some("Chọn thư mục dự án")) {
+        Some(path) => {
+            let path_str = path.to_string_lossy().to_string();
+            Ok(serde_json::json!({
+                "ok": true,
+                "path": normalize_path(&path_str)
+            }))
+        }
+        None => Ok(serde_json::json!({
+            "ok": false,
+            "cancelled": true
+        })),
     }
 }
 
