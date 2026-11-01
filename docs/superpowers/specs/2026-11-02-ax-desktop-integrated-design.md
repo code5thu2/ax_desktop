@@ -17,7 +17,7 @@
    - Chuẩn hóa theo mô hình Headless-First Multi-Crate Workspace: `shared-types`, `win11-platform`, `mcp-core`, `ax-core`, `apps/desktop`.
    - Thay thế 100% backend Python cũ bằng Rust hiệu năng cao, khởi động < 0.3s, RAM ~40-50MB.
    - Triển khai **Mock API Engine** cho phép kiểm thử offline toàn bộ luồng Auth và Marketplace mà không phụ thuộc server mạng nội bộ.
-   - Hỗ trợ cập nhật ứng dụng tự động qua GitHub Releases API công khai.
+   - Hỗ trợ cập nhật ứng dụng tự động qua GitHub Releases API công khai (`https://github.com/code5thu2/ax_desktop`).
 3. **Frontend Hiện đại (Vue 3 + PrimeVue 4 Aura)**:
    - Tuân thủ triết lý `frontend-design`: Giao diện Obsidian AI Dark cao cấp, điểm nhấn ngọc lục bảo (Emerald `#10A37F`), hiệu ứng Ambient Glow và Glassmorphism.
    - Tích hợp bộ màn hình xác thực chất lượng cao từ `D:\primevue-auth-showcase` (`LoginScreen`, `RegisterScreen`, `OtpScreen`, `ForgotScreen`, `LogoutScreen`).
@@ -46,7 +46,7 @@ d:\mcp-server-test\
 │       ├── skill_manager.rs    # Install, Uninstall, Toggle, Clone skill, check SKILL.md
 │       ├── synchronizer.rs     # Đọc SKILL.md name, sync disabledSkills vào AIPRO Studio config
 │       ├── mock_engine.rs      # Giả lập Auth & Marketplace API offline
-│       └── updater.rs          # Kiểm tra release & download update qua GitHub API
+│       └── updater.rs          # Kiểm tra release & download update qua GitHub API (code5thu2/ax_desktop)
 ├── apps/
 │   └── desktop/                # Tauri v2 Binary Shell ("AX Desktop")
 │       ├── tauri.conf.json     # App config, identifier, icons, NSIS bundle
@@ -110,7 +110,7 @@ d:\mcp-server-test\
 3. **Hệ thống & Tiện ích**:
    - `open_studio()` -> Mở `AIPRO_Studio.exe` qua Registry `HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall`
    - `select_folder()` -> Mở hộp thoại chọn thư mục gốc của Windows
-   - `check_for_update()` -> Gọi GitHub Releases API
+   - `check_for_update()` -> Gọi GitHub Releases API (`https://api.github.com/repos/code5thu2/ax_desktop/releases`)
    - `download_update()` -> Tải file installer
 4. **MCP Commands hiện có**:
    - `get_catalog()`, `execute_tool()`
