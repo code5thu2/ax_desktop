@@ -100,3 +100,203 @@ pub struct ToolExecuteResponse {
     #[ts(type = "any")]
     pub result: serde_json::Value,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct AuthUser {
+    pub id: u64,
+    pub name: String,
+    pub email: String,
+    #[serde(default)]
+    #[ts(optional)]
+    pub avatar: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct AuthTokens {
+    pub access_token: String,
+    pub refresh_token: String,
+    #[serde(default)]
+    #[ts(optional)]
+    pub user: Option<AuthUser>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct InstalledPlugin {
+    pub id: u64,
+    pub name: String,
+    pub version: u32,
+    pub enabled: bool,
+    pub installed_at: String,
+    pub scope: String, // "global" | "project"
+    #[serde(default)]
+    #[ts(optional)]
+    pub project_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct SkillFileItem {
+    pub id: u64,
+    pub file_name: String,
+    pub file_size: u64,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct SkillItem {
+    pub id: u64,
+    pub name: String,
+    pub description: String,
+    pub creator_name: String,
+    pub created_at: String,
+    pub status: String,
+    pub scope: String,
+    pub categories: Vec<String>,
+    pub stages: Vec<String>,
+    pub view_count: u64,
+    #[serde(default)]
+    #[ts(optional)]
+    pub avg_rating: Option<f64>,
+    pub rating_count: u64,
+    pub subscribed: bool,
+    pub installed: bool,
+    pub enabled: bool,
+    #[serde(default)]
+    #[ts(optional)]
+    pub install_scope: Option<String>,
+    #[serde(default)]
+    pub installed_projects: Vec<String>,
+    #[serde(default)]
+    pub project_states: HashMap<String, bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub install_path: Option<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub installed_version: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct SkillDetail {
+    pub id: u64,
+    pub name: String,
+    pub description: String,
+    pub creator_name: String,
+    pub created_at: String,
+    pub status: String,
+    pub scope: String,
+    pub categories: Vec<String>,
+    pub stages: Vec<String>,
+    pub view_count: u64,
+    #[serde(default)]
+    #[ts(optional)]
+    pub avg_rating: Option<f64>,
+    pub rating_count: u64,
+    pub subscribed: bool,
+    pub installed: bool,
+    pub enabled: bool,
+    #[serde(default)]
+    #[ts(optional)]
+    pub install_scope: Option<String>,
+    #[serde(default)]
+    pub installed_projects: Vec<String>,
+    #[serde(default)]
+    pub project_states: HashMap<String, bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub install_path: Option<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub installed_version: Option<u32>,
+    pub version: u32,
+    pub hashtags: Vec<String>,
+    pub files: Vec<SkillFileItem>,
+    pub is_creator: bool,
+    pub can_edit: bool,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct SkillVersionItem {
+    pub version: u32,
+    pub name: String,
+    pub description: String,
+    pub public_scope: String,
+    pub hashtags: Vec<String>,
+    pub creator_name: String,
+    pub created_at: String,
+    pub files: Vec<SkillFileItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct PortalStatus {
+    pub logged_in: bool,
+    #[serde(default)]
+    #[ts(optional)]
+    pub user: Option<AuthUser>,
+    pub theme: String,
+    pub installed: Vec<InstalledPlugin>,
+    pub recent_projects: Vec<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub remembered_email: Option<String>,
+    pub remember_account: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct Settings {
+    pub theme: String,
+    pub recent_projects: Vec<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub remembered_email: Option<String>,
+    pub remember_account: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct GithubAsset {
+    pub name: String,
+    pub browser_download_url: String,
+    pub size: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "../../../frontend/src/types/generated/")]
+pub struct GithubRelease {
+    pub tag_name: String,
+    #[serde(default)]
+    #[ts(optional)]
+    pub name: Option<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub body: Option<String>,
+    pub prerelease: bool,
+    #[serde(default)]
+    #[ts(optional)]
+    pub published_at: Option<String>,
+    #[serde(default)]
+    pub assets: Vec<GithubAsset>,
+}

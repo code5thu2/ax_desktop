@@ -1,4 +1,67 @@
-use shared_types::models::{PluginEnvRequirement, PluginItem, PluginTool, CatalogResponse};
+use shared_types::models::{
+    PluginEnvRequirement, PluginItem, PluginTool, CatalogResponse,
+    AuthUser, AuthTokens, InstalledPlugin, SkillItem, SkillDetail,
+    SkillVersionItem, PortalStatus, Settings, GithubRelease, GithubAsset
+};
+
+#[test]
+fn test_ax_desktop_models() {
+    let user = AuthUser {
+        id: 1,
+        name: "Test User".to_string(),
+        email: "test@example.com".to_string(),
+        avatar: None,
+    };
+    let auth = AuthTokens {
+        access_token: "mock-access-token".to_string(),
+        refresh_token: "mock-refresh-token".to_string(),
+        user: Some(user.clone()),
+        updated_at: Some("2026-11-02T00:00:00Z".to_string()),
+    };
+    let json_auth = serde_json::to_string(&auth).unwrap();
+    assert!(json_auth.contains("mock-access-token"));
+
+    let installed = InstalledPlugin {
+        id: 42,
+        name: "test-skill".to_string(),
+        version: 1,
+        enabled: true,
+        installed_at: "2026-11-02T00:00:00Z".to_string(),
+        scope: "global".to_string(),
+        project_path: None,
+    };
+    let json_inst = serde_json::to_string(&installed).unwrap();
+    assert!(json_inst.contains("test-skill"));
+
+    let status = PortalStatus {
+        logged_in: true,
+        user: Some(user),
+        theme: "dark".to_string(),
+        installed: vec![installed],
+        recent_projects: vec!["D:/projects/demo".to_string()],
+        remembered_email: Some("test@example.com".to_string()),
+        remember_account: true,
+    };
+    let json_status = serde_json::to_string(&status).unwrap();
+    assert!(json_status.contains("test@example.com"));
+    assert!(json_status.contains("recentProjects"));
+
+    let gh_asset = GithubAsset {
+        name: "AX-Desktop-Setup.exe".to_string(),
+        browser_download_url: "https://github.com/code5thu2/ax_desktop/releases/download/v1.0.1/setup.exe".to_string(),
+        size: 5200000,
+    };
+    let release = GithubRelease {
+        tag_name: "v1.0.1".to_string(),
+        name: Some("AX Desktop 1.0.1".to_string()),
+        body: Some("Bug fixes".to_string()),
+        prerelease: false,
+        published_at: Some("2026-11-02T00:00:00Z".to_string()),
+        assets: vec![gh_asset],
+    };
+    let json_release = serde_json::to_string(&release).unwrap();
+    assert!(json_release.contains("v1.0.1"));
+}
 
 #[test]
 fn test_plugin_item_serialization() {
