@@ -13,7 +13,9 @@
     "mock": "node mock-server.cjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "tauri:build:clean": "tauri build && node -e \"const fs=require('fs'); if(fs.existsSync('../target/debug')) fs.rmSync('../target/debug', {recursive:true, force:true}); console.log('[CLEANUP] Cleaned target/debug');\"",
+    "build:clean": "npm run build && cargo build --release -p desktop && node -e \"const fs=require('fs'); if(fs.existsSync('../target/debug')) fs.rmSync('../target/debug', {recursive:true, force:true}); console.log('[CLEANUP] Cleaned target/debug');\""
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.10.0",

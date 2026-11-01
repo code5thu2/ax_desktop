@@ -15,6 +15,9 @@ thiserror = "2.0"
 ts-rs = { version = "10.1", features = ["serde-compat"] }
 tauri = { version = "2.12.5" }
 
+[profile.dev]
+debug = 1 # Chỉ sinh line-table symbols, tránh tạo file .pdb khổng lồ khi test/dev
+
 [profile.release]
 opt-level = 3
 lto = true
