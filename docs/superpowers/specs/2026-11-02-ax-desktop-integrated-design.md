@@ -119,13 +119,23 @@ d:\mcp-server-test\
 
 ## 4. Frontend Specification (Vue 3 + PrimeVue 4)
 
-### 4.1 Triết lý Thiết kế (frontend-design)
+### 4.1 Triết lý Thiết kế & Tối ưu Hiệu năng (frontend-design & Zero-Jank)
 - **Design Personality**: *Obsidian AI Workspace* — Nền tối chiều sâu (`#121212`, `#1E1E1E`, `#252526`), viền phân cách tinh tế (`#333333`), điểm nhấn Ngọc lục bảo thương hiệu (`#10A37F` / Emerald Aura).
-- **Typography**: Phông chữ chính `Plus Jakarta Sans`, phông số liệu/code `JetBrains Mono` (đã nhúng local woff2, hỗ trợ 100% môi trường air-gapped không cần CDN).
+- **Nguyên tắc "Mượt mà số 1 - Zero Lag"**:
+  1. **Triệt tiêu animation ngốn CPU/GPU chạy ngầm**:
+     - Bỏ hoàn toàn các animation vòng lặp vô tận chạy nền (như `ambientGlow 7s ease-in-out infinite` liên tục kích hoạt Chromium layout repaint).
+     - Thay thế bằng **Radial Gradient tĩnh (Static Ambient Glow)**: Vẫn giữ hiệu ứng ánh sáng tỏa sang trọng nhưng **0% CPU** khi đứng yên.
+     - Giảm tải / loại bỏ `backdrop-filter: blur(24px)` trên các vùng diện tích lớn vì WebView2 tốn nhiều tài nguyên khi render blur. Dùng màu nền bán trong suốt tĩnh kết hợp viền mờ cao cấp (`bg-slate-900/90 border border-white/10`).
+  2. **Chỉ animate các thuộc tính GPU-accelerated**:
+     - Tuyệt đối không animate `width`, `height`, `margin`, `padding`, `top`, `left`, `box-shadow`.
+     - Chỉ cho phép chuyển động trên **`opacity`** và **`transform`** (`translateY`, `scale`) với thời lượng ngắn (`150ms - 200ms`, `cubic-bezier(0.16, 1, 0.3, 1)`).
+  3. **Tối ưu Danh sách & Tìm kiếm (Render Performance)**:
+     - Debounce 300ms khi người dùng gõ phím tìm kiếm để tránh kích hoạt tính toán và re-render liên tục.
+     - Lọc danh sách cục bộ tức thì trong bộ nhớ (Client-side fast filter) mang lại cảm giác phản hồi 0-latency.
+  4. **Typography**: Phông chữ chính `Plus Jakarta Sans`, phông số liệu/code `JetBrains Mono` (đã nhúng local woff2, hỗ trợ 100% môi trường air-gapped không cần CDN).
 - **UX States đầy đủ**:
-  - Skeleton loaders khi đang tải danh sách skill.
+  - Skeleton loaders nhẹ nhàng khi đang tải danh sách skill.
   - Empty states trực quan khi tìm kiếm không ra kết quả hoặc danh sách project rỗng.
-  - Phản hồi tức thì: Tìm kiếm Hybrid (lọc nhanh trên Client + debounce 300ms gọi Server).
   - Toast thông báo chuẩn ở góc dưới bên phải (`bottom-right`).
 
 ### 4.2 Cấu trúc Giao diện
