@@ -14,3 +14,10 @@ tokio = { version = "1.0", features = ["full"] }
 thiserror = "2.0"
 ts-rs = { version = "10.1", features = ["serde-compat"] }
 tauri = { version = "2.12.5" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -20,7 +20,8 @@
   "dependencies": {
     "@formkit/auto-animate": "^0.10.0",
     "@primevue/themes": "^4.0.7",
-    "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/cli": "^2.12.4",
     "@vueuse/core": "^10.9.0",
     "highlight.js": "^11.9.0",
     "lucide-vue-next": "^0.350.0",

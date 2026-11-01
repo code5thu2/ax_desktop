@@ -569,6 +569,7 @@ dependencies = [
  "serde_json",
  "shared-types",
  "tauri",
+ "tauri-build",
  "tokio",
  "win11-platform",
 ]
@@ -1768,6 +1769,7 @@ dependencies = [
  "shared-types",
  "thiserror 2.0.21",
  "tokio",
+ "walkdir",
 ]
 
 [[package]]
