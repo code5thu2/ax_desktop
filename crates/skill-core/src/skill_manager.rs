@@ -197,22 +197,111 @@ impl SkillManager {
         self.save_installed(&list)
     }
 
-    pub fn clone_skill(&self, id: u64, src_project: &str, dst_project: &str) -> Result<(), String> {
-        let src_dir = self.resolve_target_dir(id, "project", Some(src_project))?;
-        let dst_dir = self.resolve_target_dir(id, "project", Some(dst_project))?;
+    pub fn clone_skill(
+        &self,
+        id: u64,
+        name_opt: Option<&str>,
+        src_project: &str,
+        dst_project: &str,
+    ) -> Result<(), String> {
+        let norm_src = normalize_path(src_project);
+        let norm_dst = normalize_path(dst_project);
+        let list = self.list_installed();
+
+        let src_entry = list
+            .iter()
+            .find(|i| {
+                i.scope == "project"
+                    && i.project_path.as_deref() == Some(&norm_src)
+                    && (i.id == id || name_opt.map(|n| n == i.name).unwrap_or(false))
+            })
+            .or_else(|| {
+                list.iter().find(|i| {
+                    i.id == id || name_opt.map(|n| n == i.name).unwrap_or(false)
+                })
+            })
+            .cloned();
+
+        let effective_name = name_opt
+            .map(|s| s.to_string())
+            .or_else(|| src_entry.as_ref().map(|e| e.name.clone()))
+            .unwrap_or_else(|| format!("skill-{}", id));
+
+        let effective_id = src_entry.as_ref().map(|e| e.id).unwrap_or(id);
+
+        // 1. Locate source directory
+        let mut src_dir = self.resolve_target_dir(effective_id, "project", Some(src_project))?;
+        if !src_dir.exists() {
+            if let Ok(orig_dir) = self.resolve_target_dir(id, "project", Some(src_project)) {
+                if orig_dir.exists() {
+                    src_dir = orig_dir;
+                }
+            }
+        }
+
+        // If direct match by ID does not exist, search inside source project's .aipro/skills
+        if !src_dir.exists() {
+            let src_skills_root = PathBuf::from(&norm_src).join(".aipro").join("skills");
+            if src_skills_root.exists() {
+                if let Ok(entries) = fs::read_dir(&src_skills_root) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        if path.is_dir() {
+                            let folder_name = path
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("");
+                            if folder_name == effective_id.to_string()
+                                || folder_name == id.to_string()
+                            {
+                                src_dir = path;
+                                break;
+                            }
+                            let md_name = read_skill_name_from_md(&path);
+                            if md_name.eq_ignore_ascii_case(&effective_name) {
+                                src_dir = path;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: check global skills root if available
+        if !src_dir.exists() {
+            let global_dir = self.global_skills_root.join(effective_id.to_string());
+            if global_dir.exists() {
+                src_dir = global_dir;
+            } else {
+                let global_orig = self.global_skills_root.join(id.to_string());
+                if global_orig.exists() {
+                    src_dir = global_orig;
+                } else if self.global_skills_root.exists() {
+                    if let Ok(entries) = fs::read_dir(&self.global_skills_root) {
+                        for entry in entries.flatten() {
+                            let path = entry.path();
+                            if path.is_dir() {
+                                let md_name = read_skill_name_from_md(&path);
+                                if md_name.eq_ignore_ascii_case(&effective_name) {
+                                    src_dir = path;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         if !src_dir.exists() {
-            return Err("Source project skill directory does not exist".to_string());
+            return Err(format!(
+                "Thư mục nguồn của skill '{}' không tồn tại trong dự án {}",
+                effective_name, src_project
+            ));
         }
 
-        if dst_dir.exists() {
-            let _ = fs::remove_dir_all(&dst_dir);
-        }
-        if let Some(parent) = dst_dir.parent() {
-            let _ = fs::create_dir_all(parent);
-        }
-
-        // Recursive directory copy
+        // Recursive directory copy helper
         fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
             fs::create_dir_all(dst)?;
             for entry in fs::read_dir(src)? {
@@ -230,20 +319,37 @@ impl SkillManager {
             Ok(())
         }
 
-        copy_dir_all(&src_dir, &dst_dir).map_err(|e| e.to_string())?;
+        // Auto-repair source project standard directory if found in a non-standard folder
+        if let Ok(std_src_dir) = self.resolve_target_dir(effective_id, "project", Some(src_project)) {
+            if !std_src_dir.exists() && src_dir != std_src_dir {
+                let _ = copy_dir_all(&src_dir, &std_src_dir);
+            }
+        }
 
+        // 2. Resolve destination directory
+        let dst_dir = self.resolve_target_dir(effective_id, "project", Some(dst_project))?;
+        if dst_dir.exists() {
+            let _ = fs::remove_dir_all(&dst_dir);
+        }
+        if let Some(parent) = dst_dir.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+
+        copy_dir_all(&src_dir, &dst_dir).map_err(|e| format!("Lỗi sao chép tệp: {}", e))?;
+
+        // 3. Update installed list
         let mut list = self.list_installed();
-        let norm_dst = normalize_path(dst_project);
-        let src_entry = list.iter().find(|i| i.id == id).cloned();
+        list.retain(|i| {
+            !( (i.id == effective_id || i.name == effective_name)
+                && i.scope == "project"
+                && i.project_path == Some(norm_dst.clone()) )
+        });
 
-        list.retain(|i| !(i.id == id && i.scope == "project" && i.project_path == Some(norm_dst.clone())));
-
-        let name = src_entry.as_ref().map(|e| e.name.clone()).unwrap_or_else(|| read_skill_name_from_md(&dst_dir));
         let version = src_entry.as_ref().map(|e| e.version).unwrap_or(1);
 
         list.push(InstalledPlugin {
-            id,
-            name,
+            id: effective_id,
+            name: effective_name.clone(),
             version,
             enabled: true,
             installed_at: chrono::Utc::now().to_rfc3339(),
@@ -251,6 +357,13 @@ impl SkillManager {
             project_path: Some(norm_dst),
         });
 
-        self.save_installed(&list)
+        self.save_installed(&list)?;
+
+        // 4. Sync config in destination project
+        if let Ok(cfg) = self.resolve_config_path("project", Some(dst_project)) {
+            let _ = sync_disabled_skills(&cfg, &effective_name, false);
+        }
+
+        Ok(())
     }
 }

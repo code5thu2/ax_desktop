@@ -526,11 +526,20 @@ export const nativeBridge = {
     if (isTauriEnvironment()) {
       const cloned: InstalledPlugin[] = []
       for (const name of skillNames) {
-        const matched = mockSkills.find((s) => s.name === name)
-        const skillId = matched ? Number(matched.id) : 1
+        const matched = mockInstalled.find((s) => s.name === name) || mockSkills.find((s) => s.name === name)
+        const skillId = matched
+          ? Number(matched.id)
+          : (name === 'AI Code Assistant'
+              ? 101
+              : name === 'Smart Database Query & Introspection'
+              ? 102
+              : name === 'Multi-Language Legal Document Analyzer'
+              ? 103
+              : 1)
         await invokeNative('clone_skill', {
           payload: {
             skill_id: skillId,
+            name: name,
             source_project_path: sourceProject,
             target_project_path: targetProject,
           },
@@ -547,7 +556,23 @@ export const nativeBridge = {
       }
       return cloned
     }
-    return []
+    const cloned: InstalledPlugin[] = []
+    for (const name of skillNames) {
+      const matched = mockInstalled.find((s) => s.name === name) || mockSkills.find((s) => s.name === name)
+      const skillId = matched ? matched.id : BigInt(1)
+      const newItem: InstalledPlugin = {
+        id: skillId,
+        name,
+        version: 1,
+        enabled: true,
+        installedAt: new Date().toISOString(),
+        scope: 'project',
+        projectPath: targetProject,
+      }
+      mockInstalled.push(newItem)
+      cloned.push(newItem)
+    }
+    return cloned
   },
 
   // ==========================================

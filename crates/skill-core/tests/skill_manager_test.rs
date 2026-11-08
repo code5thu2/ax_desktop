@@ -72,3 +72,39 @@ fn test_skill_lifecycle_install_toggle_uninstall() {
     let installed_after_uninst = manager.list_installed();
     assert!(installed_after_uninst.is_empty());
 }
+
+#[test]
+fn test_clone_skill_by_name_and_repair() {
+    let dir = tempdir().unwrap();
+    let global_skills_root = dir.path().join("aipro/skills");
+    let config_path = dir.path().join("aipro/config.json");
+    let installed_json = dir.path().join("installed.json");
+    let src_proj = dir.path().join("src_project");
+    let dst_proj = dir.path().join("dst_project");
+
+    let manager = SkillManager::new(global_skills_root, installed_json, config_path);
+
+    // Create a skill folder with custom name in src_project/.aipro/skills/custom-id-999
+    let src_skill_dir = src_proj.join(".aipro/skills/custom-id-999");
+    fs::create_dir_all(&src_skill_dir).unwrap();
+    fs::write(
+        src_skill_dir.join("SKILL.md"),
+        "---\nname: Custom Database Tool\nid: 999\n---\n# Doc",
+    ).unwrap();
+
+    let clone_res = manager.clone_skill(
+        102,
+        Some("Custom Database Tool"),
+        src_proj.to_str().unwrap(),
+        dst_proj.to_str().unwrap(),
+    );
+    assert!(clone_res.is_ok(), "Clone failed: {:?}", clone_res.err());
+
+    // Verify destination exists and has SKILL.md
+    let dst_skill_md = dst_proj.join(".aipro/skills/102/SKILL.md");
+    assert!(dst_skill_md.exists());
+
+    // Verify source project was auto-repaired to also have standard folder 102
+    let repaired_src_md = src_proj.join(".aipro/skills/102/SKILL.md");
+    assert!(repaired_src_md.exists());
+}

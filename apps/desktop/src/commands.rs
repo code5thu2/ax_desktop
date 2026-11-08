@@ -340,6 +340,7 @@ pub fn toggle(state: State<'_, AppState>, payload: ToggleSkillPayload) -> Result
 #[derive(Deserialize)]
 pub struct CloneSkillPayload {
     pub skill_id: u64,
+    pub name: Option<String>,
     pub source_project_path: String,
     pub target_project_path: String,
 }
@@ -348,6 +349,7 @@ pub struct CloneSkillPayload {
 pub fn clone_skill(state: State<'_, AppState>, payload: CloneSkillPayload) -> Result<serde_json::Value, String> {
     state.skill_manager.clone_skill(
         payload.skill_id,
+        payload.name.as_deref(),
         &payload.source_project_path,
         &payload.target_project_path,
     )?;
