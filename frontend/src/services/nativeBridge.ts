@@ -401,6 +401,7 @@ export const nativeBridge = {
       m.installed = true
       m.enabled = true
       m.installScope = payload.scope
+      m.installedVersion = payload.version || 1
     }
     return { ok: true }
   },

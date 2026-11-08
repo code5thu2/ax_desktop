@@ -201,16 +201,18 @@ pub fn fetch_skills(
     // Merge local installed status
     let installed_list = state.skill_manager.list_installed();
     for s in skills.iter_mut() {
-        let matched: Vec<_> = installed_list.iter().filter(|i| i.id == s.id).collect();
+        let matched: Vec<_> = installed_list.iter().filter(|i| i.id == s.id || i.name == s.name).collect();
         if !matched.is_empty() {
             s.installed = true;
             s.enabled = matched.iter().any(|i| i.enabled);
+            s.installed_version = matched.last().map(|i| i.version);
+            s.install_scope = matched.last().map(|i| i.scope.clone());
             s.installed_projects = matched
                 .iter()
                 .filter_map(|i| i.project_path.clone())
                 .collect();
             let mut pstates = HashMap::new();
-            for m in matched {
+            for m in &matched {
                 if let Some(ref p) = m.project_path {
                     pstates.insert(p.clone(), m.enabled);
                 }
@@ -230,17 +232,19 @@ pub fn fetch_skills(
 pub fn get_skill_detail(state: State<'_, AppState>, id: u64) -> Result<SkillDetail, String> {
     let mut detail = state.client.get_skill_detail(id)?;
     let installed_list = state.skill_manager.list_installed();
-    let matched: Vec<_> = installed_list.iter().filter(|i| i.id == id).collect();
+    let matched: Vec<_> = installed_list.iter().filter(|i| i.id == id || i.name == detail.name).collect();
 
     if !matched.is_empty() {
         detail.installed = true;
         detail.enabled = matched.iter().any(|i| i.enabled);
+        detail.installed_version = matched.last().map(|i| i.version);
+        detail.install_scope = matched.last().map(|i| i.scope.clone());
         detail.installed_projects = matched
             .iter()
             .filter_map(|i| i.project_path.clone())
             .collect();
         let mut pstates = HashMap::new();
-        for m in matched {
+        for m in &matched {
             if let Some(ref p) = m.project_path {
                 pstates.insert(p.clone(), m.enabled);
             }
@@ -378,8 +382,13 @@ pub async fn select_folder() -> Result<serde_json::Value, String> {
 #[tauri::command]
 pub async fn check_for_update() -> Result<serde_json::Value, String> {
     let current_version = env!("CARGO_PKG_VERSION");
-    let releases = skill_core::updater::fetch_github_releases(skill_core::updater::GITHUB_REPO).await
-        .unwrap_or_default();
+    let releases = match skill_core::updater::fetch_github_releases(skill_core::updater::GITHUB_REPO).await {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("[updater] Failed to fetch releases from GitHub: {}", e);
+            vec![]
+        }
+    };
 
     let update = check_github_release_available(&releases, current_version);
     match update {

@@ -48,12 +48,12 @@ async function handleAutostartToggle() {
 
 async function handleCheckUpdates() {
   isUserMenuOpen.value = false
-  await store.checkForUpdates()
-  if (!store.availableUpdate) {
+  const rel = await store.checkForUpdates()
+  if (!rel || !rel.updateAvailable) {
     toast.add({
-      severity: 'success',
+      severity: 'info',
       summary: t('portal.checkUpdatesMenu'),
-      detail: t('portal.latestVersionMsg', { version: 'v1.0.0' }),
+      detail: t('portal.latestVersionMsg', { version: rel?.currentVersion ? `v${rel.currentVersion}` : 'v1.0.0' }),
       life: 2500,
     })
   }

@@ -278,6 +278,7 @@ pub struct Settings {
 #[ts(export, export_to = "../../../frontend/src/types/generated/")]
 pub struct GithubAsset {
     pub name: String,
+    #[serde(alias = "browser_download_url")]
     pub browser_download_url: String,
     pub size: u64,
 }
@@ -286,6 +287,7 @@ pub struct GithubAsset {
 #[serde(rename_all = "camelCase")]
 #[ts(export, export_to = "../../../frontend/src/types/generated/")]
 pub struct GithubRelease {
+    #[serde(alias = "tag_name")]
     pub tag_name: String,
     #[serde(default)]
     #[ts(optional)]
@@ -293,8 +295,9 @@ pub struct GithubRelease {
     #[serde(default)]
     #[ts(optional)]
     pub body: Option<String>,
-    pub prerelease: bool,
     #[serde(default)]
+    pub prerelease: bool,
+    #[serde(default, alias = "published_at")]
     #[ts(optional)]
     pub published_at: Option<String>,
     #[serde(default)]

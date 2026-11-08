@@ -94,3 +94,36 @@ fn test_updater_constants_and_script() {
     assert!(script.contains("C:\\apps\\desktop.exe"));
     assert!(script.contains("/S /SILENT"));
 }
+
+#[test]
+fn test_github_api_json_deserialization() {
+    let raw_json = r#"[
+        {
+            "tag_name": "v1.0.1",
+            "name": "AX Desktop v1.0.1",
+            "body": "Test release notes",
+            "draft": false,
+            "prerelease": false,
+            "published_at": "2026-11-08T18:19:04Z",
+            "assets": [
+                {
+                    "name": "AX_Desktop_1.0.1_x64-setup.exe",
+                    "size": 6247561,
+                    "browser_download_url": "https://github.com/code5thu2/ax_desktop/releases/download/v1.0.1/AX_Desktop_1.0.1_x64-setup.exe"
+                }
+            ]
+        }
+    ]"#;
+
+    let releases: Vec<GithubRelease> = serde_json::from_str(raw_json).expect("Failed to deserialize GitHub releases");
+    assert_eq!(releases.len(), 1);
+    assert_eq!(releases[0].tag_name, "v1.0.1");
+    assert_eq!(releases[0].assets.len(), 1);
+    assert_eq!(releases[0].assets[0].name, "AX_Desktop_1.0.1_x64-setup.exe");
+    assert_eq!(releases[0].assets[0].browser_download_url, "https://github.com/code5thu2/ax_desktop/releases/download/v1.0.1/AX_Desktop_1.0.1_x64-setup.exe");
+    assert_eq!(releases[0].assets[0].size, 6247561);
+
+    let update = check_github_release_available(&releases, "1.0.0");
+    assert!(update.is_some());
+    assert_eq!(update.unwrap().tag_name, "v1.0.1");
+}

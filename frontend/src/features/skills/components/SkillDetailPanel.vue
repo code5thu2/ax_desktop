@@ -15,14 +15,16 @@ const copiedPromptIdx = ref<number | null>(null)
 
 function handleInstall() {
   if (store.selectedSkill) {
-    store.pendingInstallSkill = store.selectedSkill
+    const latestVer = store.skillVersions?.[0]?.version || store.skillDetail?.version || 1
+    store.pendingInstallSkill = { ...store.selectedSkill, installedVersion: latestVer }
     store.showScopeModal = true
   }
 }
 
 function isCurrentInstalledVersion(verNumber: number): boolean {
   if (!store.selectedSkill?.installed) return false
-  const currVer = store.selectedSkill.installedVersion ?? 1
+  const currVer = store.selectedSkill.installedVersion ?? store.skillDetail?.installedVersion
+  if (currVer === undefined || currVer === null) return false
   return verNumber === currVer
 }
 
@@ -169,7 +171,7 @@ const providedTools = computed(() => {
               <Tag value="APPROVED" severity="success" class="!text-[10px] !py-0.5 !px-2 !font-bold" />
               <Tag value="SANDBOXED" severity="info" class="!text-[10px] !py-0.5 !px-2 !font-bold" />
               <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                v{{ store.selectedSkill.installedVersion || 1 }}.0.0
+                v{{ (store.selectedSkill.installed ? store.selectedSkill.installedVersion : (store.skillDetail?.version || store.skillVersions?.[0]?.version)) || 1 }}.0.0
               </span>
             </div>
 

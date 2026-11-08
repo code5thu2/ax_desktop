@@ -140,12 +140,12 @@ where
         .build()
         .map_err(|e| e.to_string())?;
 
-    let token = get_github_token();
     let mut req = client.get(download_url);
-    if !token.is_empty() {
-        req = req.header("Authorization", format!("Bearer {}", token));
-    }
     if download_url.contains("api.github.com") {
+        let token = get_github_token();
+        if !token.is_empty() {
+            req = req.header("Authorization", format!("Bearer {}", token));
+        }
         req = req.header("Accept", "application/octet-stream");
     }
 

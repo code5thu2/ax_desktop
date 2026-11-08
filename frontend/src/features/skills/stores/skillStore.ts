@@ -279,6 +279,14 @@ export const useSkillStore = defineStore('skills', () => {
         mSkill.installed = true
         mSkill.enabled = true
         mSkill.installScope = scope
+        mSkill.installedVersion = version
+      }
+
+      if (skillDetail.value && skillDetail.value.name === name) {
+        skillDetail.value.installed = true
+        skillDetail.value.enabled = true
+        skillDetail.value.installScope = scope
+        skillDetail.value.installedVersion = version
       }
 
       return installed
@@ -297,6 +305,12 @@ export const useSkillStore = defineStore('skills', () => {
         if (mSkill) {
           mSkill.installed = false
           mSkill.enabled = false
+          mSkill.installedVersion = undefined
+        }
+        if (skillDetail.value && skillDetail.value.name === name) {
+          skillDetail.value.installed = false
+          skillDetail.value.enabled = false
+          skillDetail.value.installedVersion = undefined
         }
       }
       return ok
@@ -384,9 +398,13 @@ export const useSkillStore = defineStore('skills', () => {
       if (rel.status === 'success' && rel.updateAvailable) {
         availableUpdate.value = rel
         showUpdateDialog.value = true
+      } else {
+        availableUpdate.value = null
       }
+      return rel
     } catch (e) {
       console.warn('Update check failed:', e)
+      return null
     } finally {
       isCheckingUpdate.value = false
     }
