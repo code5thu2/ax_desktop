@@ -20,6 +20,19 @@ function handleInstall() {
   }
 }
 
+function isCurrentInstalledVersion(verNumber: number): boolean {
+  if (!store.selectedSkill?.installed) return false
+  const currVer = store.selectedSkill.installedVersion ?? 1
+  return verNumber === currVer
+}
+
+function handleInstallVersion(version: number) {
+  if (store.selectedSkill) {
+    store.pendingInstallSkill = { ...store.selectedSkill, installedVersion: version }
+    store.showScopeModal = true
+  }
+}
+
 function handleToggle(enabled: boolean) {
   if (store.selectedSkill) {
     store.toggleSkill(store.selectedSkill.name, enabled, store.selectedSkill.installedProjects?.[0])
@@ -531,9 +544,22 @@ ${store.selectedSkill.description}
               </p>
             </div>
 
-            <span class="text-xs font-bold text-emerald-500 flex items-center gap-1 flex-shrink-0">
+            <!-- Status indicator or Install Button -->
+            <span
+              v-if="isCurrentInstalledVersion(ver.version)"
+              class="text-xs font-bold text-emerald-500 flex items-center gap-1 flex-shrink-0"
+            >
               <i class="pi pi-check"></i> {{ t('portal.currentInstalledVersion') }}
             </span>
+            <button
+              v-else
+              type="button"
+              class="py-1.5 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+              @click="handleInstallVersion(ver.version)"
+            >
+              <i class="pi pi-download text-[10px]"></i>
+              <span>{{ store.selectedSkill?.installed ? t('portal.installThisVersion') : t('portal.installSkillBtn') }}</span>
+            </button>
           </div>
         </div>
       </div>
