@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import Tag from 'primevue/tag'
+import MarkdownIt from 'markdown-it'
 import { useSkillStore } from '../stores/skillStore'
 import { useConfirm } from 'primevue/useconfirm'
 import { useI18n } from '@/i18n'
@@ -9,9 +10,44 @@ const store = useSkillStore()
 const confirm = useConfirm()
 const { t } = useI18n()
 
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  breaks: true,
+})
+
+const renderedDescription = computed(() => {
+  const content = store.skillDetail?.description || store.selectedSkill?.description || ''
+  return md.render(content)
+})
+
+const skillDisplayVersion = computed(() => {
+  if (!store.selectedSkill) return '1.0.0'
+  const v = store.selectedSkill.installed
+    ? (store.selectedSkill.installedVersion ?? store.skillDetail?.version ?? 1)
+    : (store.skillDetail?.version ?? store.skillVersions?.[0]?.version ?? 1)
+  return typeof v === 'number' ? `${v}.0.0` : String(v).replace(/^v/, '')
+})
+
+const skillStatusText = computed(() => {
+  if (!store.selectedSkill?.installed) {
+    return t('portal.notInstalled')
+  }
+  return store.selectedSkill.enabled
+    ? t('portal.activeStatus')
+    : t('portal.disabledStatus')
+})
+
+const skillStatusColorClass = computed(() => {
+  if (!store.selectedSkill?.installed) {
+    return 'text-emerald-500 dark:text-emerald-400'
+  }
+  return store.selectedSkill.enabled
+    ? 'text-emerald-500 dark:text-emerald-400 font-bold'
+    : 'text-amber-500 dark:text-amber-400 font-bold'
+})
+
 const activeDetailTab = ref<'overview' | 'tools' | 'files' | 'versions'>('overview')
-const copiedCode = ref(false)
-const copiedPromptIdx = ref<number | null>(null)
 
 function handleInstall() {
   if (store.selectedSkill) {
@@ -58,58 +94,6 @@ function handleUninstall() {
     },
   })
 }
-
-function copySkillSpec() {
-  const content = store.skillDetail?.description || `# ${store.selectedSkill?.name}\n\nSkill được đóng gói chuẩn cho AIPRO Studio với quy trình kiểm thử nghiêm ngặt.`
-  if (typeof navigator !== 'undefined' && navigator.clipboard) {
-    navigator.clipboard.writeText(content)
-  }
-  copiedCode.value = true
-  setTimeout(() => {
-    copiedCode.value = false
-  }, 2000)
-}
-
-function copyPrompt(text: string, idx: number) {
-  if (typeof navigator !== 'undefined' && navigator.clipboard) {
-    navigator.clipboard.writeText(text)
-  }
-  copiedPromptIdx.value = idx
-  setTimeout(() => {
-    copiedPromptIdx.value = null
-  }, 2000)
-}
-
-// Generate sample prompts tailored to the skill
-const samplePrompts = computed(() => {
-  const name = store.selectedSkill?.name || 'Skill'
-  if (name.includes('Code')) {
-    return [
-      `@${name.toLowerCase().replace(/\s+/g, '-')} Hãy phân tích kiến trúc mã nguồn và kiểm tra lỗi tiềm ẩn trong module hiện tại.`,
-      `@${name.toLowerCase().replace(/\s+/g, '-')} Viết bộ unit tests hoàn chỉnh với độ bao phủ 100% cho file đang mở.`,
-      `/refactor --target=src/components --pattern=solid`
-    ]
-  }
-  if (name.includes('Database') || name.includes('Query')) {
-    return [
-      `@${name.toLowerCase().replace(/\s+/g, '-')} Kiểm tra schema các bảng hiện tại và tối ưu hóa index cho các truy vấn chậm.`,
-      `@${name.toLowerCase().replace(/\s+/g, '-')} Viết câu lệnh migration an toàn để thêm cột metadata JSONB vào bảng users.`,
-      `/db-inspect --schema=public --explain`
-    ]
-  }
-  if (name.includes('Legal') || name.includes('Document')) {
-    return [
-      `@${name.toLowerCase().replace(/\s+/g, '-')} Tra cứu quy định mới nhất về giấy phép kinh doanh thương mại điện tử tại Việt Nam.`,
-      `@${name.toLowerCase().replace(/\s+/g, '-')} Rà soát các điều khoản miễn trừ trách nhiệm trong dự thảo hợp đồng đối tác.`,
-      `/legal-audit --standard=vn-commercial-law`
-    ]
-  }
-  return [
-    `@${name.toLowerCase().replace(/\s+/g, '-')} Kích hoạt skill và thực thi tác vụ mặc định.`,
-    `@${name.toLowerCase().replace(/\s+/g, '-')} Liệt kê tất cả các tham số cấu hình hỗ trợ.`,
-    `/execute --verbose`
-  ]
-})
 
 // Sample tools tailored to the skill
 const providedTools = computed(() => {
@@ -287,7 +271,7 @@ const providedTools = computed(() => {
           @click="activeDetailTab = 'overview'"
         >
           <i class="pi pi-file-edit text-xs text-emerald-500"></i>
-          <span>{{ t('portal.tabOverview') }} &amp; Đặc tả</span>
+          <span>{{ t('portal.tabOverview') }}</span>
         </button>
 
         <button
@@ -325,141 +309,43 @@ const providedTools = computed(() => {
 
       <!-- 4. TAB CONTENT CONTAINER (BENTO GRID ARCHITECTURE) -->
       <div class="flex-1 overflow-y-auto bg-white dark:bg-slate-900/60 rounded-3xl border border-slate-200/90 dark:border-slate-800 p-6 min-h-0 space-y-6">
-        <!-- TAB 1: OVERVIEW & SPEC -->
-        <div v-if="activeDetailTab === 'overview'" class="space-y-6">
-          <!-- Bento Grid: Top 2-Column Split -->
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <!-- Left: Description & Capability Highlights (7 cols) -->
-            <div class="lg:col-span-7 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
-              <div>
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-2">
-                  <i class="pi pi-info-circle text-emerald-500"></i>
-                  <span>{{ t('portal.skillDescTitle') }}</span>
-                </h3>
-                <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                  {{ store.selectedSkill.description }}
-                </p>
-              </div>
-
-              <!-- Feature Bullets -->
-              <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700/60 space-y-2">
-                <div class="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Tính năng cốt lõi:</div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300">
-                  <div class="flex items-center gap-2">
-                    <i class="pi pi-check-circle text-emerald-500 text-xs"></i>
-                    <span>Tự động nhận diện ngữ cảnh dự án</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <i class="pi pi-check-circle text-emerald-500 text-xs"></i>
-                    <span>Hỗ trợ Stdio JSON-RPC protocol</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <i class="pi pi-check-circle text-emerald-500 text-xs"></i>
-                    <span>Không rò rỉ dữ liệu (Zero Telemetry)</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <i class="pi pi-check-circle text-emerald-500 text-xs"></i>
-                    <span>Tương thích đa tác nhân (Multi-Agent)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Right: Environment & Security Matrix (5 cols) -->
-            <div class="lg:col-span-5 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800">
-              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                <i class="pi pi-sliders-h text-teal-400"></i>
-                <span>Ma trận Môi trường &amp; Quyền hạn</span>
-              </h3>
-
-              <div class="space-y-2.5 text-xs">
-                <div class="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <span class="text-slate-400">Phạm vi thực thi</span>
-                  <span class="font-bold text-slate-800 dark:text-white uppercase">{{ store.selectedSkill.installScope || store.selectedSkill.scope || 'GLOBAL' }}</span>
-                </div>
-
-                <div class="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <span class="text-slate-400">Hỗ trợ IDE / CLI</span>
-                  <span class="font-bold text-emerald-500">Claude, Cursor, AIPRO</span>
-                </div>
-
-                <div class="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <span class="text-slate-400">Giao thức IPC</span>
-                  <span class="font-mono text-slate-800 dark:text-white">Stdio (JSON-RPC 2.0)</span>
-                </div>
-
-                <div class="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <span class="text-slate-400">Mức độ bảo mật</span>
-                  <span class="font-bold text-emerald-400 flex items-center gap-1">
-                    <i class="pi pi-lock text-[10px]"></i> Sandboxed
-                  </span>
-                </div>
-              </div>
+        <!-- TAB 1: OVERVIEW (Mô tả Markdown/HTML & Thông số Kỹ thuật) -->
+        <div v-if="activeDetailTab === 'overview'" class="space-y-5">
+          <!-- Description Container (Hỗ trợ HTML và Markdown) -->
+          <div class="p-6 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 min-h-[220px]">
+            <div
+              v-if="renderedDescription"
+              class="prose prose-sm dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-relaxed font-normal skill-markdown-body"
+              v-html="renderedDescription"
+            ></div>
+            <div v-else class="text-xs text-slate-400 italic">
+              {{ t('portal.noDescription') }}
             </div>
           </div>
 
-          <!-- Bento Card 3: Terminal Code Viewer (SKILL.md) -->
-          <div class="rounded-2xl border border-slate-800 overflow-hidden shadow-2xl bg-slate-950">
-            <!-- macOS-style Terminal Header -->
-            <div class="h-10 bg-slate-900 px-4 flex items-center justify-between border-b border-slate-800">
-              <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
-                <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
-                <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
-                <span class="ml-2 font-mono text-xs text-slate-400 font-semibold">
-                  aipro/skills/{{ store.selectedSkill.name.toLowerCase().replace(/\s+/g, '-') }}/SKILL.md
-                </span>
-              </div>
-
-              <button
-                type="button"
-                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700/60"
-                @click="copySkillSpec"
-              >
-                <i :class="copiedCode ? 'pi pi-check text-emerald-400' : 'pi pi-copy text-slate-400'"></i>
-                <span>{{ copiedCode ? 'Đã sao chép!' : 'Sao chép đặc tả' }}</span>
-              </button>
-            </div>
-
-            <!-- Terminal Code Body -->
-            <div class="p-5 font-mono text-xs text-emerald-300/90 leading-relaxed overflow-x-auto max-h-80 whitespace-pre-wrap select-text">
-{{ store.skillDetail?.description || `# ${store.selectedSkill.name}
-
-## 1. Description & Context
-${store.selectedSkill.description}
-
-## 2. Trigger Rules & Directives
-- Auto-activated when relevant source code or query patterns match.
-- Fully compatible with Cursor, Claude Code, and AIPRO Super Studio runtime.
-- Executes within safe sandbox boundaries without unauthorized network calls.` }}
-            </div>
-          </div>
-
-          <!-- Bento Card 4: Quick Trigger Prompts -->
-          <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-              <i class="pi pi-send text-emerald-500"></i>
-              <span>Lệnh &amp; Câu hỏi mẫu để kích hoạt nhanh trong AI Chat</span>
+          <!-- Thông số Kỹ thuật (Chuẩn cấu trúc như bên MCP) -->
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white mt-4 mb-2">
+              {{ t('portal.specsTitle') }}
             </h3>
-
-            <div class="space-y-2">
-              <div
-                v-for="(prompt, idx) in samplePrompts"
-                :key="idx"
-                class="group p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 transition-colors hover:border-emerald-500/50"
-              >
-                <div class="flex items-center gap-2.5 min-w-0 font-mono text-xs text-slate-800 dark:text-slate-200">
-                  <span class="text-emerald-500 font-bold">$</span>
-                  <span class="truncate">{{ prompt }}</span>
-                </div>
-                <button
-                  type="button"
-                  class="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-400 group-hover:text-emerald-400 group-hover:bg-emerald-500/10 transition-all flex items-center gap-1 cursor-pointer flex-shrink-0"
-                  @click="copyPrompt(prompt, idx)"
-                >
-                  <i :class="copiedPromptIdx === idx ? 'pi pi-check text-emerald-400' : 'pi pi-copy'"></i>
-                  <span>{{ copiedPromptIdx === idx ? 'Đã chép' : 'Sao chép' }}</span>
-                </button>
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
+              <div>
+                <span class="text-slate-400 block mb-0.5">{{ t('portal.extensionType') }}</span>
+                <span class="font-bold text-slate-800 dark:text-white">AIPRO Skill</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block mb-0.5">Giao thức thực thi</span>
+                <span class="font-bold text-slate-800 dark:text-white">JSON-RPC 2.0 (Stdio IPC)</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block mb-0.5">{{ t('portal.versionLabel') }}</span>
+                <span class="font-mono text-slate-800 dark:text-white">v{{ skillDisplayVersion }}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block mb-0.5">{{ t('portal.statusLabel') }}</span>
+                <span class="font-bold" :class="skillStatusColorClass">
+                  {{ skillStatusText }}
+                </span>
               </div>
             </div>
           </div>
@@ -568,3 +454,109 @@ ${store.selectedSkill.description}
     </div>
   </div>
 </template>
+
+<style scoped>
+:deep(.skill-markdown-body) {
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+:deep(.skill-markdown-body h1) {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: inherit;
+}
+
+:deep(.skill-markdown-body h2) {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 0.875rem;
+  margin-bottom: 0.375rem;
+  color: inherit;
+}
+
+:deep(.skill-markdown-body h3) {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  color: inherit;
+}
+
+:deep(.skill-markdown-body p) {
+  margin-bottom: 0.75rem;
+}
+
+:deep(.skill-markdown-body ul),
+:deep(.skill-markdown-body ol) {
+  margin-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+:deep(.skill-markdown-body ul) {
+  list-style-type: disc;
+}
+
+:deep(.skill-markdown-body ol) {
+  list-style-type: decimal;
+}
+
+:deep(.skill-markdown-body li) {
+  margin-bottom: 0.25rem;
+}
+
+:deep(.skill-markdown-body pre) {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:deep(.skill-markdown-body code:not(pre code)) {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+:deep(.skill-markdown-body blockquote) {
+  border-left: 3px solid #10b981;
+  padding-left: 0.75rem;
+  margin-left: 0;
+  margin-bottom: 0.75rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+:deep(.skill-markdown-body table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+
+:deep(.skill-markdown-body th),
+:deep(.skill-markdown-body td) {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+:deep(.skill-markdown-body th) {
+  background-color: rgba(148, 163, 184, 0.1);
+  font-weight: 600;
+}
+
+:deep(.skill-markdown-body a) {
+  color: #0ea5e9;
+  text-decoration: underline;
+}
+</style>

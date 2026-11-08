@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import { useSkillStore } from '../stores/skillStore'
 import { nativeBridge } from '@/services/nativeBridge'
@@ -17,6 +17,36 @@ const projectOptions = computed(() => {
   return store.recentProjects.map((p) => ({ label: p, value: p }))
 })
 
+// Sync dropdown selection to custom input
+watch(selectedProject, (val) => {
+  if (val) {
+    customProjectPath.value = val
+  }
+})
+
+// Reset modal inputs on open
+watch(
+  () => store.showScopeModal,
+  (visible) => {
+    if (visible) {
+      scopeType.value = 'global'
+      selectedProject.value = ''
+      customProjectPath.value = ''
+      isInstalling.value = false
+    }
+  }
+)
+
+const effectiveProjectPath = computed(() => {
+  return (customProjectPath.value?.trim() || selectedProject.value?.trim() || '')
+})
+
+const isConfirmDisabled = computed(() => {
+  if (isInstalling.value) return true
+  if (scopeType.value === 'project' && !effectiveProjectPath.value) return true
+  return false
+})
+
 async function handleBrowseFolder() {
   const res = await nativeBridge.selectFolder()
   if (res.ok && res.path) {
@@ -28,12 +58,13 @@ async function handleBrowseFolder() {
 
 async function handleConfirmInstall() {
   if (!store.pendingInstallSkill) return
+  if (scopeType.value === 'project' && !effectiveProjectPath.value) return
 
   isInstalling.value = true
   try {
     const skill = store.pendingInstallSkill
     const targetDir = scopeType.value === 'project'
-      ? (selectedProject.value || customProjectPath.value || store.currentProject || '.')
+      ? effectiveProjectPath.value
       : '.'
 
     await store.installSkill(skill.name, skill.installedVersion || 1, scopeType.value, targetDir)
@@ -150,7 +181,8 @@ function handleClose() {
             v-model="customProjectPath"
             type="text"
             :placeholder="t('scopeModal.customPathPlaceholder')"
-            class="flex-1 text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono"
+            class="flex-1 text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border text-slate-900 dark:text-white focus:outline-none font-mono"
+            :class="!effectiveProjectPath ? 'border-amber-400 dark:border-amber-600 focus:border-amber-500' : 'border-slate-200 dark:border-slate-700 focus:border-emerald-500'"
           />
           <button
             type="button"
@@ -161,6 +193,12 @@ function handleClose() {
             <span>{{ t('scopeModal.browseBtn') }}</span>
           </button>
         </div>
+
+        <!-- Validation warning if project path is missing -->
+        <p v-if="!effectiveProjectPath" class="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 font-medium pt-1">
+          <i class="pi pi-exclamation-triangle text-xs flex-shrink-0"></i>
+          <span>{{ t('scopeModal.projectRequiredHint') }}</span>
+        </p>
       </div>
     </div>
 
@@ -176,8 +214,8 @@ function handleClose() {
         </button>
         <button
           type="button"
-          class="py-2 px-4 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
-          :disabled="isInstalling"
+          class="py-2 px-4 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="isConfirmDisabled"
           @click="handleConfirmInstall"
         >
           <i v-if="isInstalling" class="pi pi-spinner animate-spin text-xs"></i>

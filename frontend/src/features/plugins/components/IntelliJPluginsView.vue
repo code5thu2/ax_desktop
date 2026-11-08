@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Dialog from 'primevue/dialog'
 import Tag from 'primevue/tag'
 import { useToast } from 'primevue/usetoast'
@@ -48,6 +48,16 @@ function copyEndpoint() {
     copiedToast.value = false
   }, 2000)
 }
+
+const gatewayLabel = computed(() => {
+  if (!pluginStore.isServerOnline) return 'Offline'
+  try {
+    const u = new URL(pluginStore.registryServerUrl)
+    return `Gateway :${u.port || (u.protocol === 'https:' ? '443' : '80')}`
+  } catch {
+    return 'Gateway'
+  }
+})
 
 // Git Import Modal State
 const gitRepoUrl = ref('')
@@ -268,7 +278,7 @@ function handleUninstall(id: string, name: string) {
           @click="copyEndpoint"
         >
           <span class="w-2 h-2 rounded-full" :class="pluginStore.isServerOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-          <span>{{ copiedToast ? 'Đã sao chép URL!' : (pluginStore.isServerOnline ? 'Gateway :8000' : 'Offline') }}</span>
+          <span>{{ copiedToast ? 'Đã sao chép URL!' : gatewayLabel }}</span>
           <i class="pi pi-copy text-[10px] opacity-70"></i>
         </button>
 

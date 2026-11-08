@@ -43,14 +43,14 @@ function handleStartUpdate() {
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate">
-              AX Desktop {{ store.availableUpdate?.latestVersion || 'v1.1.0' }}
+              AX Desktop {{ store.availableUpdate?.latestVersion || `v${store.appVersion}` }}
             </h4>
             <span class="px-2 py-0.5 text-[10px] font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 rounded-md border border-sky-500/20">
-              Mới nhất
+              {{ t('updateModal.latestBadge') }}
             </span>
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            {{ t('updateModal.currentVersion', { version: store.availableUpdate?.currentVersion || 'v1.0.0' }) }}
+            {{ t('updateModal.currentVersion', { version: store.availableUpdate?.currentVersion ? `v${store.availableUpdate.currentVersion}` : `v${store.appVersion}` }) }}
           </p>
         </div>
       </div>

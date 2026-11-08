@@ -279,6 +279,13 @@ pub fn install(state: State<'_, AppState>, payload: InstallSkillPayload) -> Resu
     let name = payload.name.as_deref().unwrap_or("custom-skill");
     let ver = payload.version.unwrap_or(1);
 
+    if scope == "project" {
+        let proj = payload.project_path.as_deref().unwrap_or("").trim();
+        if proj.is_empty() || proj == "." {
+            return Err("Vui lòng chọn hoặc nhập đường dẫn thư mục dự án khi cài đặt theo dự án".to_string());
+        }
+    }
+
     let zip_bytes = state.client.download_skill_zip(payload.skill_id, name)?;
     let code = state.skill_manager.install(
         payload.skill_id,

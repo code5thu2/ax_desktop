@@ -273,7 +273,13 @@ export const useSkillStore = defineStore('skills', () => {
   ): Promise<InstalledPlugin> {
     isLoading.value = true
     try {
-      const target = scope === 'project' ? (targetDir || currentProject.value || '.') : '.'
+      if (scope === 'project') {
+        const finalTarget = (targetDir || currentProject.value || '').trim()
+        if (!finalTarget || finalTarget === '.') {
+          throw new Error('Vui lòng chọn hoặc nhập đường dẫn dự án đích khi cài đặt theo dự án.')
+        }
+      }
+      const target = scope === 'project' ? (targetDir || currentProject.value || '').trim() : '.'
       const installed = await nativeBridge.installSkill(name, version, target, scope)
 
       // Update state

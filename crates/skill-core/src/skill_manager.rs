@@ -45,7 +45,11 @@ impl SkillManager {
             Ok(self.global_skills_root.join(id.to_string()))
         } else if scope == "project" {
             let p_raw = project_path.ok_or_else(|| "project_path is required for project scope".to_string())?;
-            let normalized = normalize_path(p_raw);
+            let trimmed = p_raw.trim();
+            if trimmed.is_empty() || trimmed == "." {
+                return Err("A valid project directory must be specified for project scope".to_string());
+            }
+            let normalized = normalize_path(trimmed);
             Ok(PathBuf::from(normalized).join(".aipro/skills").join(id.to_string()))
         } else {
             Err(format!("Invalid scope: {}", scope))
@@ -57,7 +61,11 @@ impl SkillManager {
             Ok(self.global_config_path.clone())
         } else if scope == "project" {
             let p_raw = project_path.ok_or_else(|| "project_path is required for project scope".to_string())?;
-            let normalized = normalize_path(p_raw);
+            let trimmed = p_raw.trim();
+            if trimmed.is_empty() || trimmed == "." {
+                return Err("A valid project directory must be specified for project scope".to_string());
+            }
+            let normalized = normalize_path(trimmed);
             Ok(PathBuf::from(normalized).join(".aipro/config.json"))
         } else {
             Err(format!("Invalid scope: {}", scope))

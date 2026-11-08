@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { usePluginStore } from '@/features/plugins/stores/pluginStore'
 import PageMascot from '@/components/common/PageMascot.vue'
@@ -12,6 +12,16 @@ const settingsStore = useSettingsStore()
 const pluginStore = usePluginStore()
 
 const copiedToast = ref(false)
+
+const gatewayLabel = computed(() => {
+  if (!pluginStore.isServerOnline) return 'Offline'
+  try {
+    const u = new URL(pluginStore.registryServerUrl)
+    return `Gateway :${u.port || (u.protocol === 'https:' ? '443' : '80')}`
+  } catch {
+    return 'Gateway'
+  }
+})
 
 function copyEndpoint() {
   const url = `${pluginStore.registryServerUrl}/mcp`
@@ -71,7 +81,7 @@ function refreshCatalog() {
         @click="copyEndpoint"
       >
         <span class="w-2 h-2 rounded-full" :class="pluginStore.isServerOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-        <span>{{ copiedToast ? 'Đã sao chép URL!' : (pluginStore.isServerOnline ? 'Gateway :8000' : 'Offline') }}</span>
+        <span>{{ copiedToast ? 'Đã sao chép URL!' : gatewayLabel }}</span>
         <i class="pi pi-copy text-[10px] opacity-70"></i>
       </button>
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/i18n'
+import { nativeBridge } from '@/services/nativeBridge'
 
 interface Props {
   duration?: number
@@ -18,6 +19,7 @@ const { t } = useI18n()
 
 const progress = ref(0)
 const statusText = ref(t('splash.step1'))
+const appVersion = ref('1.0.2')
 let animationTimer: ReturnType<typeof setInterval> | null = null
 
 const steps = [
@@ -27,7 +29,14 @@ const steps = [
   { at: 90, key: 'splash.step4' },
 ]
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const info = await nativeBridge.getAppInfo()
+    if (info?.version) {
+      appVersion.value = info.version
+    }
+  } catch {}
+
   const isTest = typeof process !== 'undefined' && (process.env?.NODE_ENV === 'test' || Boolean(process.env?.VITEST))
   const actualDuration = isTest ? 100 : Math.max(1500, props.duration)
 
@@ -136,7 +145,7 @@ onUnmounted(() => {
     <!-- Bottom Footer Tag -->
     <div class="absolute bottom-6 inset-x-0 text-center">
       <span class="text-[10px] text-slate-500 font-mono tracking-wide">
-        AX Desktop • Super App Architecture • v1.0.0
+        AX Desktop • Super App Architecture • v{{ appVersion }}
       </span>
     </div>
   </div>

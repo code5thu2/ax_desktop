@@ -269,7 +269,7 @@ onMounted(async () => {
                 <span>{{ t('portal.autostartMenu') }}</span>
               </div>
               <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="store.autostartEnabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'">
-                {{ store.autostartEnabled ? 'BẬT' : 'TẮT' }}
+                {{ store.autostartEnabled ? t('common.on') : t('common.off') }}
               </span>
             </button>
 
