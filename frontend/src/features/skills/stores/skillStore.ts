@@ -34,7 +34,7 @@ export const useSkillStore = defineStore('skills', () => {
   const isLoading = ref(false)
   const isCheckingUpdate = ref(false)
   const availableUpdate = ref<any>(null)
-  const appVersion = ref('1.0.4')
+  const appVersion = ref('1.0.5')
   const autostartEnabled = ref(false)
   const isUpdating = ref(false)
   const updateProgress = ref(0)

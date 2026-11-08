@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import { useSkillStore } from './stores/skillStore'
 import { useAuthStore } from '@/features/auth/stores/authStore'
@@ -30,6 +30,65 @@ const userMenuContainerRef = ref<HTMLElement>()
 const isUserMenuOpen = ref(false)
 const isLaunchingStudio = ref(false)
 const showSettings = ref(false)
+
+const skillLocationInfo = computed(() => {
+  // If in projects tab, show active current project workspace
+  if (store.activeTab === 'projects') {
+    if (!store.currentProject) return null
+    return {
+      isGlobal: false,
+      icon: 'pi pi-folder-open',
+      iconColor: 'text-emerald-500',
+      label: store.currentProject,
+      title: store.currentProject,
+    }
+  }
+
+  // If in marketplace or installed tab, check selectedSkill
+  const skill = store.selectedSkill
+  if (!skill) return null
+
+  if (!skill.installed) {
+    return {
+      isGlobal: false,
+      icon: 'pi pi-cloud',
+      iconColor: 'text-slate-400',
+      label: t('portal.notInstalled'),
+      title: t('portal.notInstalled'),
+    }
+  }
+
+  const isGlobal = skill.installScope === 'global' || skill.scope === 'GLOBAL'
+  if (isGlobal) {
+    return {
+      isGlobal: true,
+      icon: 'pi pi-globe',
+      iconColor: 'text-blue-500 dark:text-blue-400',
+      label: '~/.aipro/skills (Global)',
+      title: 'Toàn cục: ~/.aipro/skills',
+    }
+  }
+
+  // Project scope
+  const projPath = skill.installedProjects?.[0] || store.currentProject || ''
+  if (!projPath) {
+    return {
+      isGlobal: false,
+      icon: 'pi pi-folder-open',
+      iconColor: 'text-emerald-500',
+      label: 'Theo Dự án',
+      title: 'Theo Dự án',
+    }
+  }
+
+  return {
+    isGlobal: false,
+    icon: 'pi pi-folder-open',
+    iconColor: 'text-emerald-500',
+    label: projPath,
+    title: projPath,
+  }
+})
 
 onClickOutside(userMenuContainerRef, () => {
   isUserMenuOpen.value = false
@@ -346,10 +405,12 @@ onMounted(async () => {
             </button>
           </div>
 
-          <!-- Current active workspace indicator -->
-          <div v-if="store.currentProject" class="hidden md:flex items-center gap-1.5 text-xs text-slate-400">
-            <i class="pi pi-folder-open text-xs text-emerald-500"></i>
-            <span class="font-mono text-[11px] truncate max-w-xs">{{ store.currentProject }}</span>
+          <!-- Current active workspace / skill installation location indicator -->
+          <div v-if="skillLocationInfo" class="hidden md:flex items-center gap-1.5 text-xs text-slate-400">
+            <i :class="[skillLocationInfo.icon, skillLocationInfo.iconColor, 'text-xs']"></i>
+            <span class="font-mono text-[11px] truncate max-w-xs" :title="skillLocationInfo.title">
+              {{ skillLocationInfo.label }}
+            </span>
           </div>
         </div>
 
