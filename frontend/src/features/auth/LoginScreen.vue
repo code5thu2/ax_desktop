@@ -1,23 +1,19 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from '@/i18n'
-import InputText from 'primevue/inputtext'
-import Password from 'primevue/password'
-import Checkbox from 'primevue/checkbox'
-import Button from 'primevue/button'
 import type { AuthScreen } from './types'
 import { nativeBridge } from '@/services/nativeBridge'
 
 const emit = defineEmits<{
   (e: 'navigate', screen: AuthScreen): void
   (e: 'login-success', user: any): void
-  (e: 'guest-mode'): void
 }>()
 
 const { t } = useI18n()
 
 const identifier = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const rememberMe = ref(true)
 const isLoading = ref(false)
 
@@ -92,50 +88,47 @@ async function handleLogin() {
     isLoading.value = false
   }
 }
-
-function handleGuestMode() {
-  emit('guest-mode')
-}
 </script>
 
 <template>
   <div class="w-full flex items-center justify-center py-6 px-4">
-    <!-- Zero-Jank Container (Static Subtle Radial Backdrops) -->
+    <!-- Ambient radial glow background -->
     <div class="relative w-full max-w-md mx-auto">
-      <div class="absolute -top-12 -left-12 w-48 h-48 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
-      <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-teal-500/10 dark:bg-teal-500/15 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -top-12 -left-12 w-56 h-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-12 -right-12 w-56 h-56 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-300/30 dark:shadow-black/40">
-        <!-- Header -->
+      <!-- Obsidian Card -->
+      <div class="relative bg-slate-900/95 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-8 sm:p-10 shadow-2xl shadow-black/60">
+        <!-- Brand Shield Header -->
         <div class="text-center mb-6">
-          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white shadow-lg shadow-emerald-500/25 mb-3.5">
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 text-white shadow-xl shadow-emerald-500/25 ring-4 ring-emerald-500/10 mb-3.5">
             <i class="pi pi-shield text-2xl font-bold"></i>
           </div>
-          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-1">
+          <h1 class="text-2xl font-black text-white tracking-tight mb-1">
             {{ t('login.title') }}
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">
+          <p class="text-xs text-slate-400 font-medium">
             {{ t('login.subtitle') }}
           </p>
         </div>
 
-        <!-- FORM-LEVEL INLINE ALERTS -->
+        <!-- FORM ALERTS -->
         <div
           v-if="formError"
-          class="mb-4 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2.5 animate-slide-down"
+          class="mb-4 p-3.5 rounded-2xl bg-rose-950/40 border border-rose-800/60 text-xs text-rose-300 flex items-start gap-2.5 animate-slide-down"
         >
-          <i class="pi pi-exclamation-circle text-rose-500 text-sm mt-0.5 flex-shrink-0"></i>
+          <i class="pi pi-exclamation-circle text-rose-400 text-sm mt-0.5 flex-shrink-0"></i>
           <span class="leading-relaxed font-medium">{{ formError }}</span>
         </div>
 
         <div
           v-if="formSuccess"
-          class="mb-4 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-200 flex items-start gap-2.5 animate-slide-down"
+          class="mb-4 p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-200 flex items-start gap-2.5 animate-slide-down"
         >
-          <i class="pi pi-check-circle text-emerald-500 text-sm mt-0.5 flex-shrink-0"></i>
+          <i class="pi pi-check-circle text-emerald-400 text-sm mt-0.5 flex-shrink-0"></i>
           <div>
             <div class="font-bold mb-0.5">{{ t('common.success') }}</div>
-            <div class="text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300">{{ formSuccess }}</div>
+            <div class="text-[11px] leading-relaxed text-emerald-300">{{ formSuccess }}</div>
           </div>
         </div>
 
@@ -143,20 +136,21 @@ function handleGuestMode() {
         <form @submit.prevent="handleLogin" class="space-y-4">
           <!-- Identifier Input -->
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">
               {{ t('login.identifierLabel') }}
             </label>
             <div class="relative">
-              <i class="pi pi-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10"></i>
-              <InputText
+              <i class="pi pi-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10 pointer-events-none"></i>
+              <input
                 v-model="identifier"
-                :invalid="!!errors.identifier"
+                type="text"
                 :placeholder="t('login.identifierPlaceholder')"
-                class="w-full !pl-9 !py-2.5 !text-sm !rounded-xl transition-all"
+                class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl bg-slate-950/90 border border-slate-700/80 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 transition-all shadow-inner"
+                :class="{ '!border-rose-500 !ring-rose-500/20': !!errors.identifier }"
                 @input="clearError('identifier')"
               />
             </div>
-            <p v-if="errors.identifier" class="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-rose-500 dark:text-rose-400">
+            <p v-if="errors.identifier" class="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-rose-400">
               <i class="pi pi-times-circle text-[10px]"></i>
               <span>{{ errors.identifier }}</span>
             </p>
@@ -165,71 +159,79 @@ function handleGuestMode() {
           <!-- Password Input -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
-              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <label class="block text-xs font-semibold text-slate-300">
                 {{ t('login.passwordLabel') }}
               </label>
               <button
                 type="button"
-                class="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
                 @click="emit('navigate', 'forgot')"
               >
                 {{ t('login.forgotPassword') }}
               </button>
             </div>
-            <Password
-              v-model="password"
-              :invalid="!!errors.password"
-              :placeholder="t('login.passwordPlaceholder')"
-              :feedback="false"
-              toggleMask
-              class="w-full"
-              inputClass="w-full !py-2.5 !text-sm !rounded-xl"
-              @input="clearError('password')"
-            />
-            <p v-if="errors.password" class="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-rose-500 dark:text-rose-400">
+            <div class="relative">
+              <i class="pi pi-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10 pointer-events-none"></i>
+              <input
+                v-model="password"
+                :type="showPassword ? 'text' : 'password'"
+                :placeholder="t('login.passwordPlaceholder')"
+                class="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl bg-slate-950/90 border border-slate-700/80 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 transition-all font-mono shadow-inner"
+                :class="{ '!border-rose-500 !ring-rose-500/20': !!errors.password }"
+                @input="clearError('password')"
+              />
+              <button
+                type="button"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white cursor-pointer p-1.5 transition-colors rounded-lg hover:bg-slate-800"
+                :title="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+                @click="showPassword = !showPassword"
+              >
+                <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'" class="text-xs"></i>
+              </button>
+            </div>
+            <p v-if="errors.password" class="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-rose-400">
               <i class="pi pi-times-circle text-[10px]"></i>
               <span>{{ errors.password }}</span>
             </p>
           </div>
 
-          <!-- Remember me -->
+          <!-- Remember me (Bulletproof Custom Checkbox) -->
           <div class="flex items-center justify-between pt-1">
-            <div class="flex items-center gap-2">
-              <Checkbox v-model="rememberMe" :binary="true" inputId="remember-obsidian" />
-              <label for="remember-obsidian" class="text-xs text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+            <div
+              class="flex items-center gap-2.5 cursor-pointer select-none group"
+              @click="rememberMe = !rememberMe"
+            >
+              <div
+                class="w-4 h-4 rounded-md border flex items-center justify-center transition-all"
+                :class="rememberMe ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs' : 'border-slate-600 bg-slate-950 group-hover:border-slate-500'"
+              >
+                <i v-if="rememberMe" class="pi pi-check text-[10px] font-bold"></i>
+              </div>
+              <span class="text-xs text-slate-300 font-medium">
                 {{ t('login.rememberMe') }}
-              </label>
+              </span>
             </div>
           </div>
 
           <!-- Submit Button -->
-          <Button
-            type="submit"
-            :label="t('login.submitBtn')"
-            icon="pi pi-arrow-right"
-            iconPos="right"
-            :loading="isLoading"
-            class="w-full !py-3 !rounded-xl !text-sm !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-lg shadow-emerald-500/25 transition-transform active:scale-[0.99] cursor-pointer mt-1"
-          />
-
-          <!-- Guest / Offline Mode Button -->
           <button
-            type="button"
-            class="w-full py-2.5 px-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-xs font-semibold text-slate-600 dark:text-slate-300 transition-colors flex items-center justify-center gap-2 cursor-pointer mt-3"
-            @click="handleGuestMode"
+            type="submit"
+            :disabled="isLoading"
+            class="w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-white shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <i class="pi pi-desktop text-emerald-500"></i>
-            <span>Dùng chế độ Khách / Offline Mode</span>
+            <i v-if="isLoading" class="pi pi-spinner animate-spin text-sm"></i>
+            <span>{{ t('login.submitBtn') }}</span>
+            <i v-if="!isLoading" class="pi pi-arrow-right text-xs"></i>
           </button>
         </form>
 
         <!-- Footer link -->
-        <div class="text-center mt-6 pt-4 border-t border-slate-200/80 dark:border-slate-800/80">
-          <p class="text-xs text-slate-500 dark:text-slate-400">
+        <div class="text-center mt-6 pt-4 border-t border-slate-800/80">
+          <p class="text-xs text-slate-400">
             {{ t('login.noAccount') }}
             <button
               type="button"
-              class="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer ml-1"
+              class="font-bold text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer ml-1"
               @click="emit('navigate', 'register')"
             >
               {{ t('login.registerNow') }}
@@ -240,20 +242,3 @@ function handleGuestMode() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.animate-slide-down {
-  animation: slideDown 0.25s ease-out forwards;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-</style>

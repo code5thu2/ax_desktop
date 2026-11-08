@@ -378,24 +378,111 @@ pub async fn select_folder() -> Result<serde_json::Value, String> {
 #[tauri::command]
 pub async fn check_for_update() -> Result<serde_json::Value, String> {
     let current_version = env!("CARGO_PKG_VERSION");
-    let releases = skill_core::updater::fetch_github_releases("code5thu2/ax_desktop").await
+    let releases = skill_core::updater::fetch_github_releases(skill_core::updater::GITHUB_REPO).await
         .unwrap_or_default();
 
     let update = check_github_release_available(&releases, current_version);
     match update {
-        Some(rel) => Ok(serde_json::json!({
-            "status": "success",
-            "updateAvailable": true,
-            "latestVersion": rel.tag_name,
-            "currentVersion": current_version,
-            "downloadUrl": rel.assets.first().map(|a| a.browser_download_url.clone())
-        })),
+        Some(rel) => {
+            let asset = skill_core::updater::find_best_windows_asset(&rel);
+            Ok(serde_json::json!({
+                "status": "success",
+                "updateAvailable": true,
+                "latestVersion": rel.tag_name,
+                "currentVersion": current_version,
+                "releaseName": rel.name,
+                "releaseNotes": rel.body,
+                "assetName": asset.map(|a| a.name.clone()),
+                "assetSize": asset.map(|a| a.size),
+                "downloadUrl": asset.map(|a| a.browser_download_url.clone())
+            }))
+        },
         None => Ok(serde_json::json!({
             "status": "success",
             "updateAvailable": false,
             "currentVersion": current_version
         })),
     }
+}
+
+#[derive(Deserialize)]
+pub struct DownloadUpdatePayload {
+    pub download_url: Option<String>,
+}
+
+#[tauri::command]
+pub async fn download_and_install_update(
+    app: tauri::AppHandle,
+    payload: Option<DownloadUpdatePayload>,
+) -> Result<serde_json::Value, String> {
+    use tauri::Emitter;
+
+    let mut url_to_download = payload.and_then(|p| p.download_url);
+    let mut target_filename = "ax_desktop_update.exe".to_string();
+
+    if url_to_download.is_none() {
+        let releases = skill_core::updater::fetch_github_releases(skill_core::updater::GITHUB_REPO).await?;
+        let current_version = env!("CARGO_PKG_VERSION");
+        let rel = skill_core::updater::check_github_release_available(&releases, current_version)
+            .ok_or_else(|| "No update available to download".to_string())?;
+        let asset = skill_core::updater::find_best_windows_asset(&rel)
+            .ok_or_else(|| "No compatible Windows asset found in release".to_string())?;
+        url_to_download = Some(asset.browser_download_url.clone());
+        target_filename = asset.name.clone();
+    }
+
+    let url = url_to_download.ok_or_else(|| "Download URL is required".to_string())?;
+    let temp_dest = std::env::temp_dir().join(&target_filename);
+
+    let app_handle = app.clone();
+    let download_result = skill_core::updater::download_release_asset_with_progress(
+        &url,
+        &temp_dest,
+        move |downloaded, total| {
+            let percent = if total > 0 {
+                ((downloaded as f64 / total as f64) * 100.0) as u32
+            } else {
+                0
+            };
+            let _ = app_handle.emit(
+                "update-progress",
+                serde_json::json!({
+                    "downloaded": downloaded,
+                    "total": total,
+                    "percent": percent,
+                    "status": "downloading"
+                }),
+            );
+        },
+    ).await;
+
+    if let Err(err) = download_result {
+        let _ = app.emit(
+            "update-progress",
+            serde_json::json!({
+                "status": "error",
+                "error": err
+            }),
+        );
+        return Err(err);
+    }
+
+    let _ = app.emit(
+        "update-progress",
+        serde_json::json!({
+            "status": "installing",
+            "percent": 100
+        }),
+    );
+
+    let current_exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    skill_core::updater::apply_update_and_restart(&temp_dest, &current_exe)?;
+
+    // Allow background batch process to detach cleanly
+    tokio::time::sleep(tokio::time::Duration::from_millis(600)).await;
+    app.exit(0);
+
+    Ok(serde_json::json!({ "ok": true }))
 }
 
 #[tauri::command]

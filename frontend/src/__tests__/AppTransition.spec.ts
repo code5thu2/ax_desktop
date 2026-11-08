@@ -12,7 +12,12 @@ describe('App Route Transitions', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const auth = useAuthStore()
-    auth.setGuestMode()
+    auth.setAuthenticated({
+      id: BigInt(1) as any,
+      name: 'Lê Viết Thắng',
+      email: 'thang@aipro.studio',
+      avatar: undefined,
+    })
   })
 
   it('wraps router-view in a page-fade transition with out-in mode', async () => {

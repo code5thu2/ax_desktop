@@ -23,6 +23,7 @@ export const useSkillStore = defineStore('skills', () => {
   // Data states
   const skills = ref<SkillItem[]>([])
   const selectedSkillName = ref<string | null>(null)
+  const selectedInstalledKey = ref<string | null>(null)
   const skillDetail = ref<SkillDetail | null>(null)
   const skillVersions = ref<SkillVersionItem[]>([])
   const installedSkills = ref<InstalledPlugin[]>([])
@@ -34,6 +35,12 @@ export const useSkillStore = defineStore('skills', () => {
   const isCheckingUpdate = ref(false)
   const availableUpdate = ref<any>(null)
   const autostartEnabled = ref(false)
+  const isUpdating = ref(false)
+  const updateProgress = ref(0)
+  const updateBytesDownloaded = ref(0)
+  const updateBytesTotal = ref(0)
+  const updateStatusText = ref('')
+  const updateError = ref<string | null>(null)
 
   // Dialog Visibility
   const showScopeModal = ref(false)
@@ -44,10 +51,21 @@ export const useSkillStore = defineStore('skills', () => {
 
   // Computed Properties
   const selectedSkill = computed<SkillItem | null>(() => {
-    if (!selectedSkillName.value) {
-      if (skills.value.length > 0) return skills.value[0]
-      if (installedSkills.value.length > 0) {
-        const inst = installedSkills.value[0]
+    // If installed tab is active, look in installedSkills first
+    if (activeTab.value === 'installed') {
+      let inst: InstalledPlugin | undefined
+      if (selectedInstalledKey.value) {
+        inst = installedSkills.value.find(
+          (s) => `${s.name}-${s.scope}-${s.projectPath || 'global'}` === selectedInstalledKey.value
+        )
+      }
+      if (!inst && selectedSkillName.value) {
+        inst = installedSkills.value.find((s) => s.name === selectedSkillName.value)
+      }
+      if (!inst && installedSkills.value.length > 0) {
+        inst = installedSkills.value[0]
+      }
+      if (inst) {
         return {
           id: inst.id,
           name: inst.name,
@@ -70,6 +88,10 @@ export const useSkillStore = defineStore('skills', () => {
           installedVersion: inst.version,
         }
       }
+    }
+
+    if (!selectedSkillName.value) {
+      if (skills.value.length > 0) return skills.value[0]
       return null
     }
 
@@ -143,6 +165,11 @@ export const useSkillStore = defineStore('skills', () => {
 
   function setActiveTab(tab: SkillTab) {
     activeTab.value = tab
+    if (tab === 'installed' && installedSkills.value.length > 0) {
+      selectInstalledSkill(installedSkills.value[0])
+    } else if (tab === 'marketplace' && skills.value.length > 0) {
+      selectSkill(skills.value[0])
+    }
   }
 
   function setInstalledFilter(filter: InstalledFilter) {
@@ -156,7 +183,17 @@ export const useSkillStore = defineStore('skills', () => {
         nativeBridge.getStatus(),
         nativeBridge.isAutostartEnabled().catch(() => false)
       ])
-      installedSkills.value = status.installed || []
+      const rawInstalled = status.installed || []
+      const seen = new Set<string>()
+      const deduped: InstalledPlugin[] = []
+      for (const item of rawInstalled) {
+        const key = `${item.name}-${item.scope}-${item.projectPath || 'global'}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          deduped.push(item)
+        }
+      }
+      installedSkills.value = deduped
       recentProjects.value = status.recentProjects || []
       if (!currentProject.value && recentProjects.value.length > 0) {
         currentProject.value = recentProjects.value[0]
@@ -211,6 +248,7 @@ export const useSkillStore = defineStore('skills', () => {
 
   function selectInstalledSkill(inst: InstalledPlugin) {
     selectedSkillName.value = inst.name
+    selectedInstalledKey.value = `${inst.name}-${inst.scope}-${inst.projectPath || 'global'}`
     fetchSkillDetail(inst.id)
   }
 
@@ -226,7 +264,9 @@ export const useSkillStore = defineStore('skills', () => {
       const installed = await nativeBridge.installSkill(name, version, target, scope)
 
       // Update state
-      const existingIdx = installedSkills.value.findIndex((s) => s.name === name)
+      const existingIdx = installedSkills.value.findIndex(
+        (s) => s.name === name && s.scope === scope && (s.projectPath || '') === (installed.projectPath || '')
+      )
       if (existingIdx >= 0) {
         installedSkills.value[existingIdx] = installed
       } else {
@@ -361,6 +401,48 @@ export const useSkillStore = defineStore('skills', () => {
     autostartEnabled.value = enable
   }
 
+  async function applyAutoUpdate() {
+    if (isUpdating.value) return
+    isUpdating.value = true
+    updateProgress.value = 0
+    updateBytesDownloaded.value = 0
+    updateBytesTotal.value = 0
+    updateError.value = null
+    updateStatusText.value = 'Đang kết nối tới máy chủ cập nhật...'
+
+    let unlisten: (() => void) | null = null
+    try {
+      unlisten = await nativeBridge.onUpdateProgress((payload) => {
+        if (payload.status === 'downloading') {
+          updateProgress.value = payload.percent
+          updateBytesDownloaded.value = payload.downloaded
+          updateBytesTotal.value = payload.total
+          updateStatusText.value = `Đang tải xuống (${payload.percent}%)...`
+        } else if (payload.status === 'installing') {
+          updateProgress.value = 100
+          updateStatusText.value = 'Đang tự động áp dụng bản cập nhật và khởi động lại...'
+        } else if (payload.status === 'error') {
+          updateError.value = payload.error || 'Cập nhật thất bại'
+          isUpdating.value = false
+        }
+      })
+
+      const downloadUrl = availableUpdate.value?.downloadUrl
+      const res = await nativeBridge.downloadAndInstallUpdate(downloadUrl)
+      if (!res.ok && res.error) {
+        updateError.value = res.error
+        isUpdating.value = false
+      }
+    } catch (e: any) {
+      updateError.value = e?.message || String(e)
+      isUpdating.value = false
+    } finally {
+      if (updateError.value && unlisten) {
+        unlisten()
+      }
+    }
+  }
+
   return {
     currentMode,
     activeTab,
@@ -369,6 +451,7 @@ export const useSkillStore = defineStore('skills', () => {
     selectedCategory,
     skills,
     selectedSkillName,
+    selectedInstalledKey,
     selectedSkill,
     skillDetail,
     skillVersions,
@@ -379,6 +462,12 @@ export const useSkillStore = defineStore('skills', () => {
     isCheckingUpdate,
     availableUpdate,
     autostartEnabled,
+    isUpdating,
+    updateProgress,
+    updateBytesDownloaded,
+    updateBytesTotal,
+    updateStatusText,
+    updateError,
     showScopeModal,
     pendingInstallSkill,
     showFolderPickerModal,
@@ -403,6 +492,7 @@ export const useSkillStore = defineStore('skills', () => {
     removeProject,
     pickProjectFolder,
     checkForUpdates,
+    applyAutoUpdate,
     openAiproStudio,
     setAutostart,
   }

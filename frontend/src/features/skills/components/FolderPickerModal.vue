@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Dialog from 'primevue/dialog'
-import Button from 'primevue/button'
-import InputText from 'primevue/inputtext'
 import { useSkillStore } from '../stores/skillStore'
 import { nativeBridge } from '@/services/nativeBridge'
 import { useI18n } from '@/i18n'
@@ -43,7 +41,8 @@ function handleClose() {
     v-model:visible="store.showFolderPickerModal"
     modal
     :header="t('folderPicker.title')"
-    :style="{ width: '460px' }"
+    :style="{ width: '480px' }"
+    class="p-dialog-custom"
   >
     <div class="space-y-4 py-2">
       <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -55,21 +54,22 @@ function handleClose() {
           {{ t('folderPicker.pathLabel') }}
         </label>
         <div class="flex gap-2">
-          <InputText
+          <input
             v-model="pathInput"
+            type="text"
             :placeholder="t('folderPicker.pathPlaceholder')"
-            class="flex-1 !rounded-xl !text-xs"
-            :invalid="!!errorMsg"
+            class="flex-1 text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono"
+            :class="{ '!border-rose-500': !!errorMsg }"
             @input="errorMsg = null"
           />
-          <Button
+          <button
             type="button"
-            icon="pi pi-folder-open"
-            :label="t('folderPicker.browseBtn')"
-            variant="outlined"
-            class="!rounded-xl !text-xs cursor-pointer flex-shrink-0"
+            class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0"
             @click="handleBrowse"
-          />
+          >
+            <i class="pi pi-folder-open text-xs"></i>
+            <span>{{ t('folderPicker.browseBtn') }}</span>
+          </button>
         </div>
         <p v-if="errorMsg" class="text-[11px] text-rose-500 font-semibold mt-1">
           {{ errorMsg }}
@@ -79,20 +79,21 @@ function handleClose() {
 
     <template #footer>
       <div class="flex items-center justify-end gap-2 pt-2">
-        <Button
+        <button
           type="button"
-          :label="t('folderPicker.cancelBtn')"
-          variant="text"
-          class="!rounded-xl !text-xs cursor-pointer"
+          class="py-2 px-3 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
           @click="handleClose"
-        />
-        <Button
+        >
+          {{ t('common.cancel') }}
+        </button>
+        <button
           type="button"
-          :label="t('folderPicker.addBtn')"
-          icon="pi pi-plus"
-          class="!rounded-xl !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer"
+          class="py-2 px-4 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
           @click="handleConfirm"
-        />
+        >
+          <i class="pi pi-check text-xs"></i>
+          <span>{{ t('folderPicker.confirmBtn') }}</span>
+        </button>
       </div>
     </template>
   </Dialog>

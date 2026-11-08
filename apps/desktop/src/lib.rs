@@ -118,6 +118,7 @@ pub fn run() {
             commands::open_studio,
             commands::select_folder,
             commands::check_for_update,
+            commands::download_and_install_update,
             commands::set_theme,
             commands::is_autostart_enabled,
             commands::set_autostart,

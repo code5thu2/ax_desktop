@@ -31,7 +31,16 @@ export const INITIAL_PLUGINS: PluginItem[] = [
       { name: 'postgres_list_indexes', description: 'Lists all indexes and usage stats across current database schemas' },
       { name: 'postgres_explain_query', description: 'Generates cost and timing breakdown of an execution plan' }
     ],
-    changeNotes: 'v2.4.1: Added support for partitioned tables and SSL connection pools.'
+    changeNotes: 'v2.4.1: Added support for partitioned tables and SSL connection pools.',
+    envRequirements: [
+      { key: 'DATABASE_URL', label: 'PostgreSQL Connection URL', required: true, default: 'postgresql://postgres:postgres@localhost:5432/mcp_db', type: 'text' },
+      { key: 'PG_MAX_POOL', label: 'Max Connection Pool Size', required: false, default: '10', type: 'text' },
+      { key: 'PG_SSL_MODE', label: 'SSL Connection Mode', required: false, default: 'prefer', type: 'text' }
+    ],
+    configuredEnv: {
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/mcp_db',
+      PG_MAX_POOL: '10'
+    }
   },
   {
     id: 'docker-mcp',
@@ -114,7 +123,12 @@ export const INITIAL_PLUGINS: PluginItem[] = [
       { name: 'gitlab_get_job_trace', description: 'Fetches raw console log of a failed pipeline job' },
       { name: 'gitlab_create_mr', description: 'Creates a new Merge Request between two branches' }
     ],
-    changeNotes: 'v3.1.2: Added support for GitLab 17.x GraphQL API.'
+    changeNotes: 'v3.1.2: Added support for GitLab 17.x GraphQL API.',
+    envRequirements: [
+      { key: 'GITLAB_URL', label: 'GitLab Instance URL', required: true, default: 'https://gitlab.com', type: 'text' },
+      { key: 'GITLAB_TOKEN', label: 'Personal Access Token (glpat-...)', required: true, default: '', type: 'password' },
+      { key: 'GITLAB_DEFAULT_PROJECT', label: 'Default Project Path (group/project)', required: false, default: '', type: 'text' }
+    ]
   },
   {
     id: 'filesystem-mcp',
@@ -198,7 +212,19 @@ export const usePluginStore = defineStore('plugins', () => {
     try {
       if (typeof localStorage !== 'undefined') {
         const raw = localStorage.getItem('mcp_studio_plugins_v1')
-        if (raw) return JSON.parse(raw)
+        if (raw) {
+          const parsed: PluginItem[] = JSON.parse(raw)
+          parsed.forEach((p) => {
+            const init = INITIAL_PLUGINS.find((i) => i.id === p.id)
+            if (init?.envRequirements && (!p.envRequirements || p.envRequirements.length === 0)) {
+              p.envRequirements = init.envRequirements
+            }
+            if (init?.configuredEnv && !p.configuredEnv) {
+              p.configuredEnv = init.configuredEnv
+            }
+          })
+          return parsed
+        }
       }
     } catch {}
     return JSON.parse(JSON.stringify(INITIAL_PLUGINS))

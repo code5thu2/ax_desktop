@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import Dialog from 'primevue/dialog'
-import Button from 'primevue/button'
-import Dropdown from 'primevue/dropdown'
-import Checkbox from 'primevue/checkbox'
-import InputText from 'primevue/inputtext'
 import { useSkillStore } from '../stores/skillStore'
 import { nativeBridge } from '@/services/nativeBridge'
 import { useI18n } from '@/i18n'
@@ -23,7 +19,6 @@ const projectOptions = computed(() => {
 })
 
 // Strictly filter ONLY project-scoped skills belonging to the selected source project.
-// Global skills are strictly excluded per requirement.
 const availableSkillsToClone = computed(() => {
   if (!sourceProject.value) return []
   const normSource = sourceProject.value.replace(/\\/g, '/').toLowerCase()
@@ -94,6 +89,7 @@ function handleClose() {
     modal
     :header="t('cloneModal.title')"
     :style="{ width: '520px' }"
+    class="p-dialog-custom"
   >
     <div class="space-y-4 py-2">
       <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 text-xs text-sky-800 dark:text-sky-300 leading-relaxed flex items-start gap-2">
@@ -107,14 +103,15 @@ function handleClose() {
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
             {{ t('cloneModal.sourceProjectLabel') }}
           </label>
-          <Dropdown
+          <select
             v-model="sourceProject"
-            :options="projectOptions"
-            optionLabel="label"
-            optionValue="value"
-            :placeholder="t('cloneModal.sourceProjectPlaceholder')"
-            class="w-full !rounded-xl !text-xs"
-          />
+            class="w-full text-xs py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+          >
+            <option value="" disabled>{{ t('cloneModal.sourceProjectPlaceholder') }}</option>
+            <option v-for="opt in projectOptions" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </div>
 
         <!-- Target project -->
@@ -123,19 +120,20 @@ function handleClose() {
             {{ t('cloneModal.targetProjectLabel') }}
           </label>
           <div class="flex gap-2">
-            <InputText
+            <input
               v-model="targetProject"
+              type="text"
               :placeholder="t('cloneModal.targetProjectPlaceholder')"
-              class="flex-1 !rounded-xl !text-xs"
+              class="flex-1 text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono"
             />
-            <Button
+            <button
               type="button"
-              icon="pi pi-folder-open"
-              :label="t('scopeModal.browseBtn')"
-              variant="outlined"
-              class="!rounded-xl !text-xs cursor-pointer flex-shrink-0"
+              class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0"
               @click="handleBrowseTargetFolder"
-            />
+            >
+              <i class="pi pi-folder-open text-xs"></i>
+              <span>{{ t('scopeModal.browseBtn') }}</span>
+            </button>
           </div>
         </div>
 
@@ -163,16 +161,12 @@ function handleClose() {
               @click="selectedSkillNames = selectedSkillNames.includes(skillName) ? selectedSkillNames.filter(n => n !== skillName) : [...selectedSkillNames, skillName]"
             >
               <div class="flex items-center gap-2.5 min-w-0">
-                <Checkbox
-                  :modelValue="selectedSkillNames.includes(skillName)"
-                  :binary="true"
-                  :inputId="`clone-${skillName}`"
-                  @click.stop
-                  @update:modelValue="(val) => {
-                    if (val && !selectedSkillNames.includes(skillName)) selectedSkillNames.push(skillName)
-                    else if (!val) selectedSkillNames = selectedSkillNames.filter(n => n !== skillName)
-                  }"
-                />
+                <div
+                  class="w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0"
+                  :class="selectedSkillNames.includes(skillName) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-800'"
+                >
+                  <i v-if="selectedSkillNames.includes(skillName)" class="pi pi-check text-[10px] font-bold"></i>
+                </div>
                 <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate select-none">
                   {{ skillName }}
                 </span>
@@ -200,23 +194,24 @@ function handleClose() {
 
     <template #footer>
       <div class="flex items-center justify-end gap-2 pt-2">
-        <Button
+        <button
           type="button"
-          :label="t('cloneModal.cancelBtn')"
-          variant="text"
+          class="py-2 px-3 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
           :disabled="isCloning"
-          class="!rounded-xl !text-xs cursor-pointer"
           @click="handleClose"
-        />
-        <Button
+        >
+          {{ t('cloneModal.cancelBtn') }}
+        </button>
+        <button
           type="button"
-          :label="isCloning ? t('cloneModal.cloningBtn') : t('cloneModal.cloneBtn', { count: selectedSkillNames.length })"
-          icon="pi pi-copy"
-          :loading="isCloning"
-          :disabled="selectedSkillNames.length === 0"
-          class="!rounded-xl !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
+          class="py-2 px-4 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          :disabled="selectedSkillNames.length === 0 || isCloning"
           @click="handleConfirmClone"
-        />
+        >
+          <i v-if="isCloning" class="pi pi-spinner animate-spin text-xs"></i>
+          <i v-else class="pi pi-copy text-xs"></i>
+          <span>{{ isCloning ? t('cloneModal.cloningBtn') : t('cloneModal.cloneBtn', { count: selectedSkillNames.length }) }}</span>
+        </button>
       </div>
     </template>
   </Dialog>

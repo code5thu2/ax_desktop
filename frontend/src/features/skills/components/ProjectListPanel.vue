@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import Button from 'primevue/button'
 import Tag from 'primevue/tag'
-import InputSwitch from 'primevue/inputswitch'
 import { useSkillStore } from '../stores/skillStore'
 import { useI18n } from '@/i18n'
 
@@ -56,21 +54,22 @@ function handleOpenClone() {
       </div>
 
       <div class="flex items-center gap-2">
-        <Button
+        <button
           type="button"
-          icon="pi pi-copy"
-          :label="t('projects.cloneBtn')"
-          variant="outlined"
-          class="!rounded-xl !text-xs !font-semibold cursor-pointer"
+          class="py-1.5 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer"
           @click="handleOpenClone"
-        />
-        <Button
+        >
+          <i class="pi pi-copy text-xs"></i>
+          <span>{{ t('projects.cloneBtn') }}</span>
+        </button>
+        <button
           type="button"
-          icon="pi pi-plus"
-          :label="t('projects.addBtn')"
-          class="!rounded-xl !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-md shadow-emerald-500/20 cursor-pointer"
+          class="py-1.5 px-3.5 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
           @click="handleAddProject"
-        />
+        >
+          <i class="pi pi-plus text-xs"></i>
+          <span>{{ t('projects.addBtn') }}</span>
+        </button>
       </div>
     </div>
 
@@ -158,10 +157,19 @@ function handleOpenClone() {
             </div>
 
             <div class="flex items-center gap-3">
-              <InputSwitch
-                :modelValue="skill.enabled"
-                @update:modelValue="(val) => handleToggleSkill(skill.name, val)"
-              />
+              <button
+                type="button"
+                role="switch"
+                :aria-checked="skill.enabled"
+                class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                :class="skill.enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
+                @click="handleToggleSkill(skill.name, !skill.enabled)"
+              >
+                <span
+                  class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
+                  :class="skill.enabled ? 'translate-x-4' : 'translate-x-0'"
+                />
+              </button>
               <button
                 type="button"
                 class="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"

@@ -1195,3 +1195,508 @@
   }
 }
 
+
+
+/* ========================================================
+   Screen Reader Hidden & PrimeVue Base Overrides
+   ======================================================== */
+.p-hidden-accessible {
+  border: 0 !important;
+  clip: rect(0 0 0 0) !important;
+  height: 1px !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  width: 1px !important;
+  white-space: nowrap !important;
+}
+
+/* PrimeVue Menu Solid Dark/Light Panel Styling */
+.p-menu {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 0.375rem !important;
+  min-width: 14rem !important;
+  z-index: 9999 !important;
+}
+
+.dark .p-menu,
+.app-dark .p-menu {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
+}
+
+.p-menu .p-menu-list,
+.p-menu .p-menuitem-list {
+  padding: 0 !important;
+  margin: 0 !important;
+  list-style: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.125rem !important;
+}
+
+.p-menu .p-menu-item,
+.p-menu .p-menuitem {
+  border-radius: 0.625rem !important;
+  overflow: hidden !important;
+}
+
+.p-menu .p-menu-item-link,
+.p-menu .p-menuitem-link,
+.p-menu .p-menu-item-content,
+.p-menu .p-menuitem-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.625rem !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  border-radius: 0.625rem !important;
+  transition: all 0.15s ease !important;
+}
+
+.dark .p-menu .p-menu-item-link,
+.dark .p-menu .p-menuitem-link,
+.app-dark .p-menu .p-menu-item-link,
+.app-dark .p-menu .p-menuitem-link {
+  color: #e2e8f0 !important;
+}
+
+.p-menu .p-menu-item-link:hover,
+.p-menu .p-menuitem-link:hover,
+.p-menu .p-menu-item:hover,
+.p-menu .p-menuitem:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.dark .p-menu .p-menu-item-link:hover,
+.dark .p-menu .p-menuitem-link:hover,
+.dark .p-menu .p-menu-item:hover,
+.dark .p-menu .p-menuitem:hover,
+.app-dark .p-menu .p-menu-item-link:hover,
+.app-dark .p-menu .p-menuitem-link:hover,
+.app-dark .p-menu .p-menu-item:hover,
+.app-dark .p-menu .p-menuitem:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+.p-menu .p-menu-separator,
+.p-menu .p-menuitem-separator {
+  height: 1px !important;
+  background-color: #e2e8f0 !important;
+  margin: 0.25rem 0.5rem !important;
+}
+
+.dark .p-menu .p-menu-separator,
+.dark .p-menu .p-menuitem-separator,
+.app-dark .p-menu .p-menu-separator,
+.app-dark .p-menu .p-menuitem-separator {
+  background-color: #334155 !important;
+}
+
+/* ==========================================================================
+   UI-UX-PROMAX Obsidian Design System & Autofill Guard
+   ========================================================================== */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  caret-color: #f8fafc !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.bg-obsidian-950 { background-color: #07090e; }
+.bg-obsidian-900 { background-color: #0b0f19; }
+.bg-obsidian-850 { background-color: #101626; }
+.bg-obsidian-800 { background-color: #151d32; }
+.border-obsidian { border-color: rgba(255, 255, 255, 0.08); }
+.border-obsidian-subtle { border-color: rgba(255, 255, 255, 0.04); }
+.glow-emerald { box-shadow: 0 0 25px -4px rgba(16, 185, 129, 0.25); }
+.glow-teal { box-shadow: 0 0 25px -4px rgba(20, 184, 166, 0.25); }
+.glow-card { box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4); }
+
+/* Shimmer animation for skeleton loaders */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.06) 20%,
+    rgba(255, 255, 255, 0.12) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer-sweep 2s infinite;
+}
+
+/* ==========================================================================
+   UNIVERSAL POPUP, MODAL & DIALOG SOLID BACKGROUNDS (UI-UX-PROMAX STANDARD)
+   Guarantees 100% opaque, crystal-clear, non-transparent dialogs everywhere
+   ========================================================================== */
+
+/* 1. Backdrop Overlay Mask */
+.p-overlay-mask,
+.p-dialog-mask {
+  background-color: rgba(3, 7, 18, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 9999 !important;
+  transition: opacity 0.2s ease-in-out !important;
+}
+
+/* 2. Dialog & Modal Root Container */
+.p-dialog,
+.p-confirmdialog,
+.p-confirm-dialog,
+.p-dialog-custom,
+div[role="dialog"],
+div[role="alertdialog"] {
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(51, 65, 85, 0.85) !important;
+  border-radius: 1.25rem !important; /* 20px */
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  overflow: hidden !important;
+}
+
+/* Light mode support */
+:root:not(.dark):not(.app-dark) .p-dialog,
+:root:not(.dark):not(.app-dark) .p-confirmdialog,
+:root:not(.dark):not(.app-dark) .p-confirm-dialog,
+:root:not(.dark):not(.app-dark) .p-dialog-custom,
+:root:not(.dark):not(.app-dark) div[role="dialog"],
+:root:not(.dark):not(.app-dark) div[role="alertdialog"] {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 3. Dialog Header */
+.p-dialog-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-shrink: 0 !important;
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.6) !important;
+  padding: 1.1rem 1.5rem !important;
+}
+
+:root:not(.dark):not(.app-dark) .p-dialog-header {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.p-dialog-title {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: inherit !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* 4. Dialog Content Body */
+.p-dialog-content {
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+:root:not(.dark):not(.app-dark) .p-dialog-content {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+}
+
+/* 5. Dialog Footer */
+.p-dialog-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+  background-color: #0b1120 !important;
+  background: #0b1120 !important;
+  color: #e2e8f0 !important;
+  border-top: 1px solid rgba(51, 65, 85, 0.6) !important;
+  padding: 1rem 1.5rem !important;
+}
+
+:root:not(.dark):not(.app-dark) .p-dialog-footer {
+  background-color: #f8fafc !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+
+/* 6. Close button in Header */
+.p-dialog-header-actions,
+.p-dialog-header-actions button,
+.p-dialog-close-button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.p-dialog-header-actions button,
+.p-dialog-close-button {
+  background-color: transparent !important;
+  color: #94a3b8 !important;
+  border-radius: 0.625rem !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+  border: 1px solid transparent !important;
+  padding: 0 !important;
+}
+
+:root:not(.dark):not(.app-dark) .p-dialog-header-actions button,
+:root:not(.dark):not(.app-dark) .p-dialog-close-button {
+  color: #64748b !important;
+}
+
+.p-dialog-header-actions button:hover,
+.p-dialog-close-button:hover {
+  background-color: rgba(51, 65, 85, 0.6) !important;
+  color: #ffffff !important;
+  border-color: rgba(100, 116, 139, 0.4) !important;
+}
+
+:root:not(.dark):not(.app-dark) .p-dialog-header-actions button:hover,
+:root:not(.dark):not(.app-dark) .p-dialog-close-button:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+.p-dialog-header-actions button svg,
+.p-dialog-close-button svg,
+.p-dialog-close-icon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  fill: currentColor !important;
+}
+
+/* 7. Confirm Dialog styling */
+.p-confirmdialog,
+.p-confirm-dialog {
+  max-width: 480px !important;
+  width: 92vw !important;
+}
+
+.p-confirmdialog .p-dialog-content,
+.p-confirm-dialog .p-dialog-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1.125rem !important;
+  padding: 1.5rem !important;
+}
+
+.p-confirmdialog-icon,
+.p-confirm-dialog-icon {
+  font-size: 1.75rem !important;
+  color: #f59e0b !important;
+  flex-shrink: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.p-confirmdialog-message,
+.p-confirm-dialog-message {
+  font-size: 0.875rem !important;
+  line-height: 1.55 !important;
+  color: inherit !important;
+  flex: 1 !important;
+}
+
+/* PrimeVue Buttons in Dialog / ConfirmDialog Footer */
+.p-confirmdialog-reject-button,
+.p-confirm-dialog-reject-button,
+.p-dialog-footer .p-button-secondary {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0.55rem 1.15rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  border-radius: 0.75rem !important;
+  color: #475569 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  text-decoration: none !important;
+}
+
+.p-confirmdialog-reject-button:hover,
+.p-confirm-dialog-reject-button:hover,
+.p-dialog-footer .p-button-secondary:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+.dark .p-confirmdialog-reject-button,
+.dark .p-confirm-dialog-reject-button,
+.app-dark .p-confirmdialog-reject-button,
+.app-dark .p-confirm-dialog-reject-button,
+.dark .p-dialog-footer .p-button-secondary,
+.app-dark .p-dialog-footer .p-button-secondary {
+  color: #cbd5e1 !important;
+  background-color: rgba(30, 41, 59, 0.7) !important;
+  border: 1px solid rgba(51, 65, 85, 0.85) !important;
+  box-shadow: none !important;
+}
+
+.dark .p-confirmdialog-reject-button:hover,
+.dark .p-confirm-dialog-reject-button:hover,
+.app-dark .p-confirmdialog-reject-button:hover,
+.app-dark .p-confirm-dialog-reject-button:hover,
+.dark .p-dialog-footer .p-button-secondary:hover,
+.app-dark .p-dialog-footer .p-button-secondary:hover {
+  background-color: rgba(51, 65, 85, 0.9) !important;
+  color: #ffffff !important;
+  border-color: rgba(100, 116, 139, 0.8) !important;
+}
+
+/* Accept Button - Danger */
+.p-confirmdialog-accept-button.p-button-danger,
+.p-confirm-dialog-accept-button.p-button-danger,
+.p-dialog-footer .p-button-danger {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.375rem !important;
+  padding: 0.55rem 1.25rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  border-radius: 0.75rem !important;
+  color: #ffffff !important;
+  background-color: #ef4444 !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 14px -2px rgba(239, 68, 68, 0.4) !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  text-decoration: none !important;
+}
+
+.p-confirmdialog-accept-button.p-button-danger:hover,
+.p-confirm-dialog-accept-button.p-button-danger:hover,
+.p-dialog-footer .p-button-danger:hover {
+  background-color: #dc2626 !important;
+  box-shadow: 0 6px 20px -2px rgba(239, 68, 68, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Accept Button - Primary / Default */
+.p-confirmdialog-accept-button:not(.p-button-danger),
+.p-confirm-dialog-accept-button:not(.p-button-danger),
+.p-dialog-footer .p-button:not(.p-button-secondary):not(.p-button-danger) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.375rem !important;
+  padding: 0.55rem 1.25rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  border-radius: 0.75rem !important;
+  color: #ffffff !important;
+  background-color: #10b981 !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.4) !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  text-decoration: none !important;
+}
+
+.p-confirmdialog-accept-button:not(.p-button-danger):hover,
+.p-confirm-dialog-accept-button:not(.p-button-danger):hover,
+.p-dialog-footer .p-button:not(.p-button-secondary):not(.p-button-danger):hover {
+  background-color: #059669 !important;
+  box-shadow: 0 6px 20px -2px rgba(16, 185, 129, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 8. Toast Notification Styling */
+.p-toast {
+  z-index: 10000 !important;
+}
+
+.p-toast-message {
+  background-color: #0f172a !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(51, 65, 85, 0.85) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
+  color: #f8fafc !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.p-toast-message-content {
+  padding: 0.875rem 1.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+}
+
+.p-toast-summary {
+  font-weight: 700 !important;
+  font-size: 0.8125rem !important;
+  color: #ffffff !important;
+}
+
+.p-toast-detail {
+  font-size: 0.75rem !important;
+  color: #94a3b8 !important;
+}
+
+.p-toast-close-button {
+  color: #94a3b8 !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.15s ease !important;
+}
+
+.p-toast-close-button:hover {
+  color: #ffffff !important;
+  background-color: rgba(51, 65, 85, 0.6) !important;
+}
+

@@ -29,6 +29,43 @@ export async function invokeNative<T>(cmd: string, args: Record<string, any> = {
   throw new Error(`Command '${cmd}' requires Tauri environment`)
 }
 
+export async function listenToEvent<T>(
+  event: string,
+  handler: (payload: T) => void
+): Promise<() => void> {
+  if (isTauriEnvironment()) {
+    try {
+      const { listen } = await import('@tauri-apps/api/event')
+      const unlisten = await listen<T>(event, (e) => handler(e.payload))
+      return unlisten
+    } catch (err) {
+      console.warn(`[NativeBridge] Failed to listen to '${event}':`, err)
+    }
+  }
+  return () => {}
+}
+
+export interface UpdateProgressPayload {
+  downloaded: number
+  total: number
+  percent: number
+  status: 'downloading' | 'installing' | 'ready' | 'error'
+  error?: string
+}
+
+export interface CheckUpdateResponse {
+  status: string
+  updateAvailable?: boolean
+  latestVersion?: string
+  currentVersion?: string
+  releaseName?: string
+  releaseNotes?: string
+  assetName?: string
+  assetSize?: number
+  downloadUrl?: string
+  error?: string
+}
+
 // In-memory mock storage for dev browser preview
 let mockLoggedIn = false
 let mockUser: AuthUser = {
@@ -102,12 +139,56 @@ let mockSkills: SkillItem[] = [
 
 let mockInstalled: InstalledPlugin[] = [
   {
-    id: BigInt(2) as unknown as bigint,
-    name: 'frontend-design-master',
-    version: 2,
+    id: BigInt(101) as unknown as bigint,
+    name: 'AI Code Assistant',
+    version: 1,
     scope: 'global',
-    installedAt: '2026-10-10T08:00:00Z',
+    installedAt: '2026-11-02T02:00:00Z',
     enabled: true,
+  },
+  {
+    id: BigInt(101) as unknown as bigint,
+    name: 'AI Code Assistant',
+    version: 1,
+    scope: 'project',
+    projectPath: 'D:/baoao',
+    installedAt: '2026-11-02T02:00:00Z',
+    enabled: true,
+  },
+  {
+    id: BigInt(102) as unknown as bigint,
+    name: 'Smart Database Query & Introspection',
+    version: 1,
+    scope: 'project',
+    projectPath: 'D:/baoao',
+    installedAt: '2026-11-02T02:00:00Z',
+    enabled: true,
+  },
+  {
+    id: BigInt(103) as unknown as bigint,
+    name: 'Multi-Language Legal Document Analyzer',
+    version: 1,
+    scope: 'project',
+    projectPath: 'C:/Users/levie/Desktop/ison',
+    installedAt: '2026-11-02T02:00:00Z',
+    enabled: true,
+  },
+  {
+    id: BigInt(102) as unknown as bigint,
+    name: 'Smart Database Query & Introspection',
+    version: 1,
+    scope: 'project',
+    projectPath: 'C:/Users/levie/Desktop/ASAP',
+    installedAt: '2026-11-02T02:00:00Z',
+    enabled: true,
+  },
+  {
+    id: BigInt(102) as unknown as bigint,
+    name: 'Smart Database Query & Introspection',
+    version: 1,
+    scope: 'global',
+    installedAt: '2026-11-02T02:00:00Z',
+    enabled: false,
   },
 ]
 
@@ -325,8 +406,16 @@ export const nativeBridge = {
   },
 
   async installSkill(name: string, version: number, targetDir: string, scope: string): Promise<InstalledPlugin> {
-    const matched = mockSkills.find((s) => s.name === name)
-    const id = matched ? matched.id : BigInt(Date.now()) as unknown as bigint
+    const matched = mockSkills.find((s) => s.name === name) || mockInstalled.find((s) => s.name === name)
+    const id = matched
+      ? matched.id
+      : (name === 'AI Code Assistant'
+          ? 101
+          : name === 'Smart Database Query & Introspection'
+          ? 102
+          : name === 'Multi-Language Legal Document Analyzer'
+          ? 103
+          : 1)
     await this.install({
       skill_id: id,
       name,
@@ -335,7 +424,7 @@ export const nativeBridge = {
       project_path: scope === 'project' ? targetDir : undefined,
     })
     return {
-      id,
+      id: BigInt(id) as unknown as bigint,
       name,
       version,
       scope,
@@ -366,8 +455,16 @@ export const nativeBridge = {
   },
 
   async uninstallSkill(name: string, projectPath?: string): Promise<boolean> {
-    const matched = mockSkills.find((s) => s.name === name)
-    const id = matched ? matched.id : 0
+    const matched = mockSkills.find((s) => s.name === name) || mockInstalled.find((s) => s.name === name)
+    const id = matched
+      ? matched.id
+      : (name === 'AI Code Assistant'
+          ? 101
+          : name === 'Smart Database Query & Introspection'
+          ? 102
+          : name === 'Multi-Language Legal Document Analyzer'
+          ? 103
+          : 0)
     const res = await this.uninstall({
       skill_id: id,
       scope: projectPath ? 'project' : 'global',
@@ -396,8 +493,16 @@ export const nativeBridge = {
   },
 
   async toggleSkill(name: string, enabled: boolean, projectPath?: string): Promise<boolean> {
-    const matched = mockSkills.find((s) => s.name === name)
-    const id = matched ? matched.id : 0
+    const matched = mockSkills.find((s) => s.name === name) || mockInstalled.find((s) => s.name === name)
+    const id = matched
+      ? matched.id
+      : (name === 'AI Code Assistant'
+          ? 101
+          : name === 'Smart Database Query & Introspection'
+          ? 102
+          : name === 'Multi-Language Legal Document Analyzer'
+          ? 103
+          : 0)
     const res = await this.toggle({
       skill_id: id,
       enabled,
@@ -490,11 +595,26 @@ export const nativeBridge = {
     throw new Error(res.error || 'Không tìm thấy AIPRO_Studio.exe')
   },
 
-  async checkForUpdate(): Promise<{ status: string; updateAvailable?: boolean; latestVersion?: string; currentVersion?: string; error?: string }> {
+  async checkForUpdate(): Promise<CheckUpdateResponse> {
     if (isTauriEnvironment()) {
-      return await invokeNative('check_for_update')
+      return await invokeNative<CheckUpdateResponse>('check_for_update')
     }
     return { status: 'success', updateAvailable: false, currentVersion: '1.0.0' }
+  },
+
+  async downloadAndInstallUpdate(downloadUrl?: string): Promise<{ ok: boolean; error?: string }> {
+    if (isTauriEnvironment()) {
+      return await invokeNative('download_and_install_update', {
+        payload: { download_url: downloadUrl },
+      })
+    }
+    return { ok: true }
+  },
+
+  async onUpdateProgress(
+    callback: (payload: UpdateProgressPayload) => void
+  ): Promise<() => void> {
+    return await listenToEvent<UpdateProgressPayload>('update-progress', callback)
   },
 
   async isAutostartEnabled(): Promise<boolean> {

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 import { useSkillStore } from './stores/skillStore'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { useI18n, type LocaleLang } from '@/i18n'
-import Button from 'primevue/button'
 import Tag from 'primevue/tag'
-import Menu from 'primevue/menu'
 import { useToast } from 'primevue/usetoast'
 
 import SkillList from './components/SkillList.vue'
@@ -27,59 +26,37 @@ const settingsStore = useSettingsStore()
 const { t, locale, setLocale } = useI18n()
 const toast = useToast()
 
-const userMenu = ref()
+const userMenuContainerRef = ref<HTMLElement>()
+const isUserMenuOpen = ref(false)
 const isLaunchingStudio = ref(false)
 const showSettings = ref(false)
 
-const userMenuItems = computed(() => [
-  {
-    label: t('portal.settingsMenu'),
-    icon: 'pi pi-cog',
-    command: () => {
-      showSettings.value = true
-    },
-  },
-  {
-    label: t('portal.autostartMenu'),
-    icon: 'pi pi-desktop',
-    command: async () => {
-      await store.setAutostart(!store.autostartEnabled)
-      toast.add({
-        severity: 'info',
-        summary: t('portal.appName'),
-        detail: store.autostartEnabled ? t('portal.autostartEnabledMsg') : t('portal.autostartDisabledMsg'),
-        life: 2500,
-      })
-    },
-  },
-  {
-    label: t('portal.checkUpdatesMenu'),
-    icon: 'pi pi-sync',
-    command: async () => {
-      await store.checkForUpdates()
-      if (!store.availableUpdate) {
-        toast.add({
-          severity: 'success',
-          summary: t('portal.checkUpdatesMenu'),
-          detail: t('portal.latestVersionMsg', { version: 'v1.0.0' }),
-          life: 2500,
-        })
-      }
-    },
-  },
-  { separator: true },
-  {
-    label: t('portal.logoutMenu'),
-    icon: 'pi pi-power-off',
-    class: 'text-rose-500 font-bold',
-    command: () => {
-      authStore.logout()
-    },
-  },
-])
+onClickOutside(userMenuContainerRef, () => {
+  isUserMenuOpen.value = false
+})
 
-function toggleUserMenu(event: Event) {
-  userMenu.value.toggle(event)
+async function handleAutostartToggle() {
+  isUserMenuOpen.value = false
+  await store.setAutostart(!store.autostartEnabled)
+  toast.add({
+    severity: 'info',
+    summary: t('portal.appName'),
+    detail: store.autostartEnabled ? t('portal.autostartEnabledMsg') : t('portal.autostartDisabledMsg'),
+    life: 2500,
+  })
+}
+
+async function handleCheckUpdates() {
+  isUserMenuOpen.value = false
+  await store.checkForUpdates()
+  if (!store.availableUpdate) {
+    toast.add({
+      severity: 'success',
+      summary: t('portal.checkUpdatesMenu'),
+      detail: t('portal.latestVersionMsg', { version: 'v1.0.0' }),
+      life: 2500,
+    })
+  }
 }
 
 function switchLang(lang: LocaleLang) {
@@ -115,6 +92,26 @@ onMounted(async () => {
   ])
   // Non-blocking update check on launch
   store.checkForUpdates().catch(() => {})
+
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('tab') === 'installed') {
+      store.setActiveTab('installed')
+    }
+    if (params.get('mode') === 'mcp') {
+      store.setMode('mcp')
+    }
+    if (params.get('settings') === '1') {
+      showSettings.value = true
+    }
+    if (params.get('scope') === '1') {
+      store.pendingInstallSkill = store.skills[0] || null
+      store.showScopeModal = true
+    }
+    if (params.get('dropdown') === '1') {
+      isUserMenuOpen.value = true
+    }
+  }
 })
 </script>
 
@@ -159,16 +156,18 @@ onMounted(async () => {
       </div>
 
       <!-- Right: Action Buttons, Theme, Language & User Profile -->
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2.5 flex-shrink-0">
         <!-- Launch AIPRO Studio Button -->
-        <Button
+        <button
           type="button"
-          :label="t('portal.launchStudioBtn')"
-          icon="pi pi-external-link"
-          :loading="isLaunchingStudio"
-          class="!py-1.5 !px-3 !text-xs !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-xs cursor-pointer !rounded-xl"
+          :disabled="isLaunchingStudio"
+          class="py-1.5 px-3.5 text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl shadow-md shadow-emerald-500/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 flex-shrink-0 active:scale-95"
           @click="handleLaunchStudio"
-        />
+        >
+          <i v-if="isLaunchingStudio" class="pi pi-spinner animate-spin text-xs"></i>
+          <i v-else class="pi pi-external-link text-xs"></i>
+          <span>{{ t('portal.launchStudioBtn') }}</span>
+        </button>
 
         <!-- Multi-language Switcher (VI | EN | KO) -->
         <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-1 shadow-xs">
@@ -208,12 +207,13 @@ onMounted(async () => {
           <i :class="settingsStore.darkMode ? 'pi pi-sun text-amber-400' : 'pi pi-moon text-slate-600'"></i>
         </button>
 
-        <!-- User Profile Avatar & Menu -->
-        <div class="relative">
+        <!-- User Profile Avatar & Solid Dropdown Menu -->
+        <div class="relative" ref="userMenuContainerRef">
           <button
             type="button"
+            data-testid="header-user-btn"
             class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            @click="toggleUserMenu"
+            @click="isUserMenuOpen = !isUserMenuOpen"
           >
             <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-xs shadow-xs">
               {{ (authStore.currentUser?.name || 'AX').substring(0, 2).toUpperCase() }}
@@ -221,9 +221,81 @@ onMounted(async () => {
             <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 hidden sm:inline max-w-[120px] truncate">
               {{ authStore.currentUser?.name || t('portal.guestName') }}
             </span>
-            <i class="pi pi-chevron-down text-[10px] text-slate-400"></i>
+            <i class="pi pi-chevron-down text-[10px] text-slate-400 transition-transform duration-200" :class="{ 'rotate-180': isUserMenuOpen }"></i>
           </button>
-          <Menu ref="userMenu" :model="userMenuItems" :popup="true" class="!rounded-2xl !text-xs" />
+
+          <!-- Solid Floating Dropdown Menu (Guaranteed Opaque, Z-9999) -->
+          <div
+            v-if="isUserMenuOpen"
+            data-testid="user-dropdown-menu"
+            class="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-slate-700/80 shadow-2xl shadow-black/80 p-1.5 z-[9999] flex flex-col gap-0.5 select-none"
+            style="background-color: #0f172a !important;"
+          >
+            <!-- User Info Header -->
+            <div class="px-3.5 py-2.5 border-b border-slate-800 mb-1 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-emerald-500/20 flex-shrink-0">
+                {{ (authStore.currentUser?.name || 'AX').substring(0, 2).toUpperCase() }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-bold text-white truncate flex items-center gap-1.5">
+                  <span>{{ authStore.currentUser?.name || t('portal.guestName') }}</span>
+                  <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">PRO</span>
+                </div>
+                <div class="text-[11px] text-slate-400 font-mono truncate mt-0.5">
+                  {{ authStore.currentUser?.email || 'offline@aipro.local' }}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer text-left"
+              @click="showSettings = true; isUserMenuOpen = false"
+            >
+              <div class="flex items-center gap-2.5">
+                <i class="pi pi-cog text-emerald-400 text-xs"></i>
+                <span>{{ t('portal.settingsMenu') }}</span>
+              </div>
+              <kbd class="text-[10px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">Ctrl+,</kbd>
+            </button>
+
+            <button
+              type="button"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer text-left"
+              @click="handleAutostartToggle"
+            >
+              <div class="flex items-center gap-2.5">
+                <i class="pi pi-desktop text-teal-400 text-xs"></i>
+                <span>{{ t('portal.autostartMenu') }}</span>
+              </div>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="store.autostartEnabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'">
+                {{ store.autostartEnabled ? 'BẬT' : 'TẮT' }}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer text-left"
+              @click="handleCheckUpdates"
+            >
+              <div class="flex items-center gap-2.5">
+                <i class="pi pi-sync text-cyan-400 text-xs"></i>
+                <span>{{ t('portal.checkUpdatesMenu') }}</span>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400">v1.0.0</span>
+            </button>
+
+            <div class="h-px bg-slate-800 my-1"></div>
+
+            <button
+              type="button"
+              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
+              @click="authStore.logout(); isUserMenuOpen = false"
+            >
+              <i class="pi pi-power-off text-rose-400 text-xs"></i>
+              <span>{{ t('portal.logoutMenu') }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -231,12 +303,12 @@ onMounted(async () => {
     <!-- Main Workspace View -->
     <div class="flex-1 flex flex-col min-h-0 overflow-hidden relative">
       <!-- Mode 1: MCP Protocol Studio Mode -->
-      <div v-if="store.currentMode === 'mcp'" class="h-full w-full overflow-hidden">
+      <div v-if="store.currentMode === 'mcp'" class="h-full w-full flex flex-col min-h-0 overflow-hidden">
         <PluginStandaloneView :embedded="true" />
       </div>
 
       <!-- Mode 2: Skill Marketplace Mode -->
-      <div v-else class="h-full flex flex-col overflow-hidden">
+      <div v-else class="h-full flex flex-col min-h-0 overflow-hidden">
         <!-- Sub-navigation Tabs (Marketplace, Installed, Projects) -->
         <div class="h-11 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/50 px-6 flex items-center justify-between flex-shrink-0">
           <div class="flex items-center gap-6 h-full">

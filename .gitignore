@@ -64,3 +64,9 @@ Thumbs.db
 .vscode/
 
 .superpowers/
+codegraph-out/
+graphify-out/
+*.png
+*.docx
+*.zip
+*.py

@@ -17,7 +17,7 @@ const showSettings = ref(false)
 </script>
 
 <template>
-  <div class="h-full w-full flex flex-col overflow-hidden bg-white dark:bg-[#121214] text-slate-900 dark:text-[#ececec] font-sans select-none">
+  <div class="h-full w-full flex flex-col min-h-0 overflow-hidden bg-white dark:bg-[#121214] text-slate-900 dark:text-[#ececec] font-sans select-none">
     <!-- Standalone Header only when NOT embedded in AX Portal -->
     <AppHeader
       v-if="!props.embedded"
@@ -26,7 +26,7 @@ const showSettings = ref(false)
 
     <!-- Main Content Area taking full available space -->
     <main class="flex-1 min-h-0 flex flex-col overflow-hidden">
-      <IntelliJPluginsView />
+      <IntelliJPluginsView :embedded="props.embedded" />
     </main>
 
     <!-- Preferences Dialog for standalone mode -->

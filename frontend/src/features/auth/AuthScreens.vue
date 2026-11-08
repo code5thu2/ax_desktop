@@ -15,7 +15,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'login-success', user: any): void
-  (e: 'guest-mode'): void
   (e: 'logged-out'): void
 }>()
 
@@ -43,10 +42,6 @@ function handleRegistered(payload: { email: string; username: string; password: 
 
 function handleLoginSuccess(user: any) {
   emit('login-success', user)
-}
-
-function handleGuestMode() {
-  emit('guest-mode')
 }
 
 function handleLoggedOut() {
@@ -109,7 +104,6 @@ function switchLang(lang: LocaleLang) {
         v-if="currentScreen === 'login'"
         @navigate="handleNavigate"
         @login-success="handleLoginSuccess"
-        @guest-mode="handleGuestMode"
       />
 
       <RegisterScreen

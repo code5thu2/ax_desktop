@@ -12,6 +12,7 @@ thiserror = { workspace = true }
 reqwest = { workspace = true }
 zip = { workspace = true }
 chrono = { workspace = true }
+futures-util = "0.3"
 
 [dev-dependencies]
 tempfile = { workspace = true }

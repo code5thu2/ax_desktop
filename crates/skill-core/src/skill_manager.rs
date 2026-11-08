@@ -20,7 +20,20 @@ impl SkillManager {
     }
 
     pub fn list_installed(&self) -> Vec<InstalledPlugin> {
-        read_json_safe::<Vec<InstalledPlugin>>(&self.installed_json_path).unwrap_or_default()
+        let raw = read_json_safe::<Vec<InstalledPlugin>>(&self.installed_json_path).unwrap_or_default();
+        let mut deduped: Vec<InstalledPlugin> = Vec::new();
+        for item in raw {
+            if let Some(pos) = deduped.iter().position(|x| {
+                (x.id == item.id || x.name == item.name)
+                    && x.scope == item.scope
+                    && x.project_path == item.project_path
+            }) {
+                deduped[pos] = item;
+            } else {
+                deduped.push(item);
+            }
+        }
+        deduped
     }
 
     fn save_installed(&self, list: &[InstalledPlugin]) -> Result<(), String> {
@@ -81,7 +94,7 @@ impl SkillManager {
         let norm_proj = project_path.map(normalize_path);
 
         list.retain(|item| {
-            !(item.id == id && item.scope == scope && item.project_path == norm_proj)
+            !( (item.id == id || item.name == name) && item.scope == scope && item.project_path == norm_proj )
         });
 
         list.push(InstalledPlugin {
@@ -152,7 +165,12 @@ impl SkillManager {
             }
             list.retain(|item| item.id != id);
         } else {
-            if let Ok(td) = self.resolve_target_dir(id, scope, project_path) {
+            let target_item = list.iter().find(|item| {
+                item.id == id || (item.scope == scope && item.project_path == norm_proj)
+            }).cloned();
+            let actual_id = target_item.as_ref().map(|i| i.id).unwrap_or(id);
+
+            if let Ok(td) = self.resolve_target_dir(actual_id, scope, project_path) {
                 let core_name = read_skill_name_from_md(&td);
                 let _ = fs::remove_dir_all(&td);
                 if let Ok(cfg) = self.resolve_config_path(scope, project_path) {
@@ -160,7 +178,7 @@ impl SkillManager {
                 }
             }
             list.retain(|item| {
-                !(item.id == id && item.scope == scope && item.project_path == norm_proj)
+                !( (item.id == id || item.id == actual_id) && item.scope == scope && item.project_path == norm_proj )
             });
         }
 

@@ -5,12 +5,11 @@ import type { AuthUser } from '@/types/generated/AuthUser'
 
 export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = ref(false)
-  const isGuest = ref(false)
   const currentUser = ref<AuthUser | null>(null)
   const isInitialized = ref(false)
 
   async function checkAuthStatus() {
-    if (isGuest.value) {
+    if (isLoggedIn.value) {
       isInitialized.value = true
       return
     }
@@ -34,20 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setAuthenticated(user: AuthUser) {
     isLoggedIn.value = true
-    isGuest.value = false
     currentUser.value = user
-    isInitialized.value = true
-  }
-
-  function setGuestMode() {
-    isLoggedIn.value = true
-    isGuest.value = true
-    currentUser.value = {
-      id: BigInt(0) as unknown as bigint,
-      name: 'Khách / Chế độ Offline',
-      email: 'guest@aipro.studio',
-      avatar: undefined,
-    }
     isInitialized.value = true
   }
 
@@ -58,18 +44,15 @@ export const useAuthStore = defineStore('auth', () => {
       // ignore
     }
     isLoggedIn.value = false
-    isGuest.value = false
     currentUser.value = null
   }
 
   return {
     isLoggedIn,
-    isGuest,
     currentUser,
     isInitialized,
     checkAuthStatus,
     setAuthenticated,
-    setGuestMode,
     logout,
   }
 })

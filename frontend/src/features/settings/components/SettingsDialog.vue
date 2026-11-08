@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import Dialog from 'primevue/dialog'
-import InputText from 'primevue/inputtext'
-import Button from 'primevue/button'
 import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { usePluginStore } from '@/features/plugins/stores/pluginStore'
 import { nativeBridge } from '@/services/nativeBridge'
@@ -138,25 +136,13 @@ function resetDefaults() {
     :header="t('settings.title')"
     :style="{ width: '680px', maxWidth: '95vw' }"
     :breakpoints="{ '1024px': '95vw', '768px': '98vw' }"
-    class="!bg-white dark:!bg-[#171717] !border !border-[#e5e5e5] dark:!border-[#2e2e2e] !text-[#0d0d0d] dark:!text-[#ececec] !rounded-2xl shadow-2xl overflow-hidden transition-all duration-200"
-    :pt="{
-      root: { class: '!bg-white dark:!bg-[#171717] !border !border-[#e5e5e5] dark:!border-[#2e2e2e] !rounded-2xl shadow-2xl overflow-hidden' },
-      header: { class: '!bg-transparent !border-b !border-[#e5e5e5] dark:!border-[#2e2e2e] !py-3.5 !px-5 !text-slate-900 dark:!text-[#ececec]' },
-      content: { class: '!bg-transparent !p-0 overflow-hidden' },
-      footer: { class: '!bg-transparent !border-t !border-[#e5e5e5] dark:!border-[#2e2e2e] !px-5 !py-3' },
-      pcCloseButton: {
-        root: {
-          tabindex: -1,
-          class: '!w-8 !h-8 !p-1.5 !outline-none !ring-0 !shadow-none !border-none focus:!outline-none active:!outline-none hover:!bg-[#f0f0f0] dark:hover:!bg-[#262626] text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 !rounded-lg flex items-center justify-center transition cursor-pointer'
-        }
-      }
-    }"
+    class="p-dialog-custom !rounded-2xl shadow-2xl overflow-hidden"
     @update:visible="emit('update:visible', $event)"
   >
     <!-- 2-Column Dialog Layout -->
     <div class="flex flex-col md:flex-row transition-all duration-200 h-[460px]">
       <!-- Left Navigation Column -->
-      <nav class="w-full md:w-52 shrink-0 border-b md:border-b-0 md:border-r border-[#e5e5e5] dark:border-[#2e2e2e] p-2.5 space-y-1 bg-[#f9f9f9] dark:bg-[#171717]">
+      <nav class="w-full md:w-52 shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 p-2.5 space-y-1 bg-slate-50 dark:bg-slate-950/70">
         <button
           v-for="tab in tabs"
           :key="tab.id"
@@ -176,7 +162,7 @@ function resetDefaults() {
       </nav>
 
       <!-- Right Content Panel -->
-      <div class="flex-1 min-w-0 bg-white dark:bg-[#171717] p-5 overflow-y-auto space-y-4 text-xs">
+      <div class="flex-1 min-w-0 bg-white dark:bg-slate-900 p-5 overflow-y-auto space-y-4 text-xs">
         <!-- TAB 1: GENERAL -->
         <div v-if="activeTab === 'general'" class="space-y-4">
           <!-- Theme Selection -->
@@ -258,10 +244,11 @@ function resetDefaults() {
                 <span>{{ pingStatus === 'checking' ? t('settings.pingChecking') : (pingStatus === 'online' ? t('settings.pingOnline') : (pingStatus === 'offline' ? t('settings.pingOffline') : t('settings.testPingBtn'))) }}</span>
               </button>
             </div>
-            <InputText
+            <input
               v-model="tempUrl"
+              type="text"
               placeholder="http://127.0.0.1:8000"
-              class="w-full !text-xs !py-2 !px-3 font-mono !rounded-lg"
+              class="w-full text-xs py-2 px-3 font-mono rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
             />
             <p class="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
               {{ t('settings.sectionGateway') }}
@@ -351,27 +338,28 @@ function resetDefaults() {
     <!-- Footer Controls -->
     <template #footer>
       <div class="flex items-center justify-between w-full">
-        <Button
-          :label="t('settings.resetDefaultsBtn')"
-          text
-          size="small"
-          class="!text-xs !text-neutral-500 hover:!text-slate-800 dark:hover:!text-white"
+        <button
+          type="button"
+          class="text-xs text-neutral-500 hover:text-slate-800 dark:hover:text-white cursor-pointer py-1.5 px-2 rounded-lg transition-colors"
           @click="resetDefaults"
-        />
+        >
+          {{ t('settings.resetDefaultsBtn') }}
+        </button>
         <div class="flex items-center gap-2">
-          <Button
-            :label="t('common.cancel')"
-            text
-            size="small"
-            class="!text-xs"
+          <button
+            type="button"
+            class="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer py-1.5 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             @click="emit('update:visible', false)"
-          />
-          <Button
-            :label="t('settings.saveBtn')"
-            size="small"
-            class="!text-xs !bg-[#10A37F] hover:!bg-[#0e8f6f] !text-white !font-semibold !rounded-lg !py-1.5 !px-4"
+          >
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl py-1.5 px-4 shadow-sm transition-all cursor-pointer active:scale-95"
             @click="saveSettings"
-          />
+          >
+            {{ t('settings.saveBtn') }}
+          </button>
         </div>
       </div>
     </template>

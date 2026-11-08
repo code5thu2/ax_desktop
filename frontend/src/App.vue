@@ -48,7 +48,7 @@ function handleSplashComplete() {
 <template>
   <div class="h-screen w-screen flex flex-col bg-white dark:bg-[#18181b] text-slate-900 dark:text-[#ececec] overflow-hidden font-sans transition-colors duration-200 relative">
     <Toast position="bottom-right" />
-    <ConfirmDialog />
+    <ConfirmDialog class="p-dialog-custom" />
 
     <!-- Unified Global Splash Screen (Hiển thị ít nhất 1.5s) -->
     <SplashScreen
@@ -62,7 +62,6 @@ function handleSplashComplete() {
       v-if="!showSplash && authStore.isInitialized && !authStore.isLoggedIn"
       :user="authStore.currentUser"
       @login-success="authStore.setAuthenticated"
-      @guest-mode="authStore.setGuestMode"
       @logged-out="authStore.logout"
     />
 

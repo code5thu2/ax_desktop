@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from '@/i18n'
-import InputText from 'primevue/inputtext'
-import Button from 'primevue/button'
 import type { AuthScreen } from './types'
 
 const emit = defineEmits<{
@@ -49,94 +47,87 @@ async function handleSendResetLink() {
 
 <template>
   <div class="w-full flex items-center justify-center py-6 px-4">
-    <!-- Zero-Jank Container (Static gradient, no infinite loops) -->
+    <!-- Ambient radial glow background -->
     <div class="relative w-full max-w-md mx-auto">
-      <div class="absolute -top-12 -left-12 w-48 h-48 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
-      <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-teal-500/10 dark:bg-teal-500/15 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -top-12 -left-12 w-56 h-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-12 -right-12 w-56 h-56 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div class="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-xl shadow-slate-300/30 dark:shadow-black/40">
+      <!-- Obsidian Card -->
+      <div class="relative bg-slate-900/95 backdrop-blur-xl border border-slate-800/90 rounded-3xl p-8 sm:p-10 shadow-2xl shadow-black/60">
         <!-- Not Submitted State -->
         <div v-if="!isSubmitted">
           <div class="text-center mb-6">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white shadow-lg shadow-emerald-500/25 mb-3.5">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 text-white shadow-xl shadow-emerald-500/25 ring-4 ring-emerald-500/10 mb-3.5">
               <i class="pi pi-key text-2xl font-bold"></i>
             </div>
-            <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-1">
+            <h1 class="text-2xl font-black text-white tracking-tight mb-1">
               {{ t('forgot.title') }}
             </h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400">
+            <p class="text-xs text-slate-400 font-medium">
               {{ t('forgot.subtitle') }}
             </p>
           </div>
 
-          <!-- Form Error Alert -->
-          <div
-            v-if="formError"
-            class="mb-4 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2"
-          >
-            <i class="pi pi-exclamation-circle text-rose-500 text-sm flex-shrink-0"></i>
-            <span>{{ formError }}</span>
-          </div>
-
           <form @submit.prevent="handleSendResetLink" class="space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              <label class="block text-xs font-semibold text-slate-300 mb-1.5">
                 {{ t('forgot.emailLabel') }}
               </label>
               <div class="relative">
-                <i class="pi pi-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10"></i>
-                <InputText
+                <i class="pi pi-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10 pointer-events-none"></i>
+                <input
                   v-model="email"
                   type="email"
-                  :invalid="!!emailError"
                   :placeholder="t('forgot.emailPlaceholder')"
-                  class="w-full !pl-9 !py-2.5 !text-sm !rounded-xl transition-all"
+                  class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl bg-slate-950/90 border border-slate-700/80 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 transition-all shadow-inner"
+                  :class="{ '!border-rose-500 !ring-rose-500/20': !!emailError }"
                   @input="clearError"
                 />
               </div>
-              <p v-if="emailError" class="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-rose-500 dark:text-rose-400">
+              <p v-if="emailError" class="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-rose-400">
                 <i class="pi pi-times-circle text-[10px]"></i>
                 <span>{{ emailError }}</span>
               </p>
             </div>
 
-            <Button
+            <button
               type="submit"
-              :label="t('forgot.submitBtn')"
-              icon="pi pi-send"
-              iconPos="right"
-              :loading="isLoading"
-              class="w-full !py-3 !rounded-xl !text-sm !font-bold !bg-emerald-500 hover:!bg-emerald-600 !border-0 shadow-lg shadow-emerald-500/25 transition-transform active:scale-[0.99] cursor-pointer"
-            />
+              :disabled="isLoading"
+              class="w-full py-3.5 px-4 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-white shadow-lg shadow-emerald-500/30 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <i v-if="isLoading" class="pi pi-spinner animate-spin text-sm"></i>
+              <span>{{ t('forgot.submitBtn') }}</span>
+              <i v-if="!isLoading" class="pi pi-send text-xs"></i>
+            </button>
           </form>
         </div>
 
         <!-- Submitted State (Inline Confirmation Card) -->
         <div v-else class="text-center py-4">
-          <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">
+          <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-3xl mx-auto mb-4 shadow-sm">
             <i class="pi pi-check-circle"></i>
           </div>
-          <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">
+          <h2 class="text-xl font-bold text-white mb-2">
             {{ t('forgot.successTitle') }}
           </h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+          <p class="text-xs text-slate-400 mb-6 leading-relaxed">
             {{ t('forgot.successSubtitle', { email }) }}
           </p>
 
-          <Button
+          <button
             type="button"
-            :label="t('forgot.tryAnotherEmail')"
-            variant="outlined"
-            class="w-full !py-2.5 !rounded-xl !text-xs !font-semibold mb-3 cursor-pointer"
+            class="w-full py-2.5 px-4 rounded-xl border border-slate-700/80 hover:border-slate-600 bg-slate-950/40 hover:bg-slate-800/60 text-xs font-semibold text-slate-300 hover:text-white transition-all flex items-center justify-center gap-2 mb-3 cursor-pointer"
             @click="isSubmitted = false"
-          />
+          >
+            <span>{{ t('forgot.tryAnotherEmail') }}</span>
+          </button>
         </div>
 
         <!-- Back to login footer -->
-        <div class="text-center mt-6 pt-4 border-t border-slate-200/80 dark:border-slate-800/80">
+        <div class="text-center mt-6 pt-4 border-t border-slate-800/80">
           <button
             type="button"
-            class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+            class="text-xs font-bold text-emerald-400 hover:text-emerald-300 hover:underline flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
             @click="emit('navigate', 'login')"
           >
             <i class="pi pi-arrow-left text-[10px]"></i>
