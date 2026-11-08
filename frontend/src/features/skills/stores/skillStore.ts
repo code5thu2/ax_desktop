@@ -34,6 +34,7 @@ export const useSkillStore = defineStore('skills', () => {
   const isLoading = ref(false)
   const isCheckingUpdate = ref(false)
   const availableUpdate = ref<any>(null)
+  const appVersion = ref('1.0.2')
   const autostartEnabled = ref(false)
   const isUpdating = ref(false)
   const updateProgress = ref(0)
@@ -177,11 +178,23 @@ export const useSkillStore = defineStore('skills', () => {
   }
 
   // Actions
+  async function loadAppVersion() {
+    try {
+      const info = await nativeBridge.getAppInfo()
+      if (info?.version) {
+        appVersion.value = info.version
+      }
+    } catch {
+      // fallback
+    }
+  }
+
   async function loadPortalStatus() {
     try {
       const [status, isAuto] = await Promise.all([
         nativeBridge.getStatus(),
-        nativeBridge.isAutostartEnabled().catch(() => false)
+        nativeBridge.isAutostartEnabled().catch(() => false),
+        loadAppVersion()
       ])
       const rawInstalled = status.installed || []
       const seen = new Set<string>()
@@ -395,6 +408,9 @@ export const useSkillStore = defineStore('skills', () => {
     isCheckingUpdate.value = true
     try {
       const rel = await nativeBridge.checkForUpdate()
+      if (rel?.currentVersion) {
+        appVersion.value = rel.currentVersion
+      }
       if (rel.status === 'success' && rel.updateAvailable) {
         availableUpdate.value = rel
         showUpdateDialog.value = true
@@ -479,6 +495,8 @@ export const useSkillStore = defineStore('skills', () => {
     isLoading,
     isCheckingUpdate,
     availableUpdate,
+    appVersion,
+    loadAppVersion,
     autostartEnabled,
     isUpdating,
     updateProgress,

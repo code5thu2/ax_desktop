@@ -41,6 +41,16 @@ const tempDarkMode = ref(settingsStore.darkMode)
 const isAutostartEnabled = ref(false)
 const pingStatus = ref<'idle' | 'checking' | 'online' | 'offline'>('idle')
 const jsonCopied = ref(false)
+const appVersion = ref('1.0.2')
+
+async function loadAppVersion() {
+  try {
+    const info = await nativeBridge.getAppInfo()
+    if (info?.version) {
+      appVersion.value = info.version
+    }
+  } catch {}
+}
 
 async function checkAutostartStatus() {
   try {
@@ -113,6 +123,7 @@ watch(
 
 onMounted(() => {
   checkAutostartStatus()
+  loadAppVersion()
 })
 
 function saveSettings() {
@@ -323,7 +334,7 @@ function resetDefaults() {
               </p>
               <div class="flex items-center gap-2 mt-2">
                 <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-                  v1.0.0 Release
+                  v{{ appVersion }} Release
                 </span>
                 <span class="text-[10px] px-2 py-0.5 rounded bg-neutral-200 dark:bg-[#333333] text-neutral-600 dark:text-neutral-300 font-mono">
                   Tauri v2 Native Rust

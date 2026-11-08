@@ -53,7 +53,7 @@ async function handleCheckUpdates() {
     toast.add({
       severity: 'info',
       summary: t('portal.checkUpdatesMenu'),
-      detail: t('portal.latestVersionMsg', { version: rel?.currentVersion ? `v${rel.currentVersion}` : 'v1.0.0' }),
+      detail: t('portal.latestVersionMsg', { version: rel?.currentVersion ? `v${rel.currentVersion}` : `v${store.appVersion}` }),
       life: 2500,
     })
   }
@@ -282,7 +282,7 @@ onMounted(async () => {
                 <i class="pi pi-sync text-cyan-400 text-xs"></i>
                 <span>{{ t('portal.checkUpdatesMenu') }}</span>
               </div>
-              <span class="text-[10px] font-mono text-slate-400">v1.0.0</span>
+              <span class="text-[10px] font-mono text-slate-400">v{{ store.appVersion }}</span>
             </button>
 
             <div class="h-px bg-slate-800 my-1"></div>
