@@ -427,9 +427,13 @@ pub async fn download_and_install_update(
     use tauri::Emitter;
 
     let mut url_to_download = payload.and_then(|p| p.download_url);
-    let mut target_filename = "ax_desktop_update.exe".to_string();
+    let mut target_filename = "ax_desktop_setup.exe".to_string();
 
-    if url_to_download.is_none() {
+    if let Some(ref url) = url_to_download {
+        if let Some(name) = url.split('/').last().filter(|s| !s.is_empty()) {
+            target_filename = name.split('?').next().unwrap_or(name).to_string();
+        }
+    } else {
         let releases = skill_core::updater::fetch_github_releases(skill_core::updater::GITHUB_REPO).await?;
         let current_version = env!("CARGO_PKG_VERSION");
         let rel = skill_core::updater::check_github_release_available(&releases, current_version)

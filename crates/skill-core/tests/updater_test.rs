@@ -92,7 +92,7 @@ fn test_updater_constants_and_script() {
     );
     assert!(script.contains("C:\\temp\\update-setup.exe"));
     assert!(script.contains("C:\\apps\\desktop.exe"));
-    assert!(script.contains("/S /SILENT"));
+    assert!(script.contains("/S /UPDATE /R"));
 }
 
 #[test]

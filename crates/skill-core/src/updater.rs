@@ -179,6 +179,10 @@ where
 pub fn generate_restart_batch_script(installer_path: &Path, current_exe: &Path) -> String {
     let installer_str = installer_path.to_string_lossy();
     let current_exe_str = current_exe.to_string_lossy();
+    let current_exe_name = current_exe
+        .file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_else(|| "AX Desktop.exe".to_string());
 
     format!(
         r#"@echo off
@@ -187,28 +191,27 @@ timeout /t 2 /nobreak >nul
 
 set "INSTALLER={installer}"
 set "TARGET_EXE={target}"
-set "IS_SETUP=0"
 
-echo %INSTALLER% | findstr /I "setup installer nsis .msi" >nul
-if not errorlevel 1 (
-    set "IS_SETUP=1"
-)
+REM Wait for parent process to exit
+timeout /t 1 /nobreak >nul
 
-if "%IS_SETUP%"=="1" (
-    start /wait "" "%INSTALLER%" /S /SILENT
-    timeout /t 1 /nobreak >nul
+REM Run Tauri NSIS installer completely silently with /S /UPDATE /R
+start /wait "" "%INSTALLER%" /S /UPDATE /R
+
+REM Check if target app was restarted by installer, if not start it
+timeout /t 2 /nobreak >nul
+tasklist /FI "IMAGENAME eq {target_name}" 2>nul | find /I "{target_name}" >nul
+if errorlevel 1 (
     if exist "%TARGET_EXE%" (
         start "" "%TARGET_EXE%"
     )
-) else (
-    copy /y "%INSTALLER%" "%TARGET_EXE%" >nul
-    start "" "%TARGET_EXE%"
 )
 
 (goto) 2>nul & del "%~f0"
 "#,
         installer = installer_str,
-        target = current_exe_str
+        target = current_exe_str,
+        target_name = current_exe_name
     )
 }
 
