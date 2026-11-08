@@ -24,10 +24,6 @@ function handleOpenInstall(skill: SkillItem, e: Event) {
   store.showScopeModal = true
 }
 
-function handleToggleInstalled(skillName: string, enabled: boolean, projectPath?: string) {
-  store.toggleSkill(skillName, enabled, projectPath)
-}
-
 function getProjectFolder(path?: string | null): string {
   if (!path) return t('portal.project')
   const clean = path.replace(/\\/g, '/').split('/').filter(Boolean)
@@ -246,22 +242,8 @@ function getProjectFolder(path?: string | null): string {
             </div>
           </div>
 
-          <!-- Quick Toggle Switch -->
-          <div class="flex items-center gap-3 flex-shrink-0" @click.stop>
-            <button
-              type="button"
-              role="switch"
-              :aria-checked="installed.enabled"
-              :title="installed.enabled ? t('portal.activeStatus') : t('portal.disabledStatus')"
-              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
-              :class="installed.enabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'"
-              @click="handleToggleInstalled(installed.name, !installed.enabled, installed.projectPath || undefined)"
-            >
-              <span
-                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
-                :class="installed.enabled ? 'translate-x-4' : 'translate-x-0'"
-              />
-            </button>
+          <div class="flex items-center gap-1.5 flex-shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 transition-colors">
+            <i class="pi pi-chevron-right text-xs"></i>
           </div>
         </div>
 

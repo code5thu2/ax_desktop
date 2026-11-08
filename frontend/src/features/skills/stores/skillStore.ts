@@ -319,18 +319,29 @@ export const useSkillStore = defineStore('skills', () => {
     try {
       const ok = await nativeBridge.uninstallSkill(name, projectPath)
       if (ok) {
-        installedSkills.value = installedSkills.value.filter((s) => s.name !== name)
-        const mSkill = skills.value.find((s) => s.name === name)
-        if (mSkill) {
-          mSkill.installed = false
-          mSkill.enabled = false
-          mSkill.installedVersion = undefined
+        const normProj = projectPath ? projectPath.replace(/\\/g, '/').toLowerCase() : null
+        installedSkills.value = installedSkills.value.filter((s) => {
+          if (s.name !== name) return true
+          if (normProj) {
+            return !s.projectPath || s.projectPath.replace(/\\/g, '/').toLowerCase() !== normProj
+          }
+          return s.scope !== 'global' && Boolean(s.projectPath)
+        })
+        const hasRemaining = installedSkills.value.some((s) => s.name === name)
+        if (!hasRemaining) {
+          const mSkill = skills.value.find((s) => s.name === name)
+          if (mSkill) {
+            mSkill.installed = false
+            mSkill.enabled = false
+            mSkill.installedVersion = undefined
+          }
+          if (skillDetail.value && skillDetail.value.name === name) {
+            skillDetail.value.installed = false
+            skillDetail.value.enabled = false
+            skillDetail.value.installedVersion = undefined
+          }
         }
-        if (skillDetail.value && skillDetail.value.name === name) {
-          skillDetail.value.installed = false
-          skillDetail.value.enabled = false
-          skillDetail.value.installedVersion = undefined
-        }
+        await loadPortalStatus()
       }
       return ok
     } finally {
@@ -342,7 +353,14 @@ export const useSkillStore = defineStore('skills', () => {
     try {
       const ok = await nativeBridge.toggleSkill(name, enabled, projectPath)
       if (ok) {
-        const item = installedSkills.value.find((s) => s.name === name)
+        const normProj = projectPath ? projectPath.replace(/\\/g, '/').toLowerCase() : null
+        const item = installedSkills.value.find((s) => {
+          if (s.name !== name) return false
+          if (normProj) {
+            return s.projectPath && s.projectPath.replace(/\\/g, '/').toLowerCase() === normProj
+          }
+          return s.scope === 'global' || !s.projectPath
+        })
         if (item) {
           item.enabled = enabled
         }
@@ -350,6 +368,10 @@ export const useSkillStore = defineStore('skills', () => {
         if (mSkill) {
           mSkill.enabled = enabled
         }
+        if (skillDetail.value && skillDetail.value.name === name) {
+          skillDetail.value.enabled = enabled
+        }
+        await loadPortalStatus()
       }
       return ok
     } catch (e) {

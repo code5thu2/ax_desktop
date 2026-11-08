@@ -219,11 +219,11 @@ const providedTools = computed(() => {
             <button
               type="button"
               class="py-1.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
-              title="Đổi phạm vi hoặc cài thêm vào dự án khác"
+              :title="t('portal.changeScopeTitle')"
               @click="handleInstall"
             >
               <i class="pi pi-sliders-h text-xs"></i>
-              <span>Đổi phạm vi</span>
+              <span>{{ t('portal.changeScope') }}</span>
             </button>
 
             <!-- Uninstall Button -->
