@@ -55,4 +55,18 @@ describe('SkillStore', () => {
     expect(store.currentProject).toBe('D:/AI_Projects/MyProject')
     expect(store.recentProjects).toContain('D:/AI_Projects/MyProject')
   })
+
+  it('updates scope and selectedInstalledKey when changing scope from project to global', async () => {
+    const store = useSkillStore()
+    // Install in project scope
+    await store.installSkill('vietnam-business-law-skills', 1, 'project', 'D:/MyProject')
+    store.setActiveTab('installed')
+    expect(store.selectedSkill?.installScope).toBe('project')
+
+    // Change scope to global
+    await store.uninstallSkill('vietnam-business-law-skills', 'D:/MyProject')
+    await store.installSkill('vietnam-business-law-skills', 1, 'global')
+    expect(store.selectedInstalledKey).toBe('vietnam-business-law-skills-global-global')
+    expect(store.selectedSkill?.installScope).toBe('global')
+  })
 })

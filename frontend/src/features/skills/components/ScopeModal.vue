@@ -29,9 +29,22 @@ watch(
   () => store.showScopeModal,
   (visible) => {
     if (visible) {
-      scopeType.value = 'global'
-      selectedProject.value = ''
-      customProjectPath.value = ''
+      if (store.pendingChangeScopeFrom) {
+        if (store.pendingChangeScopeFrom.scope === 'project') {
+          scopeType.value = 'global'
+          selectedProject.value = ''
+          customProjectPath.value = ''
+        } else {
+          scopeType.value = 'project'
+          const defaultProj = store.currentProject || store.recentProjects[0] || ''
+          selectedProject.value = defaultProj
+          customProjectPath.value = defaultProj
+        }
+      } else {
+        scopeType.value = 'global'
+        selectedProject.value = ''
+        customProjectPath.value = ''
+      }
       isInstalling.value = false
     }
   }
@@ -67,7 +80,16 @@ async function handleConfirmInstall() {
       ? effectiveProjectPath.value
       : '.'
 
+    if (store.pendingChangeScopeFrom) {
+      const oldScope = store.pendingChangeScopeFrom.scope
+      const oldProjectPath = store.pendingChangeScopeFrom.projectPath
+      if (oldScope !== scopeType.value || (oldScope === 'project' && oldProjectPath !== targetDir)) {
+        await nativeBridge.uninstallSkill(skill.name, oldScope === 'project' ? oldProjectPath : undefined)
+      }
+    }
+
     await store.installSkill(skill.name, skill.installedVersion || 1, scopeType.value, targetDir)
+    store.pendingChangeScopeFrom = null
     store.showScopeModal = false
     store.pendingInstallSkill = null
   } catch (err: any) {
@@ -78,6 +100,7 @@ async function handleConfirmInstall() {
 }
 
 function handleClose() {
+  store.pendingChangeScopeFrom = null
   store.showScopeModal = false
   store.pendingInstallSkill = null
 }
@@ -87,7 +110,7 @@ function handleClose() {
   <Dialog
     v-model:visible="store.showScopeModal"
     modal
-    :header="t('scopeModal.title')"
+    :header="store.pendingChangeScopeFrom ? t('portal.changeScopeModalTitle') : t('scopeModal.title')"
     :style="{ width: '500px' }"
     :closable="!isInstalling"
     class="p-dialog-custom"
@@ -220,7 +243,7 @@ function handleClose() {
         >
           <i v-if="isInstalling" class="pi pi-spinner animate-spin text-xs"></i>
           <i v-else class="pi pi-check text-xs"></i>
-          <span>{{ isInstalling ? t('scopeModal.installingBtn') : t('scopeModal.confirmBtn') }}</span>
+          <span>{{ isInstalling ? t('scopeModal.installingBtn') : (store.pendingChangeScopeFrom ? t('portal.confirmChangeScope') : t('scopeModal.confirmBtn')) }}</span>
         </button>
       </div>
     </template>

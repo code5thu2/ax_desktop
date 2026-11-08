@@ -446,11 +446,20 @@ export const nativeBridge = {
       })
     }
     const numId = Number(payload.skill_id)
-    mockInstalled = mockInstalled.filter((i) => Number(i.id) !== numId)
-    const m = mockSkills.find((s) => Number(s.id) === numId)
-    if (m) {
-      m.installed = false
-      m.enabled = false
+    if (payload.scope === 'project' && payload.project_path) {
+      mockInstalled = mockInstalled.filter((i) => !(Number(i.id) === numId && i.scope === 'project' && i.projectPath === payload.project_path))
+    } else if (payload.scope === 'global') {
+      mockInstalled = mockInstalled.filter((i) => !(Number(i.id) === numId && i.scope === 'global'))
+    } else {
+      mockInstalled = mockInstalled.filter((i) => Number(i.id) !== numId)
+    }
+    const hasRemaining = mockInstalled.some((i) => Number(i.id) === numId)
+    if (!hasRemaining) {
+      const m = mockSkills.find((s) => Number(s.id) === numId)
+      if (m) {
+        m.installed = false
+        m.enabled = false
+      }
     }
     return { ok: true }
   },

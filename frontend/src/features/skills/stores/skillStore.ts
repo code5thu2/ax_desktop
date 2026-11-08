@@ -46,6 +46,7 @@ export const useSkillStore = defineStore('skills', () => {
   // Dialog Visibility
   const showScopeModal = ref(false)
   const pendingInstallSkill = ref<SkillItem | null>(null)
+  const pendingChangeScopeFrom = ref<{ scope: 'global' | 'project'; projectPath?: string } | null>(null)
   const showFolderPickerModal = ref(false)
   const showCloneSkillModal = ref(false)
   const showUpdateDialog = ref(false)
@@ -167,9 +168,22 @@ export const useSkillStore = defineStore('skills', () => {
   function setActiveTab(tab: SkillTab) {
     activeTab.value = tab
     if (tab === 'installed' && installedSkills.value.length > 0) {
-      selectInstalledSkill(installedSkills.value[0])
+      const currentValid = selectedInstalledKey.value &&
+        installedSkills.value.some((s) => `${s.name}-${s.scope}-${s.projectPath || 'global'}` === selectedInstalledKey.value)
+      if (!currentValid) {
+        const matching = installedSkills.value.find((s) => s.name === selectedSkillName.value)
+        if (matching) {
+          selectInstalledSkill(matching)
+        } else {
+          selectInstalledSkill(installedSkills.value[0])
+        }
+      }
     } else if (tab === 'marketplace' && skills.value.length > 0) {
-      selectSkill(skills.value[0])
+      const currentValid = selectedSkillName.value &&
+        skills.value.some((s) => s.name === selectedSkillName.value)
+      if (!currentValid) {
+        selectSkill(skills.value[0])
+      }
     }
   }
 
@@ -186,6 +200,44 @@ export const useSkillStore = defineStore('skills', () => {
       }
     } catch {
       // fallback
+    }
+  }
+
+  function syncSkillsWithInstalled() {
+    for (const mSkill of skills.value) {
+      const matched = installedSkills.value.filter((i) => i.name === mSkill.name)
+      if (matched.length > 0) {
+        const last = matched[matched.length - 1]
+        mSkill.installed = true
+        mSkill.enabled = matched.some((i) => i.enabled)
+        mSkill.installScope = last.scope
+        mSkill.installedVersion = last.version
+        mSkill.installedProjects = matched.map((i) => i.projectPath).filter(Boolean) as string[]
+      } else {
+        mSkill.installed = false
+        mSkill.enabled = false
+        mSkill.installScope = undefined
+        mSkill.installedVersion = undefined
+        mSkill.installedProjects = []
+      }
+    }
+
+    if (skillDetail.value) {
+      const matched = installedSkills.value.filter((i) => i.name === skillDetail.value?.name)
+      if (matched.length > 0) {
+        const last = matched[matched.length - 1]
+        skillDetail.value.installed = true
+        skillDetail.value.enabled = matched.some((i) => i.enabled)
+        skillDetail.value.installScope = last.scope
+        skillDetail.value.installedVersion = last.version
+        skillDetail.value.installedProjects = matched.map((i) => i.projectPath).filter(Boolean) as string[]
+      } else {
+        skillDetail.value.installed = false
+        skillDetail.value.enabled = false
+        skillDetail.value.installScope = undefined
+        skillDetail.value.installedVersion = undefined
+        skillDetail.value.installedProjects = []
+      }
     }
   }
 
@@ -212,6 +264,20 @@ export const useSkillStore = defineStore('skills', () => {
         currentProject.value = recentProjects.value[0]
       }
       autostartEnabled.value = isAuto
+
+      syncSkillsWithInstalled()
+
+      if (selectedInstalledKey.value && !deduped.some((s) => `${s.name}-${s.scope}-${s.projectPath || 'global'}` === selectedInstalledKey.value)) {
+        const matching = deduped.find((s) => s.name === selectedSkillName.value)
+        if (matching) {
+          selectedInstalledKey.value = `${matching.name}-${matching.scope}-${matching.projectPath || 'global'}`
+        } else if (deduped.length > 0) {
+          selectedInstalledKey.value = `${deduped[0].name}-${deduped[0].scope}-${deduped[0].projectPath || 'global'}`
+          selectedSkillName.value = deduped[0].name
+        } else {
+          selectedInstalledKey.value = null
+        }
+      }
     } catch (e) {
       console.warn('Failed to load portal status:', e)
     }
@@ -222,6 +288,7 @@ export const useSkillStore = defineStore('skills', () => {
     try {
       const res = await nativeBridge.fetchSkills({ skillName: query })
       skills.value = res.items
+      syncSkillsWithInstalled()
       if (res.items.length > 0 && !selectedSkillName.value) {
         selectedSkillName.value = res.items[0].name
         await fetchSkillDetail(res.items[0].id)
@@ -282,31 +349,14 @@ export const useSkillStore = defineStore('skills', () => {
       const target = scope === 'project' ? (targetDir || currentProject.value || '').trim() : '.'
       const installed = await nativeBridge.installSkill(name, version, target, scope)
 
-      // Update state
-      const existingIdx = installedSkills.value.findIndex(
-        (s) => s.name === name && s.scope === scope && (s.projectPath || '') === (installed.projectPath || '')
-      )
-      if (existingIdx >= 0) {
-        installedSkills.value[existingIdx] = installed
-      } else {
-        installedSkills.value.push(installed)
-      }
+      // Refresh portal status from backend
+      await loadPortalStatus()
 
-      // Mark in marketplace skills
-      const mSkill = skills.value.find((s) => s.name === name)
-      if (mSkill) {
-        mSkill.installed = true
-        mSkill.enabled = true
-        mSkill.installScope = scope
-        mSkill.installedVersion = version
-      }
+      selectedSkillName.value = name
+      const effectiveProj = scope === 'project' ? (installed.projectPath || target) : undefined
+      selectedInstalledKey.value = `${name}-${scope}-${effectiveProj || 'global'}`
 
-      if (skillDetail.value && skillDetail.value.name === name) {
-        skillDetail.value.installed = true
-        skillDetail.value.enabled = true
-        skillDetail.value.installScope = scope
-        skillDetail.value.installedVersion = version
-      }
+      syncSkillsWithInstalled()
 
       return installed
     } finally {
@@ -342,6 +392,7 @@ export const useSkillStore = defineStore('skills', () => {
           }
         }
         await loadPortalStatus()
+        syncSkillsWithInstalled()
       }
       return ok
     } finally {
@@ -534,6 +585,7 @@ export const useSkillStore = defineStore('skills', () => {
     updateError,
     showScopeModal,
     pendingInstallSkill,
+    pendingChangeScopeFrom,
     showFolderPickerModal,
     showCloneSkillModal,
     showUpdateDialog,

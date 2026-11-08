@@ -49,10 +49,35 @@ const skillStatusColorClass = computed(() => {
 
 const activeDetailTab = ref<'overview' | 'tools' | 'files' | 'versions'>('overview')
 
+const skillUpdatedDate = computed(() => {
+  const d = store.selectedSkill?.createdAt
+  if (!d) return 'Hôm nay'
+  try {
+    const parsed = new Date(d)
+    if (isNaN(parsed.getTime())) return String(d)
+    return parsed.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' })
+  } catch {
+    return 'Hôm nay'
+  }
+})
+
 function handleInstall() {
   if (store.selectedSkill) {
+    store.pendingChangeScopeFrom = null
     const latestVer = store.skillVersions?.[0]?.version || store.skillDetail?.version || 1
     store.pendingInstallSkill = { ...store.selectedSkill, installedVersion: latestVer }
+    store.showScopeModal = true
+  }
+}
+
+function handleChangeScope() {
+  if (store.selectedSkill) {
+    const latestVer = store.selectedSkill.installedVersion || store.skillVersions?.[0]?.version || store.skillDetail?.version || 1
+    store.pendingInstallSkill = { ...store.selectedSkill, installedVersion: latestVer }
+    store.pendingChangeScopeFrom = {
+      scope: (store.selectedSkill.installScope as 'global' | 'project') || (store.selectedSkill.scope?.toLowerCase() === 'project' ? 'project' : 'global'),
+      projectPath: store.selectedSkill.installedProjects?.[0]
+    }
     store.showScopeModal = true
   }
 }
@@ -66,6 +91,7 @@ function isCurrentInstalledVersion(verNumber: number): boolean {
 
 function handleInstallVersion(version: number) {
   if (store.selectedSkill) {
+    store.pendingChangeScopeFrom = null
     store.pendingInstallSkill = { ...store.selectedSkill, installedVersion: version }
     store.showScopeModal = true
   }
@@ -163,7 +189,7 @@ const providedTools = computed(() => {
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
               <span>{{ t('portal.authorLabel') }}: <strong class="text-slate-700 dark:text-slate-200 font-semibold">{{ store.selectedSkill.creatorName }}</strong></span>
               <span>&bull;</span>
-              <span>Cập nhật: <strong class="text-slate-700 dark:text-slate-200 font-semibold">Tháng 11/2026</strong></span>
+              <span>Cập nhật: <strong class="text-slate-700 dark:text-slate-200 font-semibold">{{ skillUpdatedDate }}</strong></span>
             </p>
 
             <div class="flex items-center gap-3 mt-2 text-xs text-slate-500">
@@ -173,10 +199,6 @@ const providedTools = computed(() => {
               </span>
               <span>&bull;</span>
               <span>{{ String(store.selectedSkill.viewCount || 100) }} {{ t('portal.views') }}</span>
-              <span>&bull;</span>
-              <span class="text-emerald-500 font-semibold flex items-center gap-1">
-                <i class="pi pi-shield text-[10px]"></i> 100% Offline-Safe
-              </span>
             </div>
           </div>
         </div>
@@ -220,7 +242,7 @@ const providedTools = computed(() => {
               type="button"
               class="py-1.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
               :title="t('portal.changeScopeTitle')"
-              @click="handleInstall"
+              @click="handleChangeScope"
             >
               <i class="pi pi-sliders-h text-xs"></i>
               <span>{{ t('portal.changeScope') }}</span>
@@ -328,10 +350,16 @@ const providedTools = computed(() => {
             <h3 class="text-sm font-bold text-slate-900 dark:text-white mt-4 mb-2">
               {{ t('portal.specsTitle') }}
             </h3>
-            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-3 text-[11px]" :class="store.selectedSkill.installed ? 'sm:grid-cols-5' : 'sm:grid-cols-4'">
               <div>
                 <span class="text-slate-400 block mb-0.5">{{ t('portal.extensionType') }}</span>
                 <span class="font-bold text-slate-800 dark:text-white">AIPRO Skill</span>
+              </div>
+              <div v-if="store.selectedSkill.installed">
+                <span class="text-slate-400 block mb-0.5">{{ t('portal.executionScope') }}</span>
+                <span class="font-bold text-slate-800 dark:text-white">
+                  {{ store.selectedSkill.installScope === 'project' ? t('portal.project') : t('portal.global') }}
+                </span>
               </div>
               <div>
                 <span class="text-slate-400 block mb-0.5">Giao thức thực thi</span>

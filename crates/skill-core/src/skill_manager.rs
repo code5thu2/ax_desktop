@@ -174,7 +174,11 @@ impl SkillManager {
             list.retain(|item| item.id != id);
         } else {
             let target_item = list.iter().find(|item| {
-                item.id == id || (item.scope == scope && item.project_path == norm_proj)
+                item.id == id && item.scope == scope && item.project_path == norm_proj
+            }).or_else(|| {
+                list.iter().find(|item| item.id == id && item.scope == scope)
+            }).or_else(|| {
+                list.iter().find(|item| item.id == id)
             }).cloned();
             let actual_id = target_item.as_ref().map(|i| i.id).unwrap_or(id);
 
