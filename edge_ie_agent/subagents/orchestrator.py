@@ -33,6 +33,14 @@ BẠN CÓ CÁC CÔNG CỤ VÀ SUBAGENT SAU:
 7. "finish": Báo cáo hoàn thành nhiệm vụ.
    Format: {"thought": "...", "action": "finish", "message": "Tóm tắt kết quả..."}
 
+QUY TẮC AN TOÀN (HUMAN-IN-THE-LOOP):
+- Nếu một hành động có tính chất NHẠY CẢM hoặc KHÔNG THỂ ĐẢO NGƯỢC (ví dụ: bấm nút "Nộp tờ khai", "Ký số", "Xóa dữ liệu", "Hủy bỏ", "Thanh toán", "Submit"):
+  BẮT BUỘC phải thêm:
+  "is_sensitive": true,
+  "sensitive_reason": "Giải thích ngắn gọn lý do tại sao bước này cần con người xác nhận trước khi bấm"
+- Với các hành động duyệt web bình thường (mở menu, xem trang, gõ ô tìm kiếm, tra cứu thông tin):
+  "is_sensitive": false
+
 CHIẾN LƯỢC ĐIỀU PHỐI (CLAUDE CODE SUBAGENT PATTERN):
 - Khi cần bấm vào một nút/menu mới: Hãy gọi "invoke_vision_subagent" trước để lấy tọa độ chính xác.
 - Khi Vision Subagent trả về tọa độ [x, y]: Bước tiếp theo bạn ra lệnh "click" hoặc "hover" vào tọa độ đó.
@@ -54,6 +62,8 @@ class OrchestratorDecision:
     amount: int = 3
     seconds: float = 2.0
     message: Optional[str] = None
+    is_sensitive: bool = False
+    sensitive_reason: Optional[str] = None
 
 class OrchestratorAgent:
     """Main Orchestrator powered by GLM (Fast Text Planner)."""
@@ -111,5 +121,7 @@ Dựa trên tình hình hiện tại, hãy đưa ra quyết định tiếp theo 
             direction=str(data.get("direction", "down")),
             amount=int(data.get("amount", 3)),
             seconds=float(data.get("seconds", 2.0)),
-            message=data.get("message")
+            message=data.get("message"),
+            is_sensitive=bool(data.get("is_sensitive", False)),
+            sensitive_reason=data.get("sensitive_reason")
         )

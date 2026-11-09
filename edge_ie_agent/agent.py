@@ -1,8 +1,8 @@
 """Multi-Agent ReAct Coordinator (Claude Code Subagent Pattern).
-Combines GLM (Main Orchestrator) and Qwen (Vision Subagent).
+Combines GLM (Main Orchestrator) and Qwen (Vision Subagent) with Smart Page-Load Wait and Human-in-the-Loop.
 """
 import time
-from typing import Optional, List
+from typing import Optional, List, Callable
 from PIL import Image
 
 from edge_ie_agent.config import Config, load_config
@@ -12,11 +12,21 @@ from edge_ie_agent.subagents.orchestrator import OrchestratorAgent, Orchestrator
 from edge_ie_agent.subagents.vision_subagent import VisionSubagent, VisionInspectionResult
 from edge_ie_agent import window_manager
 
+def default_human_confirm(decision: OrchestratorDecision) -> bool:
+    """Prompts the user on CLI for sensitive action confirmation."""
+    print("\n" + "=" * 65)
+    print("⚠️  [HUMAN-IN-THE-LOOP: XÁC NHẬN HÀNH ĐỘNG NHẠY CẢM]")
+    print(f"[*] Lý do: {decision.sensitive_reason or 'Hành động quan trọng cần kiểm duyệt'}")
+    print(f"[*] Thao tác: {decision.action.upper()} (Tọa độ: {decision.point}, Text: {decision.text})")
+    print("=" * 65)
+    try:
+        ans = input("👉 Bạn có xác nhận cho phép Agent thực hiện không? [y/N]: ").strip().lower()
+        return ans in ("y", "yes")
+    except Exception:
+        return False
+
 class VisualAgent:
-    """Claude Code Style Multi-Agent System:
-    - GLM 5.2: Main Orchestrator (Fast Text Planner)
-    - Qwen 33.8: Vision Subagent (Screen Perception & Grounding)
-    """
+    """Claude Code Style Multi-Agent System with Smart Page-Load & Human-in-the-Loop."""
 
     def __init__(
         self,
@@ -24,13 +34,15 @@ class VisualAgent:
         orchestrator: Optional[OrchestratorAgent] = None,
         vision_subagent: Optional[VisionSubagent] = None,
         controller: Optional[Controller] = None,
-        window_module=None
+        window_module=None,
+        confirm_callback: Optional[Callable[[OrchestratorDecision], bool]] = None
     ):
         self.config = config or load_config()
         self.orchestrator = orchestrator or OrchestratorAgent(self.config)
         self.vision_subagent = vision_subagent or VisionSubagent(self.config)
         self.controller = controller or Controller()
         self.wm = window_module or window_manager
+        self.confirm_callback = confirm_callback or default_human_confirm
 
     def run(self, task: str) -> str:
         """Runs the multi-agent task loop."""
@@ -91,11 +103,30 @@ class VisualAgent:
                 time.sleep(0.3)
                 continue
 
-            # 4. Action Execution via Controller
+            # 4. Human-in-the-loop Gate: Confirm sensitive actions
+            if decision.is_sensitive:
+                confirmed = self.confirm_callback(decision)
+                if not confirmed:
+                    refusal_msg = f"Người dùng đã TỪ CHỐI hành động nhạy cảm '{decision.action}'"
+                    print(f"\n🛑 [DỪNG BƯỚC NHẠY CẢM]: {refusal_msg}")
+                    conversation_log.append(f"Bước {step}: {refusal_msg}. Hãy tìm cách khác hoặc hoàn thành.")
+                    continue
+
+            # 5. Action Execution via Controller
             bounds = self.wm.get_window_bounds(hwnd)
             action_desc = self._execute_action(decision, bounds)
             conversation_log.append(f"Bước {step}: {action_desc}")
-            time.sleep(0.5)
+
+            # 6. Smart Page-Load Wait: Wait for page visual stabilization if action likely causes reload
+            if decision.action in ("click", "double_click") or (decision.action == "type" and decision.press_enter):
+                print("  ⏳ [Smart Wait] Đang kiểm tra trạng thái tải trang...")
+                is_stable = self.wm.wait_until_stable(hwnd, timeout=5.0, check_interval=0.4)
+                if is_stable:
+                    print("  ✅ [Smart Wait] Trang web đã tải xong và ổn định.")
+                else:
+                    print("  ⚠️ [Smart Wait] Hết thời gian chờ nhưng tiếp tục bước tiếp theo.")
+            else:
+                time.sleep(0.5)
 
         raise TimeoutError(f"Đã đạt tới giới hạn {self.config.max_steps} bước mà chưa xong.")
 
