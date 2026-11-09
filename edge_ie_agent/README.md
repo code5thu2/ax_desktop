@@ -7,6 +7,9 @@
 ## 1. Tính năng nổi bật
 
 - 👁️ **Thị giác máy tính (Visual Grounding):** Qwen nhìn thẳng vào ảnh chụp màn hình cửa sổ Edge, bất chấp mọi rào cản code cũ, frameset, hay layout table cổ.
+- ⚡ **Kiến trúc Subagent Claude Code:** GLM 5.2 (Nhạc trưởng lập kế hoạch) + Qwen 33.8 (Trinh sát thị giác soi tọa độ).
+- ⏳ **Chờ tải trang thông minh (Smart Page-Load Wait):** Tự động so sánh ảnh màn hình liên tiếp, đợi trang web tải xong và đứng yên mới thực thi bước tiếp theo, tránh click vội khi web cổ đang tải chậm.
+- 🛡️ **Human-in-the-Loop an toàn:** Tự động phát hiện các hành động nhạy cảm (Ký số, Nộp hồ sơ, Xóa dữ liệu, Thanh toán) và dừng lại xin phép người dùng xác nhận `[y/N]` trên terminal.
 - 🎯 **Chuẩn hóa tọa độ 0–1000:** Định vị bấm nút chính xác tuyệt đối trên mọi độ phân giải màn hình Windows (100%, 125%, 150% scaling).
 - 🧭 **Chuyên trị menu dày đặc & đa cấp (Hover):** Hỗ trợ action `hover` giúp di chuột vào menu cha để bung menu con (`onmouseover`) trước khi click.
 - 📜 **Cuộn theo vị trí (`scroll_at`):** Di chuyển chuột đến đúng cột menu bên trái để cuộn danh mục mà không làm trôi toàn bộ trang web.
