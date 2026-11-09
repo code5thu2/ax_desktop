@@ -70,3 +70,5 @@ graphify-out/
 *.docx
 *.zip
 *.py
+!edge_ie_agent/**
+edge_ie_agent/**/__pycache__/
