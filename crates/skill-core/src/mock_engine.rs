@@ -306,4 +306,18 @@ impl MockEngine {
     pub fn fetch_mcp_catalog(&self) -> Vec<PluginItem> {
         self.mcp_servers.clone()
     }
+
+    pub fn get_mock_app_update(&self, current_version: &str) -> serde_json::Value {
+        serde_json::json!({
+            "status": "success",
+            "updateAvailable": false,
+            "currentVersion": current_version,
+            "latestVersion": current_version,
+            "releaseName": format!("AX Desktop v{}", current_version),
+            "releaseNotes": "Bạn đang sử dụng phiên bản mới nhất từ hệ thống.",
+            "assetName": "ax_desktop_setup.exe",
+            "assetSize": 0,
+            "downloadUrl": ""
+        })
+    }
 }

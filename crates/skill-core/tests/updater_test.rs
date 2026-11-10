@@ -127,3 +127,35 @@ fn test_github_api_json_deserialization() {
     assert!(update.is_some());
     assert_eq!(update.unwrap().tag_name, "v1.0.1");
 }
+
+#[test]
+fn test_backend_server_url() {
+    use skill_core::updater::get_backend_server_url;
+    let url = get_backend_server_url();
+    assert!(url.starts_with("http://") || url.starts_with("https://"));
+}
+
+#[test]
+fn test_backend_update_response_parsing() {
+    use skill_core::updater::check_backend_update_response;
+    let backend_json = serde_json::json!({
+        "status": "success",
+        "latestVersion": "1.0.6",
+        "releaseName": "AX Desktop v1.0.6",
+        "releaseNotes": "Tối ưu hóa và sửa lỗi từ Backend Server",
+        "assetName": "ax_desktop_setup.exe",
+        "assetSize": 52428800,
+        "downloadUrl": "http://localhost:8080/api/v1/app/download"
+    });
+
+    let res_available = check_backend_update_response(&backend_json, "1.0.5");
+    assert_eq!(res_available["status"], "success");
+    assert_eq!(res_available["updateAvailable"], true);
+    assert_eq!(res_available["latestVersion"], "1.0.6");
+    assert_eq!(res_available["downloadUrl"], "http://localhost:8080/api/v1/app/download");
+
+    let res_uptodate = check_backend_update_response(&backend_json, "1.0.6");
+    assert_eq!(res_uptodate["status"], "success");
+    assert_eq!(res_uptodate["updateAvailable"], false);
+}
+

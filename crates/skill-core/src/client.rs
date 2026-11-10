@@ -74,4 +74,8 @@ impl AxClient {
         }
         self.mock.fetch_mcp_catalog()
     }
+
+    pub fn get_mock_app_update(&self, current_version: &str) -> serde_json::Value {
+        self.mock.get_mock_app_update(current_version)
+    }
 }

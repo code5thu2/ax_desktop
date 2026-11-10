@@ -1,7 +1,7 @@
 use skill_core::client::AxClient;
 use skill_core::skill_manager::SkillManager;
 use skill_core::storage::{normalize_path, read_json_safe, write_json_atomic};
-use skill_core::updater::check_github_release_available;
+use skill_core::updater::{check_backend_update_response, fetch_backend_app_release, get_backend_server_url};
 use mcp_core::catalog::CatalogManager;
 use mcp_core::mock_runner::MockServerScanner;
 use serde::Deserialize;
@@ -389,37 +389,28 @@ pub async fn select_folder() -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
-pub async fn check_for_update() -> Result<serde_json::Value, String> {
+pub async fn check_for_update(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let current_version = env!("CARGO_PKG_VERSION");
-    let releases = match skill_core::updater::fetch_github_releases(skill_core::updater::GITHUB_REPO).await {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("[updater] Failed to fetch releases from GitHub: {}", e);
-            vec![]
-        }
-    };
 
-    let update = check_github_release_available(&releases, current_version);
-    match update {
-        Some(rel) => {
-            let asset = skill_core::updater::find_best_windows_asset(&rel);
+    // If mock mode is explicitly active, return mock update payload
+    if state.client.mock_mode {
+        return Ok(state.client.get_mock_app_update(current_version));
+    }
+
+    let backend_url = get_backend_server_url();
+    match fetch_backend_app_release(&backend_url).await {
+        Ok(backend_resp) => {
+            Ok(check_backend_update_response(&backend_resp, current_version))
+        }
+        Err(err) => {
+            eprintln!("[updater] Backend server check failed ({}), returning offline safe status: {}", backend_url, err);
             Ok(serde_json::json!({
                 "status": "success",
-                "updateAvailable": true,
-                "latestVersion": rel.tag_name,
+                "updateAvailable": false,
                 "currentVersion": current_version,
-                "releaseName": rel.name,
-                "releaseNotes": rel.body,
-                "assetName": asset.map(|a| a.name.clone()),
-                "assetSize": asset.map(|a| a.size),
-                "downloadUrl": asset.map(|a| a.browser_download_url.clone())
+                "serverOffline": true
             }))
-        },
-        None => Ok(serde_json::json!({
-            "status": "success",
-            "updateAvailable": false,
-            "currentVersion": current_version
-        })),
+        }
     }
 }
 
@@ -443,14 +434,17 @@ pub async fn download_and_install_update(
             target_filename = name.split('?').next().unwrap_or(name).to_string();
         }
     } else {
-        let releases = skill_core::updater::fetch_github_releases(skill_core::updater::GITHUB_REPO).await?;
-        let current_version = env!("CARGO_PKG_VERSION");
-        let rel = skill_core::updater::check_github_release_available(&releases, current_version)
-            .ok_or_else(|| "No update available to download".to_string())?;
-        let asset = skill_core::updater::find_best_windows_asset(&rel)
-            .ok_or_else(|| "No compatible Windows asset found in release".to_string())?;
-        url_to_download = Some(asset.browser_download_url.clone());
-        target_filename = asset.name.clone();
+        let backend_url = get_backend_server_url();
+        let backend_resp = fetch_backend_app_release(&backend_url).await?;
+        let check_res = check_backend_update_response(&backend_resp, env!("CARGO_PKG_VERSION"));
+        let dl_url = check_res.get("downloadUrl").and_then(|v| v.as_str()).unwrap_or("");
+        if dl_url.is_empty() {
+            return Err("No update download URL available from backend server".to_string());
+        }
+        url_to_download = Some(dl_url.to_string());
+        if let Some(name) = check_res.get("assetName").and_then(|v| v.as_str()) {
+            target_filename = name.to_string();
+        }
     }
 
     let url = url_to_download.ok_or_else(|| "Download URL is required".to_string())?;

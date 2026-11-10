@@ -71,6 +71,71 @@ pub fn check_github_release_available(releases: &[GithubRelease], current_versio
     latest.cloned()
 }
 
+/// Returns the backend server base URL. Defaults to AX_SERVER_URL environment variable or http://localhost:8080.
+pub fn get_backend_server_url() -> String {
+    std::env::var("AX_SERVER_URL")
+        .or_else(|_| std::env::var("MCP_CENTRAL_URL"))
+        .unwrap_or_else(|_| "http://localhost:8080".to_string())
+        .trim_end_matches('/')
+        .to_string()
+}
+
+/// Parses and checks the backend update response against current_version.
+pub fn check_backend_update_response(backend_json: &serde_json::Value, current_version: &str) -> serde_json::Value {
+    let latest_version = backend_json
+        .get("latestVersion")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+
+    let is_update_available = !latest_version.is_empty() && version_gt(latest_version, current_version);
+
+    if is_update_available {
+        serde_json::json!({
+            "status": "success",
+            "updateAvailable": true,
+            "latestVersion": latest_version,
+            "currentVersion": current_version,
+            "releaseName": backend_json.get("releaseName").and_then(|v| v.as_str()).unwrap_or("AX Desktop Update"),
+            "releaseNotes": backend_json.get("releaseNotes").and_then(|v| v.as_str()).unwrap_or(""),
+            "assetName": backend_json.get("assetName").and_then(|v| v.as_str()).unwrap_or("ax_desktop_setup.exe"),
+            "assetSize": backend_json.get("assetSize").and_then(|v| v.as_u64()),
+            "downloadUrl": backend_json.get("downloadUrl").and_then(|v| v.as_str()).unwrap_or("")
+        })
+    } else {
+        serde_json::json!({
+            "status": "success",
+            "updateAvailable": false,
+            "currentVersion": current_version,
+            "latestVersion": latest_version
+        })
+    }
+}
+
+/// Fetches the latest app release metadata from the backend server (`/api/v1/app/latest`).
+pub async fn fetch_backend_app_release(backend_url: &str) -> Result<serde_json::Value, String> {
+    let base = backend_url.trim_end_matches('/');
+    let url = format!("{}/api/v1/app/latest", base);
+
+    let client = reqwest::Client::builder()
+        .user_agent("AX-Desktop")
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let res = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to reach backend server at {}: {}", url, e))?;
+
+    if !res.status().is_success() {
+        return Err(format!("Backend server error: HTTP status {}", res.status()));
+    }
+
+    let json_val: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
+    Ok(json_val)
+}
+
 /// Finds the most suitable Windows binary/installer asset from a release.
 pub fn find_best_windows_asset(release: &GithubRelease) -> Option<&GithubAsset> {
     // 1. Setup / installer exe
