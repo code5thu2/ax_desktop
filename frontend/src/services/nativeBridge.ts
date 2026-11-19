@@ -151,7 +151,7 @@ let mockInstalled: InstalledPlugin[] = [
     name: 'AI Code Assistant',
     version: 1,
     scope: 'project',
-    projectPath: 'D:/baoao',
+    projectPath: 'D:/Projects/AccountingBot',
     installedAt: '2026-11-02T02:00:00Z',
     enabled: true,
   },
@@ -160,7 +160,7 @@ let mockInstalled: InstalledPlugin[] = [
     name: 'Smart Database Query & Introspection',
     version: 1,
     scope: 'project',
-    projectPath: 'D:/baoao',
+    projectPath: 'D:/Projects/AccountingBot',
     installedAt: '2026-11-02T02:00:00Z',
     enabled: true,
   },
@@ -169,7 +169,7 @@ let mockInstalled: InstalledPlugin[] = [
     name: 'Multi-Language Legal Document Analyzer',
     version: 1,
     scope: 'project',
-    projectPath: 'C:/Users/levie/Desktop/ison',
+    projectPath: 'D:/Projects/LegalDocScanner',
     installedAt: '2026-11-02T02:00:00Z',
     enabled: true,
   },
@@ -178,7 +178,7 @@ let mockInstalled: InstalledPlugin[] = [
     name: 'Smart Database Query & Introspection',
     version: 1,
     scope: 'project',
-    projectPath: 'C:/Users/levie/Desktop/ASAP',
+    projectPath: 'D:/Projects/ECommerceApp',
     installedAt: '2026-11-02T02:00:00Z',
     enabled: true,
   },
@@ -193,8 +193,8 @@ let mockInstalled: InstalledPlugin[] = [
 ]
 
 let mockRecentProjects: string[] = [
-  'D:/AI_Projects/FinanceAssistant',
-  'D:/AI_Projects/CodeReviewer',
+  'D:/Projects/FinanceAssistant',
+  'D:/Projects/CodeReviewer',
 ]
 
 export const nativeBridge = {

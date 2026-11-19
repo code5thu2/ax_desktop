@@ -37,22 +37,22 @@
 
   .dark,
   .app-dark {
-    --bg-page: #212121;
-    --bg-sidebar: #171717;
-    --surface-composer: #2F2F2F;
-    --surface-bubble-user: #2F2F2F;
-    --surface-dialog: #171717;
-    --border-subtle: #2E2E2E;
-    --border-medium: #383838;
-    --text-primary: #ECECEC;
-    --text-secondary: #B4B4B4;
+    --bg-page: #1E1F22;
+    --bg-sidebar: #2B2D30;
+    --surface-composer: #2B2D30;
+    --surface-bubble-user: #393B40;
+    --surface-dialog: #393B40;
+    --border-subtle: #393B40;
+    --border-medium: #43454A;
+    --text-primary: #DFE1E5;
+    --text-secondary: #868A91;
     --text-muted: #8E8EA0;
 
-    --p-primary-color: #10A37F;
-    --p-primary-contrast-color: #ECECEC;
-    --p-primary-hover-color: #1AC298;
-    --p-primary-active-color: #26E0B1;
-    --p-focus-ring-color: rgba(16, 163, 127, 0.35);
+    --p-primary-color: #3574F0;
+    --p-primary-contrast-color: #FFFFFF;
+    --p-primary-hover-color: #407BF3;
+    --p-primary-active-color: #2E62CC;
+    --p-focus-ring-color: rgba(53, 116, 240, 0.35);
   }
 
   body {

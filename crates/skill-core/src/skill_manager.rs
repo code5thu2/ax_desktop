@@ -121,6 +121,9 @@ impl SkillManager {
         let skill_core_name = read_skill_name_from_md(&target_dir);
         let _ = sync_disabled_skills(&config_path, &skill_core_name, false);
 
+        // Auto-provision isolated runtime if Skill contains Python code or requirements.txt
+        let _ = crate::runtime_installer::RuntimeInstaller::provision_runtime(&target_dir, None);
+
         if !target_dir.join("SKILL.md").exists() {
             Ok("NO_SKILL_MD".to_string())
         } else {

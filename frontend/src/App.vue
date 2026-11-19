@@ -46,7 +46,7 @@ function handleSplashComplete() {
 </script>
 
 <template>
-  <div class="h-screen w-screen flex flex-col bg-white dark:bg-[#18181b] text-slate-900 dark:text-[#ececec] overflow-hidden font-sans transition-colors duration-200 relative">
+  <div class="h-screen w-screen flex flex-col bg-white dark:bg-[#1E1F22] text-slate-900 dark:text-[#DFE1E5] overflow-hidden font-sans transition-colors duration-200 relative">
     <Toast position="bottom-right" />
     <ConfirmDialog class="p-dialog-custom" />
 

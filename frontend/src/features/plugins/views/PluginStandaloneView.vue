@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AppHeader from '@/components/common/AppHeader.vue'
-import IntelliJPluginsView from '../components/IntelliJPluginsView.vue'
+import McpStudioView from '../components/McpStudioView.vue'
 import SettingsDialog from '@/features/settings/components/SettingsDialog.vue'
 
 const props = withDefaults(
@@ -26,7 +26,7 @@ const showSettings = ref(false)
 
     <!-- Main Content Area taking full available space -->
     <main class="flex-1 min-h-0 flex flex-col overflow-hidden">
-      <IntelliJPluginsView :embedded="props.embedded" />
+      <McpStudioView :embedded="props.embedded" />
     </main>
 
     <!-- Preferences Dialog for standalone mode -->

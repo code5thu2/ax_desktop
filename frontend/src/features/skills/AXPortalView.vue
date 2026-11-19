@@ -17,8 +17,8 @@ import CloneSkillModal from './components/CloneSkillModal.vue'
 import UpdateDialog from './components/UpdateDialog.vue'
 import SettingsDialog from '@/features/settings/components/SettingsDialog.vue'
 
-// Import existing MCP standalone view for mode switching
-import PluginStandaloneView from '@/features/plugins/views/PluginStandaloneView.vue'
+// Import modular MCP studio view for mode switching
+import McpStudioView from '@/features/plugins/components/McpStudioView.vue'
 
 const store = useSkillStore()
 const authStore = useAuthStore()
@@ -363,40 +363,40 @@ onMounted(async () => {
     <div class="flex-1 flex flex-col min-h-0 overflow-hidden relative">
       <!-- Mode 1: MCP Protocol Studio Mode -->
       <div v-if="store.currentMode === 'mcp'" class="h-full w-full flex flex-col min-h-0 overflow-hidden">
-        <PluginStandaloneView :embedded="true" />
+        <McpStudioView :embedded="true" />
       </div>
 
       <!-- Mode 2: Skill Marketplace Mode -->
       <div v-else class="h-full flex flex-col min-h-0 overflow-hidden">
         <!-- Sub-navigation Tabs (Marketplace, Installed, Projects) -->
-        <div class="h-11 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/50 px-6 flex items-center justify-between flex-shrink-0">
+        <div class="h-11 border-b border-slate-200/80 dark:border-[#393B40] bg-white/80 dark:bg-[#1E1F22] px-6 flex items-center justify-between flex-shrink-0">
           <div class="flex items-center gap-6 h-full">
             <button
               type="button"
               class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer"
-              :class="store.activeTab === 'marketplace' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+              :class="store.activeTab === 'marketplace' ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
               @click="store.setActiveTab('marketplace')"
             >
               <i class="pi pi-compass text-xs"></i>
               <span>{{ t('portal.tabMarketplace') }}</span>
-              <Tag :value="String(store.skills.length)" severity="secondary" class="!text-[10px] !py-0 !px-1.5 !font-mono" />
+              <Tag :value="String(store.skills.length)" severity="secondary" class="!text-[10px] !py-0 !px-1.5 !font-mono dark:bg-[#393B40] dark:text-[#DFE1E5]" />
             </button>
 
             <button
               type="button"
               class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer"
-              :class="store.activeTab === 'installed' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+              :class="store.activeTab === 'installed' ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
               @click="store.setActiveTab('installed')"
             >
               <i class="pi pi-check-circle text-xs"></i>
               <span>{{ t('portal.tabInstalled') }}</span>
-              <Tag :value="String(store.installedSkills.length)" severity="success" class="!text-[10px] !py-0 !px-1.5 !font-mono" />
+              <Tag :value="String(store.installedSkills.length)" severity="success" class="!text-[10px] !py-0 !px-1.5 !font-mono dark:bg-[#5FAD65]/20 dark:text-[#5FAD65]" />
             </button>
 
             <button
               type="button"
               class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer"
-              :class="store.activeTab === 'projects' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+              :class="store.activeTab === 'projects' ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
               @click="store.setActiveTab('projects')"
             >
               <i class="pi pi-folder text-xs"></i>

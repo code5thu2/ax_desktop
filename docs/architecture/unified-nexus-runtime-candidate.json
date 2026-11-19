@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Unified Dependency Gateway & Zero-Config Runtime for MCP & Skills",
+    "output": "unified-nexus-runtime-workflow.html",
+    "viewBox": [1120, 800],
+    "column_fit": "spread",
+    "animation": "trace",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    { "id": "user", "type": "external", "label": "User / AIPRO", "sublabel": "Developer / AI Agent" },
+    { "id": "desktop", "type": "frontend", "label": "AX Desktop App", "sublabel": "Rust Tauri Core" },
+    { "id": "server", "type": "backend", "label": "Central Java Server", "sublabel": "Spring Boot :8080" },
+    { "id": "nexus", "type": "database", "label": "Nexus 3 Repository", "sublabel": "PyPI Proxy :8081" },
+    { "id": "uv", "type": "backend", "label": "Bundled uv.exe", "sublabel": "Portable Python Tool" },
+    { "id": "target", "type": "database", "label": "Isolated Target Venv", "sublabel": "~/.aipro or servers/<id>" }
+  ],
+  "segments": [
+    { "from": 150, "to": 280, "label": "1. Code Package Delivery" },
+    { "from": 285, "to": 420, "label": "2. Central Nexus Wheels Resolution" },
+    { "from": 425, "to": 560, "label": "3. Zero-Config Offline Provisioning" },
+    { "from": 565, "to": 670, "label": "4. Execution & Process Lifecycle" }
+  ],
+  "messages": [
+    { "id": "msg-install", "from": "user", "to": "desktop", "y": 160, "label": "1. Click Install (MCP or Skill)", "variant": "default" },
+    { "id": "msg-get-code", "from": "desktop", "to": "server", "y": 195, "label": "GET /api/v1/{type}/download/{id}", "variant": "emphasis" },
+    { "id": "msg-code-ret", "from": "server", "to": "desktop", "y": 230, "label": "Stream code {id}.zip (~20KB)", "variant": "return" },
+    { "id": "msg-unzip-code", "from": "desktop", "to": "target", "y": 265, "label": "Safe unzip & scan requirements.txt", "variant": "default" },
+    { "id": "msg-req-wheels", "from": "desktop", "to": "server", "y": 300, "label": "GET /api/v1/{type}/packages/{id}/wheels", "variant": "emphasis" },
+    { "id": "msg-nexus-pull", "from": "server", "to": "nexus", "y": 335, "label": "pip download win_amd64 .whl from Nexus", "variant": "security" },
+    { "id": "msg-nexus-ret", "from": "nexus", "to": "server", "y": 370, "label": "Stream .whl wheels (cached to storage)", "variant": "return" },
+    { "id": "msg-wheels-ret", "from": "server", "to": "desktop", "y": 405, "label": "Stream cached {id}-wheels.zip", "variant": "return" },
+    { "id": "msg-unzip-wheels", "from": "desktop", "to": "target", "y": 440, "label": "Unpack wheels to target/wheels/", "variant": "default" },
+    { "id": "msg-uv-venv", "from": "desktop", "to": "uv", "y": 475, "label": "uv.exe venv target/.venv", "variant": "default" },
+    { "id": "msg-uv-install", "from": "desktop", "to": "uv", "y": 510, "label": "uv pip install --no-index --find-links ./wheels", "variant": "emphasis" },
+    { "id": "msg-uv-done", "from": "uv", "to": "target", "y": 545, "label": "Offline virtualenv ready (0.3s)", "variant": "return" },
+    { "id": "msg-notify-ready", "from": "desktop", "to": "user", "y": 580, "label": "Installed & Active: Ready to run!", "variant": "return" },
+    { "id": "msg-exec-tool", "from": "user", "to": "target", "y": 615, "label": "AIPRO executes via .venv/Scripts/python.exe", "variant": "emphasis" },
+    { "id": "msg-exec-done", "from": "target", "to": "user", "y": 650, "label": "Safe execution, zero dependency collision", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "desktop", "from": 160, "to": 590, "type": "frontend" },
+    { "participant": "server", "from": 195, "to": 415, "type": "backend" },
+    { "participant": "nexus", "from": 335, "to": 380, "type": "database" },
+    { "participant": "uv", "from": 475, "to": 555, "type": "backend" },
+    { "participant": "target", "from": 260, "to": 275, "type": "database" },
+    { "participant": "target", "from": 435, "to": 555, "type": "database" },
+    { "participant": "target", "from": 610, "to": 660, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Zero-Config Architecture",
+      "items": [
+        "Client machine requires NO Python installed on Windows OS",
+        "No Administrator privileges or system PATH modifications needed",
+        "Zero internet access required at client runtime (100% air-gapped)"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Unified Dependency Gateway",
+      "items": [
+        "Central Java Server proxies Sonatype Nexus (:8081) for all client workstations",
+        "Unified storage/wheels-cache serves both MCP Servers and Skills",
+        "Clients never hold Nexus credentials, preventing token leaks"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Total Process & Venv Isolation",
+      "items": [
+        "Every MCP Server and Skill gets an independent .venv runtime",
+        "Completely eliminates Python dependency conflicts across tools",
+        "Win32 TerminateProcess cleans locked files cleanly during uninstall"
+      ]
+    }
+  ]
+}

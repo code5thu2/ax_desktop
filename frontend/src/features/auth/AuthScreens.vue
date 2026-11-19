@@ -7,6 +7,7 @@ import RegisterScreen from './RegisterScreen.vue'
 import OtpScreen from './OtpScreen.vue'
 import ForgotScreen from './ForgotScreen.vue'
 import LogoutScreen from './LogoutScreen.vue'
+import { Zap } from 'lucide-vue-next'
 
 const props = defineProps<{
   user?: any
@@ -54,15 +55,15 @@ function switchLang(lang: LocaleLang) {
 </script>
 
 <template>
-  <div class="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col justify-between transition-colors duration-300">
+  <div class="min-h-screen w-full bg-slate-50 dark:bg-[#1E1F22] text-slate-800 dark:text-[#DFE1E5] flex flex-col justify-between transition-colors duration-300">
     <!-- Top Bar with Brand & Language Switcher -->
     <header class="w-full max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-          <i class="pi pi-bolt text-lg font-bold"></i>
+          <Zap :size="18" :stroke-width="2.5" class="text-white fill-white" />
         </div>
         <div>
-          <span class="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">AX Desktop</span>
+          <span class="font-extrabold text-base tracking-tight text-slate-900 dark:text-[#DFE1E5]">AX Desktop</span>
           <span class="ml-2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             AIPRO Ecosystem
           </span>
@@ -70,11 +71,11 @@ function switchLang(lang: LocaleLang) {
       </div>
 
       <!-- Language selector -->
-      <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xs">
+      <div class="flex items-center gap-1.5 bg-white dark:bg-[#2B2D30] border border-slate-200 dark:border-[#393B40] rounded-xl p-1 shadow-xs">
         <button
           type="button"
           class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
-          :class="locale === 'vi' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="locale === 'vi' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:text-[#868A91] dark:hover:text-[#DFE1E5]'"
           @click="switchLang('vi')"
         >
           VI
@@ -82,7 +83,7 @@ function switchLang(lang: LocaleLang) {
         <button
           type="button"
           class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
-          :class="locale === 'en' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="locale === 'en' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:text-[#868A91] dark:hover:text-[#DFE1E5]'"
           @click="switchLang('en')"
         >
           EN
@@ -90,7 +91,7 @@ function switchLang(lang: LocaleLang) {
         <button
           type="button"
           class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
-          :class="locale === 'ko' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+          :class="locale === 'ko' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:text-[#868A91] dark:hover:text-[#DFE1E5]'"
           @click="switchLang('ko')"
         >
           KO
@@ -135,7 +136,7 @@ function switchLang(lang: LocaleLang) {
     </main>
 
     <!-- Footer -->
-    <footer class="w-full text-center py-4 text-xs text-slate-400 dark:text-slate-600">
+    <footer class="w-full text-center py-4 text-xs text-slate-400 dark:text-[#868A91]">
       AX Desktop &copy; 2026 AIPRO Studio &bull; Zero-Jank Native Experience
     </footer>
   </div>

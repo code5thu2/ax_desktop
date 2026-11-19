@@ -1,0 +1,109 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Comprehensive MCP & Skill End-to-End Enterprise Workflow",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "output": "project-backend-master-workflow.html"
+  },
+  "lanes": [
+    { "id": "lane_user", "label": "1. User & AIPRO Agent" },
+    { "id": "lane_desktop", "label": "2. AX Desktop Host (Rust Tauri v2 :8000)" },
+    { "id": "lane_backend", "label": "3. Central Java Server (Spring Boot :8080)" },
+    { "id": "lane_infra", "label": "4. Infra & Runtime Engine (Nexus + uv)" }
+  ],
+  "phases": [
+    { "id": "p_ingest", "label": "1. Ingestion & Storage", "fromCol": 0, "toCol": 0 },
+    { "id": "p_skill", "label": "2. Skill Scope & Sync", "fromCol": 1, "toCol": 1, "variant": "emphasis" },
+    { "id": "p_deps", "label": "3. Nexus Gateway", "fromCol": 2, "toCol": 2, "variant": "emphasis" },
+    { "id": "p_prov", "label": "4. Zero-Config Deploy", "fromCol": 3, "toCol": 3 },
+    { "id": "p_exec", "label": "5. MCP & Skill Execution", "fromCol": 4, "toCol": 4, "variant": "emphasis" },
+    { "id": "p_maint", "label": "6. Lifecycle & Update", "fromCol": 5, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "grp_skill_mgmt", "label": "Skill Scope & Config Sync", "lane": "lane_desktop", "fromCol": 1, "toCol": 1, "variant": "emphasis" },
+    { "id": "grp_gw", "label": "Nexus Dependency Gateway", "lane": "lane_backend", "fromCol": 2, "toCol": 2, "variant": "emphasis" },
+    { "id": "grp_exec", "label": "MCP Local Gateway Bridge", "lane": "lane_desktop", "fromCol": 4, "toCol": 4, "variant": "emphasis" },
+    { "id": "grp_clean", "label": "Safe Win32 Process Cleanup", "lane": "lane_infra", "fromCol": 5, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["req_wheels", "nexus_gw", "deploy_orch", "uv_runtime"],
+  "nodes": [
+    { "id": "mcp_trigger", "lane": "lane_user", "col": 0, "type": "external", "label": "Developer / Admin", "sublabel": "Upload ZIP / Git URL", "width": 138 },
+    { "id": "desktop_ui", "lane": "lane_desktop", "col": 0, "type": "frontend", "label": "Studio UI / Catalog", "sublabel": "Browse MCPs & Skills", "width": 138 },
+    { "id": "java_ingest", "lane": "lane_backend", "col": 0, "type": "backend", "label": "Ingestion Gateway", "sublabel": "ZipSlip Check & SHA256", "tag": "Security Gate", "width": 138 },
+    { "id": "storage_pkg", "lane": "lane_infra", "col": 0, "type": "database", "label": "Package Store", "sublabel": "storage/mcp-packages/", "width": 140 },
+
+    { "id": "user_skill_cfg", "lane": "lane_user", "col": 1, "type": "external", "label": "User / Developer", "sublabel": "Install / Toggle / Clone", "width": 138 },
+    { "id": "skill_install", "lane": "lane_desktop", "col": 1, "type": "frontend", "label": "Skill Manager", "sublabel": "Scope ~/.aipro & config.json", "tag": "Global vs Project", "width": 138 },
+    { "id": "java_catalog", "lane": "lane_backend", "col": 1, "type": "backend", "label": "Catalog & Releases", "sublabel": "Serve Packages & App Updates", "width": 138 },
+
+    { "id": "req_wheels", "lane": "lane_desktop", "col": 2, "type": "frontend", "label": "Dependency Client", "sublabel": "GET /packages/{id}/wheels", "tag": "Airgapped Client", "width": 138 },
+    { "id": "nexus_gw", "lane": "lane_backend", "col": 2, "type": "security", "label": "Nexus Gateway", "sublabel": "Resolve win_amd64 wheels", "tag": "Nexus Auth Proxy", "width": 138 },
+    { "id": "nexus_repo", "lane": "lane_infra", "col": 2, "type": "cloud", "label": "Nexus 3 Repository", "sublabel": "Internal PyPI (:8081)", "width": 138 },
+
+    { "id": "deploy_orch", "lane": "lane_desktop", "col": 3, "type": "frontend", "label": "Deploy Orchestrator", "sublabel": "Safe unpack code + wheels", "width": 138 },
+    { "id": "uv_runtime", "lane": "lane_infra", "col": 3, "type": "backend", "label": "Bundled uv.exe", "sublabel": "uv pip install --no-index", "tag": "0.3s Offline Install", "width": 138 },
+
+    { "id": "aipro_call", "lane": "lane_user", "col": 4, "type": "external", "label": "AIPRO Agent", "sublabel": "Calls Tool / Reads Skill", "tag": "AI Consumer", "width": 138 },
+    { "id": "local_gw", "lane": "lane_desktop", "col": 4, "type": "backend", "label": "Local Gateway (:8000)", "sublabel": "MCP JSON-RPC Bridge", "width": 138 },
+    { "id": "mcp_runner", "lane": "lane_infra", "col": 4, "type": "database", "label": "Isolated Subprocess", "sublabel": "stdio / sse JSON-RPC", "width": 138 },
+
+    { "id": "user_maint", "lane": "lane_user", "col": 5, "type": "external", "label": "User / Admin", "sublabel": "Trigger Update or Purge", "width": 138 },
+    { "id": "app_updater", "lane": "lane_desktop", "col": 5, "type": "frontend", "label": "App Auto-Updater", "sublabel": "Silent /S /UPDATE /R", "tag": "Zero Downtime", "width": 138 },
+    { "id": "server_purge", "lane": "lane_backend", "col": 5, "type": "backend", "label": "Server Purge API", "sublabel": "DELETE /packages/{id}", "width": 138 },
+    { "id": "win32_clean", "lane": "lane_infra", "col": 5, "type": "security", "label": "Win32 Process Killer", "sublabel": "Kill PID & delete .venv", "tag": "Anti-Lock (OS Err 5)", "width": 138 }
+  ],
+  "edges": [
+    { "id": "e_trigger_ui", "from": "mcp_trigger", "to": "desktop_ui", "label": "Upload ZIP / Git Repo", "variant": "emphasis" },
+    { "id": "e_ui_ingest", "from": "desktop_ui", "to": "java_ingest", "label": "POST /upload or /import-git", "variant": "emphasis" },
+    { "id": "e_ingest_store", "from": "java_ingest", "to": "storage_pkg", "label": "Store clean ZIP", "variant": "default" },
+
+    { "id": "e_user_scope", "from": "user_skill_cfg", "to": "skill_install", "label": "Select Scope / Toggle", "variant": "emphasis" },
+    { "id": "e_poll_catalog", "from": "skill_install", "to": "java_catalog", "label": "Sync Catalog & Updates", "variant": "default" },
+
+    { "id": "e_req_whl", "from": "req_wheels", "to": "nexus_gw", "label": "Fetch wheels bundle", "variant": "emphasis" },
+    { "id": "e_gw_nexus", "from": "nexus_gw", "to": "nexus_repo", "label": "Proxy win_amd64 .whl", "variant": "security" },
+    { "id": "e_ret_whl", "from": "nexus_gw", "to": "deploy_orch", "label": "Stream wheels ZIP", "variant": "emphasis" },
+
+    { "id": "e_deploy_uv", "from": "deploy_orch", "to": "uv_runtime", "label": "Spawn uv venv & install", "variant": "emphasis" },
+
+    { "id": "e_aipro_tool", "from": "aipro_call", "to": "local_gw", "label": "POST /mcp/tools/:name", "variant": "emphasis" },
+    { "id": "e_gw_subproc", "from": "local_gw", "to": "mcp_runner", "label": "JSON-RPC Stdio IPC", "variant": "default" },
+
+    { "id": "e_maint_update", "from": "user_maint", "to": "app_updater", "label": "Check & Apply Update", "variant": "default" },
+    { "id": "e_maint_purge", "from": "user_maint", "to": "server_purge", "label": "Admin Server Purge", "variant": "security" },
+    { "id": "e_maint_clean", "from": "user_maint", "to": "win32_clean", "label": "Client Uninstall", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Track A: MCP Protocol Studio",
+      "items": [
+        "Daemon runtime: Each MCP runs as an isolated subprocess with its own .venv",
+        "Local HTTP Gateway (:8000) exposes standardized REST & SSE tools for AIPRO",
+        "Win32 TerminateProcess cleanly drops file locks during uninstall (prevents OS Error 5)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Track B: Skill Context Marketplace",
+      "items": [
+        "Scope isolation: Global (~/.aipro/skills/{id}) vs Project (<project>/.aipro/skills/{id})",
+        "Configuration sync: Updates disabled_skills in config.json on every toggle",
+        "Prompt-first execution: Loads SKILL.md directly into AI Agent context window",
+        "Project cloning: Supports replicating skills between project directories with 1 click"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Enterprise Central Infrastructure",
+      "items": [
+        "Sonatype Nexus 3 (:8081) proxy caches all binary wheels; client has zero credentials",
+        "Desktop App auto-updater checks /api/v1/app/check-update and restarts silently",
+        "Central Storage enforces strict Anti-ZipSlip verification and SHA-256 integrity"
+      ]
+    }
+  ]
+}
