@@ -13,17 +13,18 @@ const emit = defineEmits<{
 }>()
 
 const store = useSkillStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const skillUpdatedDate = computed(() => {
   const d = store.selectedSkill?.createdAt
-  if (!d) return 'Hôm nay'
+  if (!d) return t('portal.today')
   try {
     const parsed = new Date(d)
     if (isNaN(parsed.getTime())) return String(d)
-    return parsed.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' })
+    const loc = locale.value === 'vi' ? 'vi-VN' : (locale.value === 'ko' ? 'ko-KR' : 'en-US')
+    return parsed.toLocaleDateString(loc, { month: '2-digit', year: 'numeric' })
   } catch {
-    return 'Hôm nay'
+    return t('portal.today')
   }
 })
 </script>
@@ -55,12 +56,12 @@ const skillUpdatedDate = computed(() => {
         <p class="text-xs text-slate-500 dark:text-[#868A91] mt-1 flex items-center gap-2 flex-wrap">
           <span>{{ t('portal.authorLabel') }}: <strong class="text-slate-700 dark:text-[#DFE1E5] font-semibold">{{ store.selectedSkill.creatorName }}</strong></span>
           <span>&bull;</span>
-          <span>Cập nhật: <strong class="text-slate-700 dark:text-[#DFE1E5] font-semibold">{{ skillUpdatedDate }}</strong></span>
+          <span>{{ t('portal.updatedDate') }}: <strong class="text-slate-700 dark:text-[#DFE1E5] font-semibold">{{ skillUpdatedDate }}</strong></span>
         </p>
 
         <div class="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-[#868A91]">
           <span class="flex items-center gap-1 text-[#E3A83F] font-bold">
-            <i class="pi pi-star-fill text-xs"></i>
+            <AxIcon name="star" size="xs" class="fill-[#E3A83F] text-[#E3A83F]" />
             {{ store.selectedSkill.avgRating || 5.0 }} ({{ String(store.selectedSkill.ratingCount || 1) }})
           </span>
           <span>&bull;</span>

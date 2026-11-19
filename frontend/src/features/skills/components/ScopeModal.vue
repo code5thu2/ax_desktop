@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import Dialog from 'primevue/dialog'
+import { useToast } from 'primevue/usetoast'
 import { useSkillStore } from '../stores/skillStore'
 import { nativeBridge } from '@/services/nativeBridge'
 import { useI18n } from '@/i18n'
+import { AxIcon } from '@/components/ui'
 
 const store = useSkillStore()
 const { t } = useI18n()
+const toast = useToast()
 
 const scopeType = ref<'global' | 'project'>('global')
 const selectedProject = ref<string>('')
@@ -92,8 +95,20 @@ async function handleConfirmInstall() {
     store.pendingChangeScopeFrom = null
     store.showScopeModal = false
     store.pendingInstallSkill = null
+    toast.add({
+      severity: 'success',
+      summary: t('common.success'),
+      detail: t('portal.installSuccessMsg', { name: skill.name }),
+      life: 3000,
+    })
   } catch (err: any) {
     console.error('Install failed:', err)
+    toast.add({
+      severity: 'error',
+      summary: t('common.error'),
+      detail: err?.message || 'Cài đặt thất bại',
+      life: 3000,
+    })
   } finally {
     isInstalling.value = false
   }
@@ -118,7 +133,7 @@ function handleClose() {
     <div class="space-y-5 py-2">
       <div v-if="store.pendingInstallSkill" class="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-sm font-bold flex-shrink-0">
-          <i class="pi pi-box text-lg"></i>
+          <AxIcon name="puzzle" size="md" />
         </div>
         <div class="min-w-0 flex-1">
           <h4 class="text-xs font-bold text-slate-900 dark:text-white truncate">
@@ -187,16 +202,17 @@ function handleClose() {
           {{ t('scopeModal.targetFolderLabel') }}
         </label>
 
-        <div v-if="projectOptions.length > 0" class="mb-2">
+        <div v-if="projectOptions.length > 0" class="mb-2 relative">
           <select
             v-model="selectedProject"
-            class="w-full text-xs py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+            class="w-full appearance-none text-xs py-2.5 pl-3.5 pr-9 rounded-xl bg-slate-50 dark:bg-[#1E1F22] border border-slate-300 dark:border-[#393B40] text-slate-800 dark:text-[#DFE1E5] focus:outline-none focus:ring-2 focus:ring-[#3574F0]/25 focus:border-[#3574F0] font-medium cursor-pointer shadow-xs transition-all"
           >
             <option value="" disabled>{{ t('scopeModal.recentProjectsPlaceholder') }}</option>
             <option v-for="opt in projectOptions" :key="opt.value" :value="opt.value">
               {{ opt.label }}
             </option>
           </select>
+          <AxIcon name="chevron-down" size="xs" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#868A91] pointer-events-none" />
         </div>
 
         <div class="flex gap-2">
@@ -204,22 +220,22 @@ function handleClose() {
             v-model="customProjectPath"
             type="text"
             :placeholder="t('scopeModal.customPathPlaceholder')"
-            class="flex-1 text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border text-slate-900 dark:text-white focus:outline-none font-mono"
-            :class="!effectiveProjectPath ? 'border-amber-400 dark:border-amber-600 focus:border-amber-500' : 'border-slate-200 dark:border-slate-700 focus:border-emerald-500'"
+            class="flex-1 text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-[#1E1F22] border text-slate-900 dark:text-[#DFE1E5] focus:outline-none font-mono"
+            :class="!effectiveProjectPath ? 'border-amber-400 dark:border-amber-600 focus:border-amber-500' : 'border-slate-300 dark:border-[#393B40] focus:border-emerald-500'"
           />
           <button
             type="button"
-            class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0"
+            class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-[#393B40] hover:border-slate-400 dark:hover:border-slate-500 bg-white dark:bg-[#1E1F22] text-slate-700 dark:text-[#DFE1E5] flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0"
             @click="handleBrowseFolder"
           >
-            <i class="pi pi-folder-open text-xs"></i>
+            <AxIcon name="folder-open" size="xs" />
             <span>{{ t('scopeModal.browseBtn') }}</span>
           </button>
         </div>
 
         <!-- Validation warning if project path is missing -->
         <p v-if="!effectiveProjectPath" class="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 font-medium pt-1">
-          <i class="pi pi-exclamation-triangle text-xs flex-shrink-0"></i>
+          <AxIcon name="alert" size="xs" class="text-amber-500 flex-shrink-0" />
           <span>{{ t('scopeModal.projectRequiredHint') }}</span>
         </p>
       </div>
@@ -241,8 +257,8 @@ function handleClose() {
           :disabled="isConfirmDisabled"
           @click="handleConfirmInstall"
         >
-          <i v-if="isInstalling" class="pi pi-spinner animate-spin text-xs"></i>
-          <i v-else class="pi pi-check text-xs"></i>
+          <AxIcon v-if="isInstalling" name="spinner" size="xs" class="animate-spin" />
+          <AxIcon v-else name="check" size="xs" />
           <span>{{ isInstalling ? t('scopeModal.installingBtn') : (store.pendingChangeScopeFrom ? t('portal.confirmChangeScope') : t('scopeModal.confirmBtn')) }}</span>
         </button>
       </div>

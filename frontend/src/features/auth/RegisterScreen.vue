@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useI18n } from '@/i18n'
 import type { AuthScreen } from './types'
 import { nativeBridge } from '@/services/nativeBridge'
@@ -15,6 +15,7 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
+  Check,
 } from 'lucide-vue-next'
 
 const emit = defineEmits<{
@@ -31,6 +32,45 @@ const password = ref('')
 const confirmPassword = ref('')
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
+
+const passwordCriteria = computed(() => {
+  const p = password.value
+  return {
+    hasMinLength: p.length >= 8,
+    hasMixedCase: /[a-z]/.test(p) && /[A-Z]/.test(p),
+    hasNumber: /\d/.test(p),
+    hasSpecial: /[^A-Za-z0-9]/.test(p),
+  }
+})
+
+const passwordStrength = computed(() => {
+  const p = password.value
+  if (!p) return { score: 0, label: '', color: '', barColor: '', percent: 0 }
+
+  const c = passwordCriteria.value
+  let score = 0
+  if (c.hasMinLength) score++
+  if (c.hasMixedCase) score++
+  if (c.hasNumber) score++
+  if (c.hasSpecial) score++
+
+  if (p.length < 6) {
+    return { score: 1, label: t('register.pwdWeak'), color: 'text-rose-500', barColor: 'bg-rose-500', percent: 25 }
+  }
+
+  switch (score) {
+    case 1:
+      return { score: 1, label: t('register.pwdWeak'), color: 'text-rose-500', barColor: 'bg-rose-500', percent: 25 }
+    case 2:
+      return { score: 2, label: t('register.pwdMedium'), color: 'text-amber-500', barColor: 'bg-amber-500', percent: 50 }
+    case 3:
+      return { score: 3, label: t('register.pwdMedium'), color: 'text-[#3574F0]', barColor: 'bg-[#3574F0]', percent: 75 }
+    case 4:
+      return { score: 4, label: t('register.pwdStrong'), color: 'text-emerald-500', barColor: 'bg-emerald-500', percent: 100 }
+    default:
+      return { score: 1, label: t('register.pwdWeak'), color: 'text-rose-500', barColor: 'bg-rose-500', percent: 25 }
+  }
+})
 
 const isLoading = ref(false)
 const formError = ref<string | null>(null)
@@ -239,6 +279,49 @@ async function handleRegister() {
                 <Eye v-else :size="15" />
               </button>
             </div>
+
+            <!-- Password Strength Bar & Indicators -->
+            <div v-if="password" class="mt-2 space-y-1.5">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-slate-500 dark:text-[#868A91]">{{ t('register.pwdPrompt') }}:</span>
+                <span class="font-bold font-mono" :class="passwordStrength.color">
+                  {{ passwordStrength.label }}
+                </span>
+              </div>
+              <div class="grid grid-cols-4 gap-1.5 h-1.5 w-full">
+                <div
+                  v-for="step in 4"
+                  :key="step"
+                  class="rounded-full transition-all duration-300"
+                  :class="step <= passwordStrength.score ? passwordStrength.barColor : 'bg-slate-200 dark:bg-[#393B40]'"
+                />
+              </div>
+
+              <!-- Criteria checklist (subtle) -->
+              <div class="grid grid-cols-2 gap-x-2 gap-y-1 pt-1 text-[10px] text-slate-500 dark:text-[#868A91]">
+                <div class="flex items-center gap-1.5" :class="{ 'text-emerald-600 dark:text-emerald-400 font-semibold': passwordCriteria.hasMinLength }">
+                  <Check v-if="passwordCriteria.hasMinLength" :size="10" />
+                  <span v-else class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>{{ t('register.pwdTip1') }}</span>
+                </div>
+                <div class="flex items-center gap-1.5" :class="{ 'text-emerald-600 dark:text-emerald-400 font-semibold': passwordCriteria.hasMixedCase }">
+                  <Check v-if="passwordCriteria.hasMixedCase" :size="10" />
+                  <span v-else class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>Chữ hoa & thường</span>
+                </div>
+                <div class="flex items-center gap-1.5" :class="{ 'text-emerald-600 dark:text-emerald-400 font-semibold': passwordCriteria.hasNumber }">
+                  <Check v-if="passwordCriteria.hasNumber" :size="10" />
+                  <span v-else class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>Chứa chữ số (0-9)</span>
+                </div>
+                <div class="flex items-center gap-1.5" :class="{ 'text-emerald-600 dark:text-emerald-400 font-semibold': passwordCriteria.hasSpecial }">
+                  <Check v-if="passwordCriteria.hasSpecial" :size="10" />
+                  <span v-else class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                  <span>Ký tự đặc biệt (!@#)</span>
+                </div>
+              </div>
+            </div>
+
             <p v-if="errors.password" class="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
               <XCircle :size="12" />
               <span>{{ errors.password }}</span>

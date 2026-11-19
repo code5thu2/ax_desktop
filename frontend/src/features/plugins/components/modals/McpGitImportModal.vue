@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import Dialog from 'primevue/dialog'
 import { usePluginStore } from '../../stores/pluginStore'
 import { useI18n } from '@/i18n'
-import { AxButton, AxInput } from '@/components/ui'
+import { AxButton, AxInput, AxIcon } from '@/components/ui'
 
 const emit = defineEmits<{
   (e: 'success', name: string, count: number): void
@@ -61,8 +61,8 @@ async function handleGitImport() {
         {{ t('mcpStudio.gitModalTitle') }}
       </p>
 
-      <div v-if="gitImportError" class="p-3 rounded-lg bg-[#FA5252]/10 border border-[#FA5252]/30 text-[#FA5252]">
-        <i class="pi pi-exclamation-triangle mr-1"></i>
+      <div v-if="gitImportError" class="p-3 rounded-lg bg-[#FA5252]/10 border border-[#FA5252]/30 text-[#FA5252] flex items-center gap-1.5">
+        <AxIcon name="alert" size="xs" />
         <span>{{ gitImportError }}</span>
       </div>
 
@@ -79,14 +79,14 @@ async function handleGitImport() {
 
       <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">Nhánh (Branch) / Tag</label>
+          <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">{{ t('mcpStudio.gitBranchLabel') }}</label>
           <AxInput
             v-model="gitBranch"
             placeholder="main"
           />
         </div>
         <div>
-          <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">Tên Hiển Thị</label>
+          <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">{{ t('mcpStudio.displayNameLabel') }}</label>
           <AxInput
             v-model="gitName"
             placeholder="VD: Database Tools"
@@ -95,7 +95,7 @@ async function handleGitImport() {
       </div>
 
       <div>
-        <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">Token Xác Thực (Private Repo)</label>
+        <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">{{ t('mcpStudio.authTokenLabel') }}</label>
         <AxInput
           v-model="gitToken"
           type="password"
@@ -104,10 +104,10 @@ async function handleGitImport() {
       </div>
 
       <div>
-        <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">Mô Tả Ngắn</label>
+        <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">{{ t('mcpStudio.shortDescLabel') }}</label>
         <AxInput
           v-model="gitDesc"
-          placeholder="Mô tả công cụ..."
+          :placeholder="t('mcpStudio.descPlaceholder')"
         />
       </div>
     </div>

@@ -3,6 +3,7 @@ import Dialog from 'primevue/dialog'
 import { computed } from 'vue'
 import { useSkillStore } from '../stores/skillStore'
 import { useI18n } from '@/i18n'
+import AxIcon from '@/components/ui/AxIcon.vue'
 
 const store = useSkillStore()
 const { t } = useI18n()
@@ -38,7 +39,7 @@ function handleStartUpdate() {
       <!-- Release Version Banner -->
       <div class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60">
         <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20 font-bold flex-shrink-0">
-          <i :class="store.isUpdating ? 'pi pi-spin pi-cog text-2xl' : 'pi pi-cloud-download text-2xl'"></i>
+          <AxIcon :name="store.isUpdating ? 'spinner' : 'download'" size="lg" :class="{ 'animate-spin': store.isUpdating }" />
         </div>
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
@@ -64,7 +65,7 @@ function handleStartUpdate() {
       <div v-if="store.isUpdating" class="p-3.5 rounded-xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-2.5">
         <div class="flex items-center justify-between text-xs">
           <span class="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <i class="pi pi-spin pi-spinner text-sky-500"></i>
+            <AxIcon name="spinner" size="xs" class="animate-spin text-sky-500" />
             {{ store.updateStatusText || t('updateModal.updating') }}
           </span>
           <span class="font-bold text-sky-600 dark:text-sky-400 tabular-nums">
@@ -89,7 +90,7 @@ function handleStartUpdate() {
         v-if="store.updateError"
         class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300"
       >
-        <i class="pi pi-exclamation-circle text-base flex-shrink-0 mt-0.5"></i>
+        <AxIcon name="alert" size="sm" class="text-rose-500 flex-shrink-0 mt-0.5" />
         <div class="flex-1">
           <p class="font-semibold">Cập nhật không thành công</p>
           <p class="mt-0.5 opacity-90">{{ store.updateError }}</p>
@@ -113,7 +114,7 @@ function handleStartUpdate() {
             class="py-2 px-4 text-xs font-bold bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white rounded-xl shadow-md shadow-sky-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
             @click="handleStartUpdate"
           >
-            <i class="pi pi-refresh text-xs"></i>
+            <AxIcon name="refresh" size="xs" />
             <span>{{ t('updateModal.retryBtn') }}</span>
           </button>
         </template>
@@ -125,7 +126,7 @@ function handleStartUpdate() {
             disabled
             class="py-2 px-4 text-xs font-bold bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-xl flex items-center gap-2 cursor-not-allowed opacity-80"
           >
-            <i class="pi pi-spin pi-spinner text-xs"></i>
+            <AxIcon name="spinner" size="xs" class="animate-spin" />
             <span>{{ store.updateProgress >= 100 ? t('updateModal.installing') : t('updateModal.updating') }}</span>
           </button>
         </template>
@@ -144,7 +145,7 @@ function handleStartUpdate() {
             class="py-2 px-4 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
             @click="handleStartUpdate"
           >
-            <i class="pi pi-cloud-download text-xs"></i>
+            <AxIcon name="download" size="xs" />
             <span>{{ t('updateModal.downloadBtn') }}</span>
           </button>
         </template>

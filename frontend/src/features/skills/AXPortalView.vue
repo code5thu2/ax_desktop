@@ -5,8 +5,8 @@ import { useSkillStore } from './stores/skillStore'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { useI18n, type LocaleLang } from '@/i18n'
-import Tag from 'primevue/tag'
 import { useToast } from 'primevue/usetoast'
+import AxIcon from '@/components/ui/AxIcon.vue'
 
 import SkillList from './components/SkillList.vue'
 import SkillDetailPanel from './components/SkillDetailPanel.vue'
@@ -37,7 +37,7 @@ const skillLocationInfo = computed(() => {
     if (!store.currentProject) return null
     return {
       isGlobal: false,
-      icon: 'pi pi-folder-open',
+      iconName: 'folder-open',
       iconColor: 'text-emerald-500',
       label: store.currentProject,
       title: store.currentProject,
@@ -51,7 +51,7 @@ const skillLocationInfo = computed(() => {
   if (!skill.installed) {
     return {
       isGlobal: false,
-      icon: 'pi pi-cloud',
+      iconName: 'cloud',
       iconColor: 'text-slate-400',
       label: t('portal.notInstalled'),
       title: t('portal.notInstalled'),
@@ -62,7 +62,7 @@ const skillLocationInfo = computed(() => {
   if (isGlobal) {
     return {
       isGlobal: true,
-      icon: 'pi pi-globe',
+      iconName: 'globe',
       iconColor: 'text-blue-500 dark:text-blue-400',
       label: '~/.aipro/skills (Global)',
       title: 'Toàn cục: ~/.aipro/skills',
@@ -74,16 +74,16 @@ const skillLocationInfo = computed(() => {
   if (!projPath) {
     return {
       isGlobal: false,
-      icon: 'pi pi-folder-open',
+      iconName: 'folder-open',
       iconColor: 'text-emerald-500',
-      label: 'Theo Dự án',
-      title: 'Theo Dự án',
+      label: t('portal.project'),
+      title: t('portal.project'),
     }
   }
 
   return {
     isGlobal: false,
-    icon: 'pi pi-folder-open',
+    iconName: 'folder-open',
     iconColor: 'text-emerald-500',
     label: projPath,
     title: projPath,
@@ -177,63 +177,128 @@ onMounted(async () => {
 <template>
   <div class="h-screen w-screen flex flex-col bg-white dark:bg-[#121214] text-slate-900 dark:text-[#ececec] overflow-hidden select-none font-sans">
     <!-- Master Header -->
-    <header class="h-14 border-b border-slate-200/90 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/90 px-5 flex items-center justify-between gap-4 flex-shrink-0 z-20">
-      <!-- Left: Logo & Ecosystem Badge -->
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-sm shadow-emerald-500/25 font-bold">
-          <i class="pi pi-bolt text-sm"></i>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="font-black text-sm tracking-tight text-slate-900 dark:text-white">{{ t('portal.appName') }}</span>
-          <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            {{ t('portal.superStudioBadge') }}
+    <header class="h-13 border-b border-slate-200/90 dark:border-[#393B40] bg-white/95 dark:bg-[#1E1F22]/95 backdrop-blur-md px-4 flex items-center justify-between gap-3 flex-shrink-0 z-20">
+      <!-- Left: Navigation Tabs (Replaces redundant logo/title directly per user request) -->
+      <div v-if="store.currentMode === 'skills'" class="flex items-center gap-1 sm:gap-1.5">
+        <button
+          type="button"
+          data-testid="tab-marketplace"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+          :class="store.activeTab === 'marketplace'
+            ? 'bg-[#3574F0]/10 text-[#3574F0] dark:text-[#56A8F5] border border-[#3574F0]/30 shadow-xs'
+            : 'text-slate-600 dark:text-[#868A91] hover:text-slate-900 dark:hover:text-[#DFE1E5] hover:bg-slate-100 dark:hover:bg-[#2B2D30] border border-transparent'"
+          @click="store.setActiveTab('marketplace')"
+        >
+          <AxIcon name="compass" size="sm" />
+          <span>{{ t('portal.tabMarketplace') }}</span>
+          <span
+            class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full"
+            :class="store.activeTab === 'marketplace' ? 'bg-[#3574F0] text-white' : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
+          >
+            {{ store.skills.length }}
           </span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="tab-installed"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+          :class="store.activeTab === 'installed'
+            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-xs'
+            : 'text-slate-600 dark:text-[#868A91] hover:text-slate-900 dark:hover:text-[#DFE1E5] hover:bg-slate-100 dark:hover:bg-[#2B2D30] border border-transparent'"
+          @click="store.setActiveTab('installed')"
+        >
+          <AxIcon name="check-circle" size="sm" />
+          <span>{{ t('portal.tabInstalled') }}</span>
+          <span
+            class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full"
+            :class="store.activeTab === 'installed' ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
+          >
+            {{ store.installedSkills.length }}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="tab-projects"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+          :class="store.activeTab === 'projects'
+            ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 shadow-xs'
+            : 'text-slate-600 dark:text-[#868A91] hover:text-slate-900 dark:hover:text-[#DFE1E5] hover:bg-slate-100 dark:hover:bg-[#2B2D30] border border-transparent'"
+          @click="store.setActiveTab('projects')"
+        >
+          <AxIcon name="folder" size="sm" />
+          <span>{{ t('portal.tabProjects') }}</span>
+          <span
+            class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full"
+            :class="store.activeTab === 'projects' ? 'bg-sky-500 text-white' : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
+          >
+            {{ store.recentProjects.length }}
+          </span>
+        </button>
+      </div>
+
+      <!-- Left when in MCP mode -->
+      <div v-else class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-500 flex items-center justify-center text-white shadow-sm shadow-teal-500/25">
+          <AxIcon name="cpu" size="sm" />
         </div>
+        <span class="font-bold text-xs text-slate-900 dark:text-[#DFE1E5] tracking-tight">MCP Protocol Studio</span>
       </div>
 
       <!-- Center: Mode Switcher (Skill Marketplace <-> MCP Protocol Studio) -->
-      <div class="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700/80">
+      <div class="flex items-center bg-slate-100 dark:bg-[#2B2D30] p-1 rounded-xl border border-slate-200 dark:border-[#393B40]">
         <button
           type="button"
-          class="flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
-          :class="store.currentMode === 'skills' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'"
+          class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          :class="store.currentMode === 'skills' ? 'bg-white dark:bg-[#35373B] text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-[#DFE1E5]'"
           @click="store.setMode('skills')"
         >
-          <i class="pi pi-box text-xs text-emerald-500"></i>
+          <AxIcon name="puzzle" size="xs" class="text-emerald-500" />
           <span>{{ t('portal.modeSkills') }}</span>
         </button>
 
         <button
           type="button"
-          class="flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
-          :class="store.currentMode === 'mcp' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'"
+          class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          :class="store.currentMode === 'mcp' ? 'bg-white dark:bg-[#35373B] text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-[#DFE1E5]'"
           @click="store.setMode('mcp')"
         >
-          <i class="pi pi-share-alt text-xs text-teal-400"></i>
+          <AxIcon name="cpu" size="xs" class="text-teal-400" />
           <span>{{ t('portal.modeMcp') }}</span>
         </button>
       </div>
 
-      <!-- Right: Action Buttons, Theme, Language & User Profile -->
-      <div class="flex items-center gap-2.5 flex-shrink-0">
+      <!-- Right: Location info, Launch Studio, Language, Theme & User Profile -->
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- Active Workspace / Scope path pill -->
+        <div
+          v-if="skillLocationInfo"
+          class="hidden lg:flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-slate-100 dark:bg-[#2B2D30] border border-slate-200 dark:border-[#393B40] text-[11px] text-slate-600 dark:text-[#CED0D6]"
+          :title="skillLocationInfo.title"
+        >
+          <AxIcon :name="skillLocationInfo.iconName" size="xs" :class="skillLocationInfo.iconColor" />
+          <span class="font-mono truncate max-w-[160px]">{{ skillLocationInfo.label }}</span>
+        </div>
+
         <!-- Launch AIPRO Studio Button -->
         <button
           type="button"
           :disabled="isLaunchingStudio"
-          class="py-1.5 px-3.5 text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl shadow-md shadow-emerald-500/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 flex-shrink-0 active:scale-95"
+          class="py-1.5 px-3 text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl shadow-xs shadow-emerald-500/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 flex-shrink-0 active:scale-95"
           @click="handleLaunchStudio"
         >
-          <i v-if="isLaunchingStudio" class="pi pi-spinner animate-spin text-xs"></i>
-          <i v-else class="pi pi-external-link text-xs"></i>
+          <AxIcon v-if="isLaunchingStudio" name="spinner" size="xs" class="animate-spin" />
+          <AxIcon v-else name="external-link" size="xs" />
           <span>{{ t('portal.launchStudioBtn') }}</span>
         </button>
 
         <!-- Multi-language Switcher (VI | EN | KO) -->
-        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-1 shadow-xs">
+        <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-[#2B2D30] border border-slate-200 dark:border-[#393B40] rounded-xl p-0.5 shadow-xs">
           <button
             type="button"
             class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-            :class="locale === 'vi' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+            :class="locale === 'vi' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
             @click="switchLang('vi')"
           >
             VI
@@ -241,7 +306,7 @@ onMounted(async () => {
           <button
             type="button"
             class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-            :class="locale === 'en' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+            :class="locale === 'en' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
             @click="switchLang('en')"
           >
             EN
@@ -249,7 +314,7 @@ onMounted(async () => {
           <button
             type="button"
             class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-            :class="locale === 'ko' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'"
+            :class="locale === 'ko' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
             @click="switchLang('ko')"
           >
             KO
@@ -259,11 +324,11 @@ onMounted(async () => {
         <!-- Dark/Light Theme Toggle -->
         <button
           type="button"
-          class="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          class="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#2B2D30] transition-colors cursor-pointer"
           :title="settingsStore.darkMode ? t('portal.themeLightTitle') : t('portal.themeDarkTitle')"
           @click="settingsStore.toggleDarkMode"
         >
-          <i :class="settingsStore.darkMode ? 'pi pi-sun text-amber-400' : 'pi pi-moon text-slate-600'"></i>
+          <AxIcon :name="settingsStore.darkMode ? 'sun' : 'moon'" size="sm" :class="settingsStore.darkMode ? 'text-amber-400' : 'text-slate-600'" />
         </button>
 
         <!-- User Profile Avatar & Solid Dropdown Menu -->
@@ -271,36 +336,35 @@ onMounted(async () => {
           <button
             type="button"
             data-testid="header-user-btn"
-            class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            class="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-[#2B2D30] transition-colors cursor-pointer"
             @click="isUserMenuOpen = !isUserMenuOpen"
           >
             <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-xs shadow-xs">
               {{ (authStore.currentUser?.name || 'AX').substring(0, 2).toUpperCase() }}
             </div>
-            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 hidden sm:inline max-w-[120px] truncate">
+            <span class="text-xs font-semibold text-slate-700 dark:text-[#CED0D6] hidden md:inline max-w-[110px] truncate">
               {{ authStore.currentUser?.name || t('portal.guestName') }}
             </span>
-            <i class="pi pi-chevron-down text-[10px] text-slate-400 transition-transform duration-200" :class="{ 'rotate-180': isUserMenuOpen }"></i>
+            <AxIcon name="chevron-down" size="xs" class="text-slate-400 transition-transform duration-200" :class="{ 'rotate-180': isUserMenuOpen }" />
           </button>
 
-          <!-- Solid Floating Dropdown Menu (Guaranteed Opaque, Z-9999) -->
+          <!-- Sleek Floating Dropdown Menu -->
           <div
             v-if="isUserMenuOpen"
             data-testid="user-dropdown-menu"
-            class="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-slate-700/80 shadow-2xl shadow-black/80 p-1.5 z-[9999] flex flex-col gap-0.5 select-none"
-            style="background-color: #0f172a !important;"
+            class="absolute right-0 top-full mt-1.5 w-64 rounded-2xl border border-slate-200/90 dark:border-[#393B40] bg-white dark:bg-[#2B2D30] shadow-xl shadow-slate-900/10 dark:shadow-black/60 p-1.5 z-[9999] flex flex-col gap-0.5 select-none"
           >
             <!-- User Info Header -->
-            <div class="px-3.5 py-2.5 border-b border-slate-800 mb-1 flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-emerald-500/20 flex-shrink-0">
+            <div class="px-3 py-2 border-b border-slate-100 dark:border-[#393B40] mb-1 flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-xs shadow-xs flex-shrink-0">
                 {{ (authStore.currentUser?.name || 'AX').substring(0, 2).toUpperCase() }}
               </div>
               <div class="min-w-0 flex-1">
-                <div class="text-xs font-bold text-white truncate flex items-center gap-1.5">
+                <div class="text-xs font-bold text-slate-900 dark:text-[#DFE1E5] truncate flex items-center gap-1.5">
                   <span>{{ authStore.currentUser?.name || t('portal.guestName') }}</span>
-                  <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">PRO</span>
+                  <span class="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">PRO</span>
                 </div>
-                <div class="text-[11px] text-slate-400 font-mono truncate mt-0.5">
+                <div class="text-[11px] text-slate-500 dark:text-[#868A91] font-mono truncate">
                   {{ authStore.currentUser?.email || 'offline@aipro.local' }}
                 </div>
               </div>
@@ -308,50 +372,50 @@ onMounted(async () => {
 
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer text-left"
+              class="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-[#CED0D6] hover:bg-slate-100 dark:hover:bg-[#35373B] hover:text-slate-900 dark:hover:text-[#DFE1E5] transition-colors cursor-pointer text-left"
               @click="showSettings = true; isUserMenuOpen = false"
             >
-              <div class="flex items-center gap-2.5">
-                <i class="pi pi-cog text-emerald-400 text-xs"></i>
+              <div class="flex items-center gap-2">
+                <AxIcon name="settings" size="xs" class="text-emerald-500" />
                 <span>{{ t('portal.settingsMenu') }}</span>
               </div>
-              <kbd class="text-[10px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">Ctrl+,</kbd>
+              <kbd class="text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-[#1E1F22] px-1.5 py-0.5 rounded border border-slate-200 dark:border-[#393B40]">Ctrl+,</kbd>
             </button>
 
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer text-left"
+              class="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-[#CED0D6] hover:bg-slate-100 dark:hover:bg-[#35373B] hover:text-slate-900 dark:hover:text-[#DFE1E5] transition-colors cursor-pointer text-left"
               @click="handleAutostartToggle"
             >
-              <div class="flex items-center gap-2.5">
-                <i class="pi pi-desktop text-teal-400 text-xs"></i>
+              <div class="flex items-center gap-2">
+                <AxIcon name="monitor" size="xs" class="text-teal-500" />
                 <span>{{ t('portal.autostartMenu') }}</span>
               </div>
-              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="store.autostartEnabled ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-800'">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" :class="store.autostartEnabled ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-slate-500 bg-slate-100 dark:bg-[#1E1F22]'">
                 {{ store.autostartEnabled ? t('common.on') : t('common.off') }}
               </span>
             </button>
 
             <button
               type="button"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer text-left"
+              class="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-[#CED0D6] hover:bg-slate-100 dark:hover:bg-[#35373B] hover:text-slate-900 dark:hover:text-[#DFE1E5] transition-colors cursor-pointer text-left"
               @click="handleCheckUpdates"
             >
-              <div class="flex items-center gap-2.5">
-                <i class="pi pi-sync text-cyan-400 text-xs"></i>
+              <div class="flex items-center gap-2">
+                <AxIcon name="sync" size="xs" class="text-cyan-500" />
                 <span>{{ t('portal.checkUpdatesMenu') }}</span>
               </div>
               <span class="text-[10px] font-mono text-slate-400">v{{ store.appVersion }}</span>
             </button>
 
-            <div class="h-px bg-slate-800 my-1"></div>
+            <div class="h-px bg-slate-100 dark:bg-[#393B40] my-1"></div>
 
             <button
               type="button"
-              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
+              class="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 dark:hover:text-rose-300 transition-colors cursor-pointer text-left"
               @click="authStore.logout(); isUserMenuOpen = false"
             >
-              <i class="pi pi-power-off text-rose-400 text-xs"></i>
+              <AxIcon name="logout" size="xs" class="text-rose-500 dark:text-rose-400" />
               <span>{{ t('portal.logoutMenu') }}</span>
             </button>
           </div>
@@ -367,72 +431,23 @@ onMounted(async () => {
       </div>
 
       <!-- Mode 2: Skill Marketplace Mode -->
-      <div v-else class="h-full flex flex-col min-h-0 overflow-hidden">
-        <!-- Sub-navigation Tabs (Marketplace, Installed, Projects) -->
-        <div class="h-11 border-b border-slate-200/80 dark:border-[#393B40] bg-white/80 dark:bg-[#1E1F22] px-6 flex items-center justify-between flex-shrink-0">
-          <div class="flex items-center gap-6 h-full">
-            <button
-              type="button"
-              class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer"
-              :class="store.activeTab === 'marketplace' ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
-              @click="store.setActiveTab('marketplace')"
-            >
-              <i class="pi pi-compass text-xs"></i>
-              <span>{{ t('portal.tabMarketplace') }}</span>
-              <Tag :value="String(store.skills.length)" severity="secondary" class="!text-[10px] !py-0 !px-1.5 !font-mono dark:bg-[#393B40] dark:text-[#DFE1E5]" />
-            </button>
-
-            <button
-              type="button"
-              class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer"
-              :class="store.activeTab === 'installed' ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
-              @click="store.setActiveTab('installed')"
-            >
-              <i class="pi pi-check-circle text-xs"></i>
-              <span>{{ t('portal.tabInstalled') }}</span>
-              <Tag :value="String(store.installedSkills.length)" severity="success" class="!text-[10px] !py-0 !px-1.5 !font-mono dark:bg-[#5FAD65]/20 dark:text-[#5FAD65]" />
-            </button>
-
-            <button
-              type="button"
-              class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer"
-              :class="store.activeTab === 'projects' ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
-              @click="store.setActiveTab('projects')"
-            >
-              <i class="pi pi-folder text-xs"></i>
-              <span>{{ t('portal.tabProjects') }}</span>
-              <Tag :value="String(store.recentProjects.length)" severity="info" class="!text-[10px] !py-0 !px-1.5 !font-mono" />
-            </button>
+      <div v-else class="h-full flex min-h-0 overflow-hidden">
+        <!-- Marketplace & Installed: 2-column layout (List + Detail) -->
+        <template v-if="store.activeTab === 'marketplace' || store.activeTab === 'installed'">
+          <div class="w-80 md:w-96 lg:w-[420px] flex-shrink-0 h-full overflow-hidden border-r border-slate-200/80 dark:border-[#393B40]">
+            <SkillList />
           </div>
-
-          <!-- Current active workspace / skill installation location indicator -->
-          <div v-if="skillLocationInfo" class="hidden md:flex items-center gap-1.5 text-xs text-slate-400">
-            <i :class="[skillLocationInfo.icon, skillLocationInfo.iconColor, 'text-xs']"></i>
-            <span class="font-mono text-[11px] truncate max-w-xs" :title="skillLocationInfo.title">
-              {{ skillLocationInfo.label }}
-            </span>
+          <div class="flex-1 h-full overflow-hidden">
+            <SkillDetailPanel />
           </div>
-        </div>
+        </template>
 
-        <!-- Tab Content Layout -->
-        <div class="flex-1 flex min-h-0 overflow-hidden">
-          <!-- Marketplace & Installed: 2-column layout (List + Detail) -->
-          <template v-if="store.activeTab === 'marketplace' || store.activeTab === 'installed'">
-            <div class="w-80 md:w-96 lg:w-[420px] flex-shrink-0 h-full overflow-hidden">
-              <SkillList />
-            </div>
-            <div class="flex-1 h-full overflow-hidden">
-              <SkillDetailPanel />
-            </div>
-          </template>
-
-          <!-- Projects: Full width Workspace Management -->
-          <template v-else-if="store.activeTab === 'projects'">
-            <div class="flex-1 h-full overflow-hidden">
-              <ProjectListPanel />
-            </div>
-          </template>
-        </div>
+        <!-- Projects: Full width Workspace Management -->
+        <template v-else-if="store.activeTab === 'projects'">
+          <div class="flex-1 h-full overflow-hidden">
+            <ProjectListPanel />
+          </div>
+        </template>
       </div>
     </div>
 

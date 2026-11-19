@@ -31,8 +31,8 @@ const { t } = useI18n()
     <div v-if="props.plugin" class="space-y-3.5 text-xs py-2">
       <p class="text-slate-500 dark:text-[#868A91] leading-relaxed">
         {{ props.isEditing
-            ? 'Cập nhật lại các biến môi trường cho MCP server này (.env):'
-            : 'MCP này yêu cầu các biến môi trường để hoạt động. Vui lòng xác nhận:' }}
+            ? t('mcpStudio.envEditNotice')
+            : t('mcpStudio.envRequiredNotice') }}
       </p>
 
       <div v-for="req in props.plugin.envRequirements" :key="req.key">

@@ -76,7 +76,7 @@ const skillStatusColorClass = computed(() => {
           </span>
         </div>
         <div>
-          <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">Giao thức thực thi</span>
+          <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">{{ t('portal.executionProtocol') }}</span>
           <span class="font-bold text-slate-800 dark:text-[#DFE1E5]">JSON-RPC 2.0 (Stdio IPC)</span>
         </div>
         <div>

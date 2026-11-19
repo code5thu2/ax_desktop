@@ -86,7 +86,7 @@ async function confirmEnvConfigInstall() {
   if (isEditingInstalledConfig.value) {
     await pluginStore.updateMcpConfig(mcp.id, envConfigValues.value)
     isEditingInstalledConfig.value = false
-    triggerToast(`Đã cập nhật cấu hình cho ${mcp.name}`)
+    triggerToast(t('mcpStudio.configUpdatedToast', { name: mcp.name }))
   } else {
     executeInstall(mcp.id, mcp.name)
   }
@@ -94,30 +94,29 @@ async function confirmEnvConfigInstall() {
 
 function executeInstall(id: string, name: string) {
   pluginStore.installPlugin(id)
-  triggerToast(`Đã cài đặt thành công MCP Server: ${name}`)
+  triggerToast(t('mcpStudio.installSuccessToast', { name }))
 }
 
 function handleUninstall(id: string, name: string) {
   confirm.require({
-    message: `Bạn có chắc chắn muốn gỡ cài đặt MCP Server "${name}"?`,
+    message: t('mcpStudio.confirmUninstallMsg', { name }),
     header: t('mcpStudio.uninstallBtn'),
-    icon: 'pi pi-exclamation-triangle',
     acceptClass: 'p-button-danger',
     acceptLabel: t('mcpStudio.uninstallBtn'),
     rejectLabel: t('common.cancel'),
     accept: () => {
       pluginStore.uninstallPlugin(id)
-      triggerToast(`Đã gỡ cài đặt: ${name}`)
+      triggerToast(t('mcpStudio.toastUninstalled', { name }))
     },
   })
 }
 
 function onGitSuccess(name: string, count: number) {
-  triggerToast(`Đã nhập và xuất bản thành công MCP: ${name} (${count} tools)`)
+  triggerToast(t('mcpStudio.gitImportSuccessToast', { name, count }))
 }
 
 function onUploadSuccess(name: string, count: number) {
-  triggerToast(`Đã upload và xuất bản thành công: ${name} (${count} tools)`)
+  triggerToast(t('mcpStudio.uploadSuccessToast', { name, count }))
 }
 </script>
 

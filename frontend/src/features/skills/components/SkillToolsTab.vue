@@ -2,8 +2,10 @@
 import { computed } from 'vue'
 import Tag from 'primevue/tag'
 import { useSkillStore } from '../stores/skillStore'
+import { useI18n } from '@/i18n'
 
 const store = useSkillStore()
+const { t } = useI18n()
 
 const providedTools = computed(() => {
   const name = store.selectedSkill?.name || 'Skill'
@@ -38,7 +40,7 @@ const providedTools = computed(() => {
 <template>
   <div class="space-y-3">
     <div class="text-xs text-slate-500 dark:text-[#868A91]">
-      Skill này đăng ký <strong class="text-slate-800 dark:text-[#DFE1E5]">{{ providedTools.length }}</strong> công cụ độc quyền vào hệ sinh thái AX Desktop:
+      {{ t('portal.toolsCountNotice', { count: providedTools.length }) }}
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -60,7 +62,7 @@ const providedTools = computed(() => {
         </div>
 
         <div class="p-2.5 rounded-lg bg-white dark:bg-[#2B2D30] border border-slate-200 dark:border-[#43454A] text-[11px] font-mono text-slate-500 dark:text-[#868A91]">
-          <span class="text-slate-400 dark:text-[#868A91] block text-[10px] uppercase font-bold mb-0.5">Tham số đầu vào:</span>
+          <span class="text-slate-400 dark:text-[#868A91] block text-[10px] uppercase font-bold mb-0.5">{{ t('portal.toolInputParams') }}</span>
           <code class="text-[#DFE1E5]">{{ tool.params }}</code>
         </div>
       </div>

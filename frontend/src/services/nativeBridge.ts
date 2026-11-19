@@ -446,7 +446,9 @@ export const nativeBridge = {
       })
     }
     const numId = Number(payload.skill_id)
-    if (payload.scope === 'project' && payload.project_path) {
+    if (payload.scope === 'all') {
+      mockInstalled = mockInstalled.filter((i) => Number(i.id) !== numId)
+    } else if (payload.scope === 'project' && payload.project_path) {
       mockInstalled = mockInstalled.filter((i) => !(Number(i.id) === numId && i.scope === 'project' && i.projectPath === payload.project_path))
     } else if (payload.scope === 'global') {
       mockInstalled = mockInstalled.filter((i) => !(Number(i.id) === numId && i.scope === 'global'))
@@ -459,12 +461,15 @@ export const nativeBridge = {
       if (m) {
         m.installed = false
         m.enabled = false
+        m.installScope = undefined
+        m.installedVersion = undefined
+        m.installedProjects = []
       }
     }
     return { ok: true }
   },
 
-  async uninstallSkill(name: string, projectPath?: string): Promise<boolean> {
+  async uninstallSkill(name: string, projectPath?: string, scope?: 'global' | 'project' | 'all'): Promise<boolean> {
     const matched = mockSkills.find((s) => s.name === name) || mockInstalled.find((s) => s.name === name)
     const id = matched
       ? matched.id
@@ -475,10 +480,11 @@ export const nativeBridge = {
           : name === 'Multi-Language Legal Document Analyzer'
           ? 103
           : 0)
+    const effScope = scope || (projectPath ? 'project' : 'global')
     const res = await this.uninstall({
       skill_id: id,
-      scope: projectPath ? 'project' : 'global',
-      project_path: projectPath,
+      scope: effScope,
+      project_path: effScope === 'project' ? projectPath : undefined,
     })
     return res.ok
   },

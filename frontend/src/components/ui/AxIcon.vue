@@ -37,6 +37,25 @@ import {
   FolderGit2,
   Eye,
   EyeOff,
+  Star,
+  Sun,
+  Moon,
+  LogOut,
+  Key,
+  Shield,
+  Zap,
+  Monitor,
+  Compass,
+  Globe,
+  Cloud,
+  CheckCircle,
+  FolderOpen,
+  Share2,
+  Loader2,
+  PackageCheck,
+  FileCode,
+  GitFork,
+  ShieldAlert,
 } from 'lucide-vue-next'
 
 const iconMap: Record<string, Component> = {
@@ -48,10 +67,12 @@ const iconMap: Record<string, Component> = {
   branch: GitBranch,
   branches: GitBranch,
   folder: Folder,
+  'folder-open': FolderOpen,
   project: FolderGit2,
   settings: Settings,
   terminal: Terminal,
   code: Code2,
+  'file-code': FileCode,
   search: Search,
   find: Search,
   download: Download,
@@ -65,6 +86,8 @@ const iconMap: Record<string, Component> = {
   plus: Plus,
   check: Check,
   checkmark: Check,
+  'check-circle': CheckCircle,
+  ready: CheckCircle,
   user: User,
   refresh: RefreshCw,
   sync: RefreshCw,
@@ -73,6 +96,7 @@ const iconMap: Record<string, Component> = {
   dependencies: Boxes,
   boxes: Boxes,
   package: Package,
+  'package-check': PackageCheck,
   'external-link': ExternalLink,
   'chevron-right': ChevronRight,
   'chevron-left': ChevronLeft,
@@ -82,6 +106,7 @@ const iconMap: Record<string, Component> = {
   info: Info,
   alert: AlertTriangle,
   warning: AlertTriangle,
+  'shield-alert': ShieldAlert,
   database: Database,
   cpu: Cpu,
   sparkles: Sparkles,
@@ -91,13 +116,30 @@ const iconMap: Record<string, Component> = {
   sliders: Sliders,
   eye: Eye,
   'eye-off': EyeOff,
+  star: Star,
+  sun: Sun,
+  moon: Moon,
+  logout: LogOut,
+  key: Key,
+  shield: Shield,
+  zap: Zap,
+  bolt: Zap,
+  monitor: Monitor,
+  desktop: Monitor,
+  compass: Compass,
+  globe: Globe,
+  cloud: Cloud,
+  share: Share2,
+  spinner: Loader2,
+  loading: Loader2,
+  fork: GitFork,
 }
 
 const props = withDefaults(
   defineProps<{
     name: string
     size?: 'xs' | 'sm' | 'md' | 'lg' | number
-    class?: string
+    class?: any
     strokeWidth?: number
   }>(),
   {

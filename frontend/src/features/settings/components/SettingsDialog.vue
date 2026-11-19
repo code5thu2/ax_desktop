@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { usePluginStore } from '@/features/plugins/stores/pluginStore'
 import { nativeBridge } from '@/services/nativeBridge'
 import { useI18n } from '@/i18n'
+import AxIcon from '@/components/ui/AxIcon.vue'
 
 interface Props {
   visible: boolean
@@ -26,9 +27,9 @@ const { t } = useI18n()
 const activeTab = ref<'general' | 'clients' | 'about'>('general')
 
 const tabs = computed(() => [
-  { id: 'general' as const, label: t('settings.tabGeneral'), icon: 'pi pi-cog' },
-  { id: 'clients' as const, label: t('settings.tabClients'), icon: 'pi pi-desktop' },
-  { id: 'about' as const, label: t('settings.tabAbout'), icon: 'pi pi-info-circle' },
+  { id: 'general' as const, label: t('settings.tabGeneral'), icon: 'settings' },
+  { id: 'clients' as const, label: t('settings.tabClients'), icon: 'desktop' },
+  { id: 'about' as const, label: t('settings.tabAbout'), icon: 'info' },
 ])
 
 function handleTabClick(tabId: 'general' | 'clients' | 'about') {
@@ -167,7 +168,7 @@ function resetDefaults() {
           ]"
           @click="handleTabClick(tab.id)"
         >
-          <i :class="tab.icon" class="text-xs"></i>
+          <AxIcon :name="tab.icon" size="xs" />
           <span>{{ tab.label }}</span>
         </button>
       </nav>
@@ -193,7 +194,7 @@ function resetDefaults() {
                 ]"
                 @click="tempDarkMode = false"
               >
-                <i class="pi pi-sun text-amber-500 text-xs"></i>
+                <AxIcon name="sun" size="xs" class="text-amber-500" />
                 <span>{{ t('settings.themeLight') }}</span>
               </button>
 
@@ -208,7 +209,7 @@ function resetDefaults() {
                 ]"
                 @click="tempDarkMode = true"
               >
-                <i class="pi pi-moon text-teal-400 text-xs"></i>
+                <AxIcon name="moon" size="xs" class="text-teal-400" />
                 <span>{{ t('settings.themeDark') }}</span>
               </button>
             </div>
@@ -218,7 +219,7 @@ function resetDefaults() {
           <div class="p-3.5 rounded-xl bg-[#f9f9f9] dark:bg-[#212121] border border-[#e5e5e5] dark:border-[#2e2e2e] flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5">
               <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-xs shrink-0">
-                <i class="pi pi-microsoft"></i>
+                <AxIcon name="monitor" size="xs" />
               </div>
               <div class="flex flex-col min-w-0">
                 <span class="text-xs font-semibold text-slate-800 dark:text-[#ececec]">
@@ -251,7 +252,7 @@ function resetDefaults() {
                 class="text-[11px] px-2 py-0.5 rounded text-[#10A37F] hover:bg-emerald-500/10 transition cursor-pointer flex items-center gap-1 font-medium"
                 @click="testGatewayPing"
               >
-                <i class="pi pi-bolt text-[10px]" :class="{ 'animate-spin': pingStatus === 'checking' }"></i>
+                <AxIcon name="bolt" size="xs" :class="{ 'animate-spin': pingStatus === 'checking' }" />
                 <span>{{ pingStatus === 'checking' ? t('settings.pingChecking') : (pingStatus === 'online' ? t('settings.pingOnline') : (pingStatus === 'offline' ? t('settings.pingOffline') : t('settings.testPingBtn'))) }}</span>
               </button>
             </div>
@@ -282,7 +283,7 @@ function resetDefaults() {
           <div class="p-3.5 rounded-xl bg-[#f9f9f9] dark:bg-[#212121] border border-[#e5e5e5] dark:border-[#2e2e2e] space-y-2">
             <div class="flex items-center justify-between">
               <span class="font-semibold text-xs text-slate-800 dark:text-[#ececec] flex items-center gap-1.5">
-                <i class="pi pi-box text-orange-500"></i>
+                <AxIcon name="package" size="xs" class="text-orange-500" />
                 Claude Desktop Configuration
               </span>
               <button
@@ -290,7 +291,7 @@ function resetDefaults() {
                 class="text-[11px] px-2.5 py-1 rounded bg-[#10A37F] hover:bg-[#0e8f6f] text-white font-medium transition cursor-pointer flex items-center gap-1"
                 @click="copyClaudeConfig"
               >
-                <i class="pi pi-copy text-[10px]"></i>
+                <AxIcon name="copy" size="xs" />
                 <span>{{ jsonCopied ? t('settings.copiedSuccess') : t('settings.copyConfigBtn') }}</span>
               </button>
             </div>
@@ -309,7 +310,7 @@ function resetDefaults() {
           <!-- Cursor & Windsurf Guide -->
           <div class="p-3.5 rounded-xl bg-[#f9f9f9] dark:bg-[#212121] border border-[#e5e5e5] dark:border-[#2e2e2e] space-y-2">
             <span class="font-semibold text-xs text-slate-800 dark:text-[#ececec] flex items-center gap-1.5">
-              <i class="pi pi-code text-indigo-500"></i>
+              <AxIcon name="code" size="xs" class="text-indigo-500" />
               Cursor & Windsurf IDE
             </span>
             <p class="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
@@ -323,7 +324,7 @@ function resetDefaults() {
         <div v-if="activeTab === 'about'" class="space-y-4">
           <div class="flex items-center gap-3 p-4 rounded-xl bg-neutral-50 dark:bg-[#212121] border border-[#e5e5e5] dark:border-[#2e2e2e]">
             <div class="w-12 h-12 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-2xl font-bold">
-              <i class="pi pi-box"></i>
+              <AxIcon name="package" size="lg" />
             </div>
             <div>
               <h2 class="text-sm font-bold text-slate-900 dark:text-white">

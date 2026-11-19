@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue'
 import { useSettingsStore } from '@/features/settings/stores/settingsStore'
 import { usePluginStore } from '@/features/plugins/stores/pluginStore'
+import { useI18n } from '@/i18n'
+import { AxIcon } from '@/components/ui'
 import PageMascot from '@/components/common/PageMascot.vue'
 
 const emit = defineEmits<{
@@ -10,6 +12,7 @@ const emit = defineEmits<{
 
 const settingsStore = useSettingsStore()
 const pluginStore = usePluginStore()
+const { t } = useI18n()
 
 const copiedToast = ref(false)
 
@@ -46,7 +49,7 @@ function refreshCatalog() {
       <div class="flex items-center gap-2">
         <!-- Logo Icon -->
         <div class="w-7 h-7 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs shadow-2xs">
-          <i class="pi pi-box text-sm"></i>
+          <AxIcon name="package" size="xs" />
         </div>
 
         <span class="font-bold text-sm tracking-tight text-slate-800 dark:text-[#ececec]" data-testid="header-plugin-title">
@@ -77,12 +80,12 @@ function refreshCatalog() {
         :class="pluginStore.isServerOnline 
           ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20' 
           : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20'"
-        :title="copiedToast ? 'Đã sao chép: ' + pluginStore.registryServerUrl + '/mcp' : 'Nhấp để sao chép endpoint: ' + pluginStore.registryServerUrl + '/mcp'"
+        :title="copiedToast ? t('mcpStudio.copyUrlSuccess') : 'endpoint: ' + pluginStore.registryServerUrl + '/mcp'"
         @click="copyEndpoint"
       >
         <span class="w-2 h-2 rounded-full" :class="pluginStore.isServerOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'"></span>
-        <span>{{ copiedToast ? 'Đã sao chép URL!' : gatewayLabel }}</span>
-        <i class="pi pi-copy text-[10px] opacity-70"></i>
+        <span>{{ copiedToast ? t('mcpStudio.copyUrlSuccess') : gatewayLabel }}</span>
+        <AxIcon name="copy" size="xs" class="opacity-70" />
       </button>
 
       <!-- Refresh Catalog Button -->
@@ -90,10 +93,10 @@ function refreshCatalog() {
         type="button"
         data-testid="btn-refresh-catalog"
         class="w-7 h-7 rounded-lg hover:bg-neutral-100 dark:hover:bg-[#2b2b2b] text-neutral-500 dark:text-neutral-400 flex items-center justify-center cursor-pointer transition border border-transparent hover:border-neutral-200 dark:hover:border-[#383838]"
-        title="Làm mới danh mục MCP từ server"
+        :title="t('mcpStudio.refreshCatalogTooltip')"
         @click="refreshCatalog"
       >
-        <i class="pi pi-sync text-xs" :class="{ 'animate-spin': pluginStore.isLoadingCatalog }"></i>
+        <AxIcon name="sync" size="xs" :class="{ 'animate-spin': pluginStore.isLoadingCatalog }" />
       </button>
     </div>
 
@@ -107,7 +110,7 @@ function refreshCatalog() {
         title="Nộp link Git / GitHub để tự động import MCP"
         @click="pluginStore.showGitImportModal = true"
       >
-        <i class="pi pi-github text-xs"></i>
+        <AxIcon name="git" size="xs" />
         <span>Import Git</span>
       </button>
 
@@ -119,7 +122,7 @@ function refreshCatalog() {
         title="Tải lên file code MCP (.py, .zip)"
         @click="pluginStore.showUploadModal = true"
       >
-        <i class="pi pi-upload text-xs text-emerald-600 dark:text-emerald-400"></i>
+        <AxIcon name="upload" size="xs" class="text-emerald-600 dark:text-emerald-400" />
         <span>Upload</span>
       </button>
 
@@ -133,9 +136,7 @@ function refreshCatalog() {
         :title="settingsStore.darkMode ? 'Chuyển sang Giao diện Sáng' : 'Chuyển sang Giao diện Tối'"
         @click="settingsStore.toggleDarkMode"
       >
-        <i
-          :class="settingsStore.darkMode ? 'pi pi-sun text-xs text-amber-300' : 'pi pi-moon text-xs text-slate-700'"
-        ></i>
+        <AxIcon :name="settingsStore.darkMode ? 'sun' : 'moon'" size="xs" :class="settingsStore.darkMode ? 'text-amber-300' : 'text-slate-700'" />
       </button>
 
       <!-- Settings Button -->
@@ -146,7 +147,7 @@ function refreshCatalog() {
         title="Cài đặt hệ thống & Gateway"
         @click="emit('openSettings')"
       >
-        <i class="pi pi-cog text-xs"></i>
+        <AxIcon name="settings" size="xs" />
       </button>
     </div>
   </header>

@@ -53,7 +53,7 @@ const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('over
 
             <div class="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-[#868A91]">
               <span class="flex items-center gap-1 text-[#E3A83F] font-bold">
-                <i class="pi pi-star-fill text-xs"></i>
+                <AxIcon name="star" size="xs" class="fill-[#E3A83F] text-[#E3A83F]" />
                 {{ pluginStore.selectedPlugin.rating }}
               </span>
               <span>&bull;</span>
@@ -130,10 +130,10 @@ const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('over
           <AxIcon name="folder" size="sm" class="text-[#3574F0] dark:text-[#56A8F5]" />
           <div>
             <span class="font-bold text-slate-900 dark:text-[#DFE1E5]">
-              Thư mục Sandbox MCP: <code class="font-mono bg-white dark:bg-[#1E1F22] px-1 py-0.5 rounded border border-slate-200 dark:border-[#393B40]">{{ pluginStore.selectedPlugin.installPath || '~/.aipro/mcp' }}</code>
+              {{ t('mcpStudio.sandboxPathLabel') }} <code class="font-mono bg-white dark:bg-[#1E1F22] px-1 py-0.5 rounded border border-slate-200 dark:border-[#393B40]">{{ pluginStore.selectedPlugin.installPath || '~/.aipro/mcp' }}</code>
             </span>
             <span class="block text-[11px] text-slate-500 dark:text-[#868A91] mt-0.5">
-              Giao tiếp qua Model Context Protocol tiêu chuẩn (JSON-RPC 2.0).
+              {{ t('mcpStudio.protocolDesc') }}
             </span>
           </div>
         </div>
@@ -201,10 +201,10 @@ const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('over
         <!-- 1. OVERVIEW TAB -->
         <div v-if="activeDetailTab === 'overview'" class="space-y-4">
           <div class="prose dark:prose-invert max-w-none text-xs text-slate-700 dark:text-[#CED0D6] leading-relaxed">
-            <h3 class="text-sm font-bold text-slate-900 dark:text-[#DFE1E5] mb-2">Mô tả MCP Server</h3>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-[#DFE1E5] mb-2">{{ t('mcpStudio.serverDescTitle') }}</h3>
             <p>{{ pluginStore.selectedPlugin.description }}</p>
 
-            <h3 class="text-sm font-bold text-slate-900 dark:text-[#DFE1E5] mt-4 mb-2">Tính năng nổi bật (Key Features)</h3>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-[#DFE1E5] mt-4 mb-2">{{ t('mcpStudio.keyFeaturesTitle') }}</h3>
             <div class="space-y-1.5">
               <div
                 v-for="(feat, idx) in pluginStore.selectedPlugin.features"
@@ -217,24 +217,24 @@ const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('over
             </div>
 
             <!-- Specifications Card -->
-            <h3 class="text-sm font-bold text-slate-900 dark:text-[#DFE1E5] mt-4 mb-2">Thông số Kỹ thuật</h3>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-[#DFE1E5] mt-4 mb-2">{{ t('mcpStudio.specsTitle') }}</h3>
             <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#1E1F22] border border-slate-200/80 dark:border-[#393B40] grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
               <div>
-                <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">Loại Extension</span>
+                <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">{{ t('mcpStudio.extensionType') }}</span>
                 <span class="font-bold text-slate-800 dark:text-[#DFE1E5]">{{ pluginStore.selectedPlugin.type }} Protocol</span>
               </div>
               <div>
-                <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">Giao thức thực thi</span>
+                <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">{{ t('mcpStudio.executionProtocol') }}</span>
                 <span class="font-bold text-slate-800 dark:text-[#DFE1E5]">JSON-RPC 2.0 (Stdio / SSE)</span>
               </div>
               <div>
-                <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">Phiên bản</span>
+                <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">{{ t('mcpStudio.versionLabel') }}</span>
                 <span class="font-mono text-slate-800 dark:text-[#DFE1E5]">v{{ pluginStore.selectedPlugin.version }}</span>
               </div>
               <div>
-                <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">Trạng thái</span>
+                <span class="text-slate-400 dark:text-[#868A91] block mb-0.5">{{ t('mcpStudio.statusLabel') }}</span>
                 <span class="font-bold text-[#5FAD65]">
-                  {{ pluginStore.selectedPlugin.installed ? (pluginStore.selectedPlugin.enabled ? 'Đã kích hoạt' : 'Đã vô hiệu hóa') : 'Chưa cài đặt' }}
+                  {{ pluginStore.selectedPlugin.installed ? (pluginStore.selectedPlugin.enabled ? t('portal.activeStatus') : t('portal.disabledStatus')) : t('portal.notInstalled') }}
                 </span>
               </div>
             </div>
@@ -248,7 +248,7 @@ const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('over
         <div v-else-if="activeDetailTab === 'config'" class="space-y-4">
           <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-[#393B40]">
             <span class="text-xs text-slate-500 dark:text-[#868A91]">
-              Các biến môi trường được lưu tại <code>.env</code> và nạp tự động khi gọi tool:
+              {{ t('mcpStudio.envNotice') }}
             </span>
             <AxButton
               variant="outline"
@@ -256,7 +256,7 @@ const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('over
               ijIcon="settings"
               @click="emit('open-config', pluginStore.selectedPlugin)"
             >
-              <span>Chỉnh sửa biến ENV</span>
+              <span>{{ t('mcpStudio.editEnvBtn') }}</span>
             </AxButton>
           </div>
 
@@ -269,10 +269,10 @@ const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('over
               <div>
                 <span class="font-mono font-bold text-slate-800 dark:text-[#DFE1E5]">{{ req.key }}</span>
                 <span class="text-[11px] text-slate-400 dark:text-[#868A91] ml-2">({{ req.label || req.key }})</span>
-                <Tag v-if="req.required" value="BẮT BUỘC" severity="danger" class="!text-[9px] !py-0 !px-1 ml-2 dark:bg-[#FA5252]/20 dark:text-[#FA5252]" />
+                <Tag v-if="req.required" :value="t('mcpStudio.requiredBadge')" severity="danger" class="!text-[9px] !py-0 !px-1 ml-2 dark:bg-[#FA5252]/20 dark:text-[#FA5252]" />
               </div>
               <div class="font-mono text-slate-500 dark:text-[#868A91]">
-                {{ pluginStore.selectedPlugin.configuredEnv?.[req.key] ? '••••••••' : (req.default || 'Chưa thiết lập') }}
+                {{ pluginStore.selectedPlugin.configuredEnv?.[req.key] ? '••••••••' : (req.default || t('mcpStudio.notConfigured')) }}
               </div>
             </div>
           </div>
@@ -282,11 +282,11 @@ const activeDetailTab = ref<'overview' | 'tools' | 'config' | 'changelog'>('over
         <div v-else-if="activeDetailTab === 'changelog'" class="space-y-3">
           <div class="p-4 rounded-xl border border-slate-200 dark:border-[#393B40] bg-slate-50 dark:bg-[#1E1F22] text-xs">
             <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-slate-800 dark:text-[#DFE1E5]">Phiên bản v{{ pluginStore.selectedPlugin.version }}</span>
-              <Tag value="CURRENT" severity="success" class="!text-[10px] dark:bg-[#5FAD65]/20 dark:text-[#5FAD65]" />
+              <span class="font-bold text-slate-800 dark:text-[#DFE1E5]">{{ t('mcpStudio.versionPrefix') }} v{{ pluginStore.selectedPlugin.version }}</span>
+              <Tag :value="t('mcpStudio.currentBadge')" severity="success" class="!text-[10px] dark:bg-[#5FAD65]/20 dark:text-[#5FAD65]" />
             </div>
             <p class="text-slate-600 dark:text-[#CED0D6] leading-relaxed">
-              {{ pluginStore.selectedPlugin.changeNotes || 'Bản phát hành chính thức tiêu chuẩn cho AX Desktop.' }}
+              {{ pluginStore.selectedPlugin.changeNotes || t('mcpStudio.releaseNotesDefault') }}
             </p>
           </div>
         </div>

@@ -167,7 +167,7 @@ function getProjectFolder(path?: string | null): string {
           <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400 dark:text-[#868A91] border-t border-slate-100 dark:border-[#393B40]">
             <div class="flex items-center gap-2">
               <span class="flex items-center gap-1 text-[#E3A83F] font-bold">
-                <i class="pi pi-star-fill text-[10px]"></i>
+                <AxIcon name="star" size="xs" class="fill-[#E3A83F] text-[#E3A83F]" />
                 {{ skill.avgRating || 5.0 }}
               </span>
               <span>&bull;</span>

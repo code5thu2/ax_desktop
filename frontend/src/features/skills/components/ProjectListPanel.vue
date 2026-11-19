@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import Tag from 'primevue/tag'
 import { useSkillStore } from '../stores/skillStore'
 import { useI18n } from '@/i18n'
+import { AxIcon } from '@/components/ui'
 
 const store = useSkillStore()
 const { t } = useI18n()
@@ -59,7 +60,7 @@ function handleOpenClone() {
           class="py-1.5 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer"
           @click="handleOpenClone"
         >
-          <i class="pi pi-copy text-xs"></i>
+          <AxIcon name="copy" size="xs" />
           <span>{{ t('projects.cloneBtn') }}</span>
         </button>
         <button
@@ -67,7 +68,7 @@ function handleOpenClone() {
           class="py-1.5 px-3.5 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
           @click="handleAddProject"
         >
-          <i class="pi pi-plus text-xs"></i>
+          <AxIcon name="plus" size="xs" />
           <span>{{ t('projects.addBtn') }}</span>
         </button>
       </div>
@@ -92,7 +93,7 @@ function handleOpenClone() {
             @click="handleSelectProject(projPath)"
           >
             <div class="min-w-0 flex items-center gap-2.5">
-              <i class="pi pi-folder text-base" :class="store.currentProject === projPath ? 'text-emerald-500' : 'text-slate-400'"></i>
+              <AxIcon name="folder" size="md" :class="store.currentProject === projPath ? 'text-emerald-500' : 'text-slate-400'" />
               <div class="min-w-0">
                 <div class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                   {{ projPath.split('/').pop() || projPath }}
@@ -109,12 +110,12 @@ function handleOpenClone() {
               :title="t('projects.removeTooltip')"
               @click="handleRemoveProject(projPath, $event)"
             >
-              <i class="pi pi-trash text-xs"></i>
+              <AxIcon name="trash" size="xs" />
             </button>
           </div>
 
           <div v-if="store.recentProjects.length === 0" class="text-center py-10 text-xs text-slate-400">
-            <i class="pi pi-folder text-3xl mb-2 text-slate-300 dark:text-slate-700 block"></i>
+            <AxIcon name="folder" size="lg" class="mb-2 text-slate-300 dark:text-slate-700 mx-auto block" />
             {{ t('projects.noProjects') }}
           </div>
         </div>
@@ -142,7 +143,7 @@ function handleOpenClone() {
           >
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-xs font-bold flex-shrink-0">
-                <i class="pi pi-bolt text-sm"></i>
+                <AxIcon name="zap" size="sm" />
               </div>
               <div class="min-w-0">
                 <div class="text-xs font-bold text-slate-900 dark:text-white truncate">
@@ -176,13 +177,13 @@ function handleOpenClone() {
                 :title="t('projects.uninstallBtn')"
                 @click="handleUninstall(skill.name)"
               >
-                <i class="pi pi-trash text-xs"></i>
+                <AxIcon name="trash" size="xs" />
               </button>
             </div>
           </div>
 
           <div v-if="currentProjectSkills.length === 0" class="text-center py-14 text-xs text-slate-400">
-            <i class="pi pi-box text-3xl mb-2 text-slate-300 dark:text-slate-700 block"></i>
+            <AxIcon name="package" size="lg" class="mb-2 text-slate-300 dark:text-slate-700 mx-auto block" />
             {{ t('projects.noSkillsInWorkspace') }}<br />
             {{ t('projects.goToMarketplace') }}
           </div>

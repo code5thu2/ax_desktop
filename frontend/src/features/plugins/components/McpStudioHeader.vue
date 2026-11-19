@@ -75,11 +75,11 @@ function copyEndpoint() {
         :class="pluginStore.isServerOnline 
           ? 'bg-[#5FAD65]/10 text-[#36A15E] dark:text-[#5FAD65] border-[#5FAD65]/30 hover:bg-[#5FAD65]/20' 
           : 'bg-[#E3A83F]/10 text-[#D48800] dark:text-[#F2C55C] border-[#E3A83F]/30 hover:bg-[#E3A83F]/20'"
-        :title="copiedToast ? 'Đã sao chép: ' + pluginStore.registryServerUrl + '/mcp' : 'Nhấp để sao chép endpoint: ' + pluginStore.registryServerUrl + '/mcp'"
+        :title="copiedToast ? t('mcpStudio.copyUrlSuccess') : 'endpoint: ' + pluginStore.registryServerUrl + '/mcp'"
         @click="copyEndpoint"
       >
         <span class="w-2 h-2 rounded-full" :class="pluginStore.isServerOnline ? 'bg-[#5FAD65] shadow-[0_0_6px_rgba(95,173,101,0.8)]' : 'bg-[#E3A83F]'"></span>
-        <span>{{ copiedToast ? 'Đã sao chép URL!' : gatewayLabel }}</span>
+        <span>{{ copiedToast ? t('mcpStudio.copyUrlSuccess') : gatewayLabel }}</span>
         <AxIcon name="copy" size="xs" class="opacity-70" />
       </button>
 
@@ -88,10 +88,10 @@ function copyEndpoint() {
         type="button"
         data-testid="btn-refresh-catalog"
         class="w-7 h-7 rounded-lg hover:bg-slate-100 dark:hover:bg-[#393B40] text-slate-500 dark:text-[#868A91] flex items-center justify-center cursor-pointer transition border border-slate-200 dark:border-[#393B40]"
-        title="Làm mới danh mục MCP từ server"
+        :title="t('mcpStudio.refreshCatalogTooltip')"
         @click="pluginStore.fetchCatalogFromServer"
       >
-        <i class="pi pi-sync text-xs" :class="{ 'animate-spin': pluginStore.isLoadingCatalog }"></i>
+        <AxIcon name="sync" size="xs" :class="{ 'animate-spin': pluginStore.isLoadingCatalog }" />
       </button>
 
       <!-- Import Git Button -->

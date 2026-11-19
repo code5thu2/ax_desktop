@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Tag from 'primevue/tag'
+import Dialog from 'primevue/dialog'
+import { useToast } from 'primevue/usetoast'
 import { useSkillStore } from '../stores/skillStore'
-import { useConfirm } from 'primevue/useconfirm'
 import { useI18n } from '@/i18n'
-import { AxIcon } from '@/components/ui'
+import { AxButton, AxIcon } from '@/components/ui'
 
 import SkillDetailHeader from './SkillDetailHeader.vue'
 import SkillOverviewTab from './SkillOverviewTab.vue'
@@ -13,10 +14,12 @@ import SkillFilesTab from './SkillFilesTab.vue'
 import SkillVersionsTab from './SkillVersionsTab.vue'
 
 const store = useSkillStore()
-const confirm = useConfirm()
 const { t } = useI18n()
+const toast = useToast()
 
 const activeDetailTab = ref<'overview' | 'tools' | 'files' | 'versions'>('overview')
+const showUninstallModal = ref(false)
+const isUninstalling = ref(false)
 
 function handleInstall() {
   if (store.selectedSkill) {
@@ -55,20 +58,36 @@ function handleToggle(enabled: boolean) {
 
 function handleUninstall() {
   if (!store.selectedSkill) return
+  showUninstallModal.value = true
+}
 
-  confirm.require({
-    message: t('portal.confirmUninstallMsg', { name: store.selectedSkill.name }),
-    header: t('portal.confirmUninstallTitle'),
-    icon: 'pi pi-exclamation-triangle',
-    acceptClass: 'p-button-danger',
-    acceptLabel: t('portal.uninstallBtn'),
-    rejectLabel: t('common.cancel'),
-    accept: () => {
-      if (store.selectedSkill) {
-        store.uninstallSkill(store.selectedSkill.name, store.selectedSkill.installedProjects?.[0])
-      }
-    },
-  })
+async function confirmUninstall() {
+  if (!store.selectedSkill) return
+  isUninstalling.value = true
+  try {
+    const skillName = store.selectedSkill.name
+    const isGlobal = store.selectedSkill.installScope === 'global' || store.activeTab === 'marketplace'
+    const projPath = isGlobal ? undefined : (store.currentProject || store.selectedSkill.installedProjects?.[0])
+    const scope = store.activeTab === 'marketplace' ? 'all' : (isGlobal ? 'global' : 'project')
+
+    await store.uninstallSkill(skillName, projPath, scope)
+    showUninstallModal.value = false
+    toast.add({
+      severity: 'success',
+      summary: t('common.success'),
+      detail: t('portal.uninstallSuccessMsg', { name: skillName }),
+      life: 3000,
+    })
+  } catch (err: any) {
+    toast.add({
+      severity: 'error',
+      summary: t('common.error'),
+      detail: err?.message || 'Gỡ cài đặt thất bại',
+      life: 3000,
+    })
+  } finally {
+    isUninstalling.value = false
+  }
 }
 </script>
 
@@ -80,7 +99,7 @@ function handleUninstall() {
         <AxIcon name="puzzle" size="lg" />
       </div>
       <p class="text-sm font-semibold text-slate-700 dark:text-[#DFE1E5]">{{ t('portal.selectSkillHint') }}</p>
-      <p class="text-xs text-slate-400 dark:text-[#868A91] mt-1">Chọn một skill từ danh mục bên trái để xem đặc tả chi tiết</p>
+      <p class="text-xs text-slate-400 dark:text-[#868A91] mt-1">{{ t('portal.selectSkillDesc') }}</p>
     </div>
 
     <!-- Active Skill Content -->
@@ -105,7 +124,7 @@ function handleUninstall() {
               {{ t('portal.scopeInfoTitle') }} {{ store.selectedSkill.installScope === 'project' ? t('portal.project') : t('portal.global') }}
             </span>
             <span class="block text-[11px] text-slate-500 dark:text-[#868A91] mt-0.5">
-              {{ store.selectedSkill.installScope === 'project' ? 'Skill được đóng gói độc lập trong thư mục dự án và nạp tự động khi mở Workspace.' : t('portal.scopeInfoDesc') }}
+              {{ store.selectedSkill.installScope === 'project' ? t('portal.scopeProjectDesc') : t('portal.scopeInfoDesc') }}
             </span>
           </div>
         </div>
@@ -139,7 +158,7 @@ function handleUninstall() {
           @click="activeDetailTab = 'tools'"
         >
           <AxIcon name="terminal" size="xs" />
-          <span>Công cụ &amp; Lệnh</span>
+          <span>{{ t('portal.tabTools') }}</span>
         </button>
 
         <button
@@ -176,5 +195,49 @@ function handleUninstall() {
         <SkillVersionsTab v-else-if="activeDetailTab === 'versions'" @install-version="handleInstallVersion" />
       </div>
     </div>
+
+    <!-- Confirm Uninstall Dialog -->
+    <Dialog
+      v-model:visible="showUninstallModal"
+      modal
+      :header="t('portal.confirmUninstallTitle')"
+      :style="{ width: '440px' }"
+      class="p-dialog-custom"
+    >
+      <div class="space-y-3 py-2 text-xs">
+        <div class="flex items-center gap-3 p-3.5 rounded-xl bg-[#FA5252]/10 border border-[#FA5252]/30 text-[#FA5252]">
+          <AxIcon name="alert" size="md" class="shrink-0 text-[#FA5252]" />
+          <div>
+            <p class="font-bold text-slate-800 dark:text-[#DFE1E5]">
+              {{ t('portal.confirmUninstallMsg', { name: store.selectedSkill?.name || '' }) }}
+            </p>
+            <p class="text-[11px] text-slate-500 dark:text-[#868A91] mt-0.5">
+              {{ store.selectedSkill?.installScope === 'project' ? t('portal.project') + ': ' + (store.selectedSkill?.installedProjects?.[0] || store.currentProject) : t('portal.global') }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <AxButton
+            variant="ghost"
+            size="sm"
+            @click="showUninstallModal = false"
+          >
+            {{ t('common.cancel') }}
+          </AxButton>
+          <AxButton
+            variant="danger"
+            size="sm"
+            ijIcon="trash"
+            :loading="isUninstalling"
+            @click="confirmUninstall"
+          >
+            <span>{{ t('portal.uninstallBtn') }}</span>
+          </AxButton>
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>

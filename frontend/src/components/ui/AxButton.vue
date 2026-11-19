@@ -26,6 +26,10 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'button',
 })
 
+const emit = defineEmits<{
+  (e: 'click', event: MouseEvent): void
+}>()
+
 const activeIconName = computed(() => {
   return props.iconName || props.ijIcon || (props.icon && !props.icon.startsWith('pi ') ? props.icon : null)
 })
@@ -68,9 +72,15 @@ const sizeClasses = computed(() => {
     :disabled="props.disabled || props.loading"
     class="inline-flex items-center justify-center font-medium transition-all duration-150 cursor-pointer select-none active:scale-[0.98] disabled:opacity-45 disabled:cursor-not-allowed disabled:pointer-events-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3574F0]/50"
     :class="[variantClasses, sizeClasses]"
+    @click="emit('click', $event)"
   >
     <!-- Loading spinner -->
-    <i v-if="props.loading" class="pi pi-spinner pi-spin text-current text-xs" />
+    <AxIcon
+      v-if="props.loading"
+      name="refresh"
+      :size="props.size === 'sm' ? 'sm' : 'md'"
+      class="animate-spin text-current"
+    />
 
     <!-- Lucide Icon Left -->
     <AxIcon

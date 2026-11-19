@@ -41,7 +41,7 @@ async function runToolTest(toolName: string) {
 <template>
   <div v-if="pluginStore.selectedPlugin" class="space-y-3">
     <div class="text-xs text-slate-500 dark:text-[#868A91] mb-2">
-      MCP Server này cung cấp <strong class="text-slate-800 dark:text-[#DFE1E5]">{{ pluginStore.selectedPlugin.tools?.length || 0 }}</strong> công cụ có thể gọi trực tiếp:
+      {{ t('mcpStudio.toolsDirectNotice', { count: pluginStore.selectedPlugin.tools?.length || 0 }) }}
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -75,7 +75,7 @@ async function runToolTest(toolName: string) {
               <button
                 type="button"
                 class="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-[#393B40] text-slate-400 dark:text-[#868A91] text-xs cursor-pointer"
-                :title="showToolArgsInput[tool.name] ? 'Thu gọn tham số' : 'Nhập tham số JSON'"
+                :title="showToolArgsInput[tool.name] ? t('mcpStudio.collapseArgs') : t('mcpStudio.inputJsonArgs')"
                 @click="toggleToolArgs(tool.name)"
               >
                 <AxIcon :name="showToolArgsInput[tool.name] ? 'close' : 'settings'" size="xs" />
@@ -89,7 +89,7 @@ async function runToolTest(toolName: string) {
 
           <!-- Parameters Input Box -->
           <div v-if="showToolArgsInput[tool.name]" class="mt-2 mb-2 p-2.5 rounded-lg bg-white dark:bg-[#1E1F22] border border-slate-200 dark:border-[#393B40]">
-            <label class="block text-[10px] font-bold text-slate-500 dark:text-[#868A91] mb-1">Tham số JSON (Arguments)</label>
+            <label class="block text-[10px] font-bold text-slate-500 dark:text-[#868A91] mb-1">{{ t('mcpStudio.jsonArgsLabel') }}</label>
             <textarea
               v-model="toolInputArgs[tool.name]"
               rows="2"

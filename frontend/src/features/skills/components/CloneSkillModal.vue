@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import Dialog from 'primevue/dialog'
+import { useToast } from 'primevue/usetoast'
 import { useSkillStore } from '../stores/skillStore'
 import { nativeBridge } from '@/services/nativeBridge'
 import { useI18n } from '@/i18n'
+import { AxIcon } from '@/components/ui'
 
 const store = useSkillStore()
 const { t } = useI18n()
+const toast = useToast()
 
 const sourceProject = ref<string>(store.currentProject || '')
 const targetProject = ref<string>('')
@@ -66,11 +69,24 @@ async function handleConfirmClone() {
 
   isCloning.value = true
   try {
+    const count = selectedSkillNames.value.length
     await store.cloneSkills(sourceProject.value, targetProject.value, selectedSkillNames.value)
     store.showCloneSkillModal = false
     selectedSkillNames.value = []
+    toast.add({
+      severity: 'success',
+      summary: t('common.success'),
+      detail: t('portal.cloneSuccessMsg', { count }),
+      life: 3000,
+    })
   } catch (err: any) {
     errorMsg.value = err?.message || String(err)
+    toast.add({
+      severity: 'error',
+      summary: t('common.error'),
+      detail: err?.message || 'Sao chép thất bại',
+      life: 3000,
+    })
   } finally {
     isCloning.value = false
   }
@@ -93,7 +109,7 @@ function handleClose() {
   >
     <div class="space-y-4 py-2">
       <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 text-xs text-sky-800 dark:text-sky-300 leading-relaxed flex items-start gap-2">
-        <i class="pi pi-info-circle text-sky-500 mt-0.5 flex-shrink-0"></i>
+        <AxIcon name="info" size="xs" class="text-sky-500 mt-0.5 flex-shrink-0" />
         <span>{{ t('cloneModal.banner') }}</span>
       </div>
 
@@ -103,15 +119,18 @@ function handleClose() {
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
             {{ t('cloneModal.sourceProjectLabel') }}
           </label>
-          <select
-            v-model="sourceProject"
-            class="w-full text-xs py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
-          >
-            <option value="" disabled>{{ t('cloneModal.sourceProjectPlaceholder') }}</option>
-            <option v-for="opt in projectOptions" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
+          <div class="relative">
+            <select
+              v-model="sourceProject"
+              class="w-full appearance-none text-xs py-2.5 pl-3.5 pr-9 rounded-xl bg-slate-50 dark:bg-[#1E1F22] border border-slate-300 dark:border-[#393B40] text-slate-800 dark:text-[#DFE1E5] focus:outline-none focus:ring-2 focus:ring-[#3574F0]/25 focus:border-[#3574F0] font-medium cursor-pointer shadow-xs transition-all"
+            >
+              <option value="" disabled>{{ t('cloneModal.sourceProjectPlaceholder') }}</option>
+              <option v-for="opt in projectOptions" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+            <AxIcon name="chevron-down" size="xs" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#868A91] pointer-events-none" />
+          </div>
         </div>
 
         <!-- Target project -->
@@ -124,14 +143,14 @@ function handleClose() {
               v-model="targetProject"
               type="text"
               :placeholder="t('cloneModal.targetProjectPlaceholder')"
-              class="flex-1 text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 font-mono"
+              class="flex-1 text-xs py-2 px-3 rounded-xl bg-slate-50 dark:bg-[#1E1F22] border border-slate-300 dark:border-[#393B40] text-slate-900 dark:text-[#DFE1E5] focus:outline-none focus:border-emerald-500 font-mono"
             />
             <button
               type="button"
-              class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0"
+              class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-[#393B40] hover:border-slate-400 dark:hover:border-slate-500 bg-white dark:bg-[#1E1F22] text-slate-700 dark:text-[#DFE1E5] flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0"
               @click="handleBrowseTargetFolder"
             >
-              <i class="pi pi-folder-open text-xs"></i>
+              <AxIcon name="folder-open" size="xs" />
               <span>{{ t('scopeModal.browseBtn') }}</span>
             </button>
           </div>
@@ -153,19 +172,19 @@ function handleClose() {
             </button>
           </div>
 
-          <div class="max-h-48 overflow-y-auto space-y-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <div class="max-h-48 overflow-y-auto space-y-2 p-3 rounded-xl border border-slate-200 dark:border-[#393B40] bg-slate-50 dark:bg-[#1E1F22]/60">
             <div
               v-for="skillName in availableSkillsToClone"
               :key="skillName"
-              class="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              class="flex items-center justify-between p-2 rounded-lg hover:bg-white dark:hover:bg-[#2B2D30] transition-colors cursor-pointer"
               @click="selectedSkillNames = selectedSkillNames.includes(skillName) ? selectedSkillNames.filter(n => n !== skillName) : [...selectedSkillNames, skillName]"
             >
               <div class="flex items-center gap-2.5 min-w-0">
                 <div
                   class="w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0"
-                  :class="selectedSkillNames.includes(skillName) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-400 dark:border-slate-600 bg-white dark:bg-slate-800'"
+                  :class="selectedSkillNames.includes(skillName) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-400 dark:border-slate-600 bg-white dark:bg-[#2B2D30]'"
                 >
-                  <i v-if="selectedSkillNames.includes(skillName)" class="pi pi-check text-[10px] font-bold"></i>
+                  <AxIcon v-if="selectedSkillNames.includes(skillName)" name="check" size="xs" />
                 </div>
                 <span class="text-xs font-bold text-slate-800 dark:text-slate-200 truncate select-none">
                   {{ skillName }}
@@ -180,7 +199,7 @@ function handleClose() {
               {{ t('cloneModal.selectSourcePrompt') }}
             </div>
             <div v-else-if="availableSkillsToClone.length === 0" class="text-xs text-amber-600 dark:text-amber-400 text-center py-4 leading-relaxed font-medium">
-              <i class="pi pi-exclamation-circle text-base block mb-1"></i>
+              <AxIcon name="alert" size="sm" class="mx-auto mb-1 text-amber-500" />
               {{ t('cloneModal.noAvailableSkills') }}
             </div>
           </div>
@@ -208,8 +227,8 @@ function handleClose() {
           :disabled="selectedSkillNames.length === 0 || isCloning"
           @click="handleConfirmClone"
         >
-          <i v-if="isCloning" class="pi pi-spinner animate-spin text-xs"></i>
-          <i v-else class="pi pi-copy text-xs"></i>
+          <AxIcon v-if="isCloning" name="spinner" size="xs" class="animate-spin" />
+          <AxIcon v-else name="copy" size="xs" />
           <span>{{ isCloning ? t('cloneModal.cloningBtn') : t('cloneModal.cloneBtn', { count: selectedSkillNames.length }) }}</span>
         </button>
       </div>

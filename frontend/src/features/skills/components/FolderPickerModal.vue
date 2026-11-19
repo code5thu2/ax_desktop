@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Dialog from 'primevue/dialog'
+import AxIcon from '@/components/ui/AxIcon.vue'
 import { useSkillStore } from '../stores/skillStore'
 import { nativeBridge } from '@/services/nativeBridge'
 import { useI18n } from '@/i18n'
@@ -64,10 +65,10 @@ function handleClose() {
           />
           <button
             type="button"
-            class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0"
+            class="py-2 px-3 text-xs font-semibold rounded-xl border border-slate-300 dark:border-[#393B40] hover:border-slate-400 dark:hover:border-slate-500 bg-white dark:bg-[#1E1F22] text-slate-700 dark:text-[#DFE1E5] flex items-center gap-1.5 transition-all cursor-pointer flex-shrink-0"
             @click="handleBrowse"
           >
-            <i class="pi pi-folder-open text-xs"></i>
+            <AxIcon name="folder-open" size="xs" />
             <span>{{ t('folderPicker.browseBtn') }}</span>
           </button>
         </div>
@@ -91,7 +92,7 @@ function handleClose() {
           class="py-2 px-4 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
           @click="handleConfirm"
         >
-          <i class="pi pi-check text-xs"></i>
+          <AxIcon name="check" size="xs" />
           <span>{{ t('folderPicker.confirmBtn') }}</span>
         </button>
       </div>

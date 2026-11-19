@@ -364,16 +364,24 @@ export const useSkillStore = defineStore('skills', () => {
     }
   }
 
-  async function uninstallSkill(name: string, projectPath?: string): Promise<boolean> {
+  async function uninstallSkill(
+    name: string,
+    projectPath?: string,
+    scope?: 'global' | 'project' | 'all'
+  ): Promise<boolean> {
     isLoading.value = true
     try {
-      const ok = await nativeBridge.uninstallSkill(name, projectPath)
+      const ok = await nativeBridge.uninstallSkill(name, projectPath, scope)
       if (ok) {
         const normProj = projectPath ? projectPath.replace(/\\/g, '/').toLowerCase() : null
         installedSkills.value = installedSkills.value.filter((s) => {
           if (s.name !== name) return true
+          if (scope === 'all') return false
           if (normProj) {
             return !s.projectPath || s.projectPath.replace(/\\/g, '/').toLowerCase() !== normProj
+          }
+          if (scope === 'global') {
+            return s.scope !== 'global'
           }
           return s.scope !== 'global' && Boolean(s.projectPath)
         })
@@ -383,12 +391,16 @@ export const useSkillStore = defineStore('skills', () => {
           if (mSkill) {
             mSkill.installed = false
             mSkill.enabled = false
+            mSkill.installScope = undefined
             mSkill.installedVersion = undefined
+            mSkill.installedProjects = []
           }
           if (skillDetail.value && skillDetail.value.name === name) {
             skillDetail.value.installed = false
             skillDetail.value.enabled = false
+            skillDetail.value.installScope = undefined
             skillDetail.value.installedVersion = undefined
+            skillDetail.value.installedProjects = []
           }
         }
         await loadPortalStatus()

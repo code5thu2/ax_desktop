@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import Dialog from 'primevue/dialog'
 import { usePluginStore } from '../../stores/pluginStore'
 import { useI18n } from '@/i18n'
-import { AxButton, AxInput } from '@/components/ui'
+import { AxButton, AxInput, AxIcon } from '@/components/ui'
 
 const emit = defineEmits<{
   (e: 'success', name: string, count: number): void
@@ -63,14 +63,14 @@ async function handleUploadSubmit() {
         {{ t('mcpStudio.uploadModalTitle') }}
       </p>
 
-      <div v-if="uploadError" class="p-3 rounded-lg bg-[#FA5252]/10 border border-[#FA5252]/30 text-[#FA5252]">
-        <i class="pi pi-exclamation-triangle mr-1"></i>
+      <div v-if="uploadError" class="p-3 rounded-lg bg-[#FA5252]/10 border border-[#FA5252]/30 text-[#FA5252] flex items-center gap-1.5">
+        <AxIcon name="alert" size="xs" />
         <span>{{ uploadError }}</span>
       </div>
 
       <div>
         <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">
-          Chọn Tệp (.py / .zip) <span class="text-[#FA5252]">*</span>
+          {{ t('mcpStudio.chooseFileLabel') }} <span class="text-[#FA5252]">*</span>
         </label>
         <input
           type="file"
@@ -81,7 +81,7 @@ async function handleUploadSubmit() {
       </div>
 
       <div>
-        <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">Tên Hiển Thị</label>
+        <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">{{ t('mcpStudio.displayNameLabel') }}</label>
         <AxInput
           v-model="uploadName"
           placeholder="VD: Custom File Server"
@@ -89,10 +89,10 @@ async function handleUploadSubmit() {
       </div>
 
       <div>
-        <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">Mô Tả</label>
+        <label class="block font-bold mb-1 text-slate-700 dark:text-[#DFE1E5]">{{ t('mcpStudio.descLabel') }}</label>
         <AxInput
           v-model="uploadDesc"
-          placeholder="Mô tả công cụ..."
+          :placeholder="t('mcpStudio.descPlaceholder')"
         />
       </div>
     </div>
