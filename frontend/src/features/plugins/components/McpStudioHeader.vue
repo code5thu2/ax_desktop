@@ -37,13 +37,13 @@ function copyEndpoint() {
 </script>
 
 <template>
-  <div class="h-11 border-b border-slate-200/80 dark:border-[#393B40] bg-white/80 dark:bg-[#1E1F22] px-6 flex items-center justify-between flex-shrink-0 select-none">
+  <div class="h-10 border-b border-slate-200/80 dark:border-[#393B40] bg-white/80 dark:bg-[#1E1F22] px-6 flex items-center justify-between flex-shrink-0 select-none">
     <!-- Left Tabs: Marketplace, Installed -->
-    <div class="flex items-center gap-6 h-full">
+    <div class="flex items-center gap-6 h-full flex-shrink-0">
       <button
         type="button"
         data-testid="tab-marketplace"
-        class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer"
+        class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
         :class="pluginStore.activeTab === 'marketplace' ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
         @click="pluginStore.setActiveTab('marketplace')"
       >
@@ -55,7 +55,7 @@ function copyEndpoint() {
       <button
         type="button"
         data-testid="tab-installed"
-        class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer"
+        class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
         :class="pluginStore.activeTab === 'installed' ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
         @click="pluginStore.setActiveTab('installed')"
       >
@@ -66,7 +66,7 @@ function copyEndpoint() {
     </div>
 
     <!-- Right Controls: Gateway Pill, Refresh, Git Import & Upload -->
-    <div class="flex items-center gap-2.5">
+    <div class="flex items-center gap-2.5 flex-shrink-0">
       <!-- Gateway Server Status Pill with Click-to-Copy -->
       <button
         type="button"

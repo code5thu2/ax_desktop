@@ -46,17 +46,7 @@ const skillLocationInfo = computed(() => {
 
   // If in marketplace or installed tab, check selectedSkill
   const skill = store.selectedSkill
-  if (!skill) return null
-
-  if (!skill.installed) {
-    return {
-      isGlobal: false,
-      iconName: 'cloud',
-      iconColor: 'text-slate-400',
-      label: t('portal.notInstalled'),
-      title: t('portal.notInstalled'),
-    }
-  }
+  if (!skill || !skill.installed) return null
 
   const isGlobal = skill.installScope === 'global' || skill.scope === 'GLOBAL'
   if (isGlobal) {
@@ -177,80 +167,36 @@ onMounted(async () => {
 <template>
   <div class="h-screen w-screen flex flex-col bg-white dark:bg-[#121214] text-slate-900 dark:text-[#ececec] overflow-hidden select-none font-sans">
     <!-- Master Header -->
-    <header class="h-13 border-b border-slate-200/90 dark:border-[#393B40] bg-white/95 dark:bg-[#1E1F22]/95 backdrop-blur-md px-4 flex items-center justify-between gap-3 flex-shrink-0 z-20">
-      <!-- Left: Navigation Tabs (Replaces redundant logo/title directly per user request) -->
-      <div v-if="store.currentMode === 'skills'" class="flex items-center gap-1 sm:gap-1.5">
+    <header class="h-12 border-b border-slate-200/90 dark:border-[#393B40] bg-white/95 dark:bg-[#1E1F22]/95 backdrop-blur-md px-4 flex items-center justify-between gap-3 flex-shrink-0 z-20">
+      <!-- Left: Only Quản lý Dự án (Replaces redundant logo/title per user request) -->
+      <div class="flex items-center gap-2 flex-shrink-0">
         <button
           type="button"
-          data-testid="tab-marketplace"
-          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
-          :class="store.activeTab === 'marketplace'
-            ? 'bg-[#3574F0]/10 text-[#3574F0] dark:text-[#56A8F5] border border-[#3574F0]/30 shadow-xs'
-            : 'text-slate-600 dark:text-[#868A91] hover:text-slate-900 dark:hover:text-[#DFE1E5] hover:bg-slate-100 dark:hover:bg-[#2B2D30] border border-transparent'"
-          @click="store.setActiveTab('marketplace')"
+          data-testid="header-projects-btn"
+          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
+          :class="store.activeTab === 'projects' && store.currentMode === 'skills'
+            ? 'bg-[#3574F0]/15 text-[#3574F0] dark:text-[#56A8F5] border border-[#3574F0]/30 shadow-xs'
+            : 'text-slate-700 dark:text-[#CED0D6] hover:text-slate-900 dark:hover:text-[#DFE1E5] hover:bg-slate-100 dark:hover:bg-[#2B2D30] border border-slate-200/80 dark:border-[#393B40] bg-slate-50 dark:bg-[#1E1F22]'"
+          @click="store.setMode('skills'); store.setActiveTab('projects')"
         >
-          <AxIcon name="compass" size="sm" />
-          <span>{{ t('portal.tabMarketplace') }}</span>
-          <span
-            class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full"
-            :class="store.activeTab === 'marketplace' ? 'bg-[#3574F0] text-white' : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
-          >
-            {{ store.skills.length }}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          data-testid="tab-installed"
-          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
-          :class="store.activeTab === 'installed'
-            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-xs'
-            : 'text-slate-600 dark:text-[#868A91] hover:text-slate-900 dark:hover:text-[#DFE1E5] hover:bg-slate-100 dark:hover:bg-[#2B2D30] border border-transparent'"
-          @click="store.setActiveTab('installed')"
-        >
-          <AxIcon name="check-circle" size="sm" />
-          <span>{{ t('portal.tabInstalled') }}</span>
-          <span
-            class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full"
-            :class="store.activeTab === 'installed' ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
-          >
-            {{ store.installedSkills.length }}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          data-testid="tab-projects"
-          class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
-          :class="store.activeTab === 'projects'
-            ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/30 shadow-xs'
-            : 'text-slate-600 dark:text-[#868A91] hover:text-slate-900 dark:hover:text-[#DFE1E5] hover:bg-slate-100 dark:hover:bg-[#2B2D30] border border-transparent'"
-          @click="store.setActiveTab('projects')"
-        >
-          <AxIcon name="folder" size="sm" />
+          <AxIcon name="folder" size="sm" class="text-[#3574F0]" />
           <span>{{ t('portal.tabProjects') }}</span>
           <span
             class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full"
-            :class="store.activeTab === 'projects' ? 'bg-sky-500 text-white' : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
+            :class="store.activeTab === 'projects' && store.currentMode === 'skills'
+              ? 'bg-[#3574F0] text-white'
+              : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
           >
             {{ store.recentProjects.length }}
           </span>
         </button>
       </div>
 
-      <!-- Left when in MCP mode -->
-      <div v-else class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-500 flex items-center justify-center text-white shadow-sm shadow-teal-500/25">
-          <AxIcon name="cpu" size="sm" />
-        </div>
-        <span class="font-bold text-xs text-slate-900 dark:text-[#DFE1E5] tracking-tight">MCP Protocol Studio</span>
-      </div>
-
       <!-- Center: Mode Switcher (Skill Marketplace <-> MCP Protocol Studio) -->
-      <div class="flex items-center bg-slate-100 dark:bg-[#2B2D30] p-1 rounded-xl border border-slate-200 dark:border-[#393B40]">
+      <div class="flex items-center bg-slate-100 dark:bg-[#2B2D30] p-1 rounded-xl border border-slate-200 dark:border-[#393B40] flex-shrink-0">
         <button
           type="button"
-          class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
           :class="store.currentMode === 'skills' ? 'bg-white dark:bg-[#35373B] text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-[#DFE1E5]'"
           @click="store.setMode('skills')"
         >
@@ -260,7 +206,7 @@ onMounted(async () => {
 
         <button
           type="button"
-          class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
           :class="store.currentMode === 'mcp' ? 'bg-white dark:bg-[#35373B] text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-[#DFE1E5]'"
           @click="store.setMode('mcp')"
         >
@@ -269,23 +215,13 @@ onMounted(async () => {
         </button>
       </div>
 
-      <!-- Right: Location info, Launch Studio, Language, Theme & User Profile -->
+      <!-- Right: Launch Studio, Language, Theme & User Profile -->
       <div class="flex items-center gap-2 flex-shrink-0">
-        <!-- Active Workspace / Scope path pill -->
-        <div
-          v-if="skillLocationInfo"
-          class="hidden lg:flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-slate-100 dark:bg-[#2B2D30] border border-slate-200 dark:border-[#393B40] text-[11px] text-slate-600 dark:text-[#CED0D6]"
-          :title="skillLocationInfo.title"
-        >
-          <AxIcon :name="skillLocationInfo.iconName" size="xs" :class="skillLocationInfo.iconColor" />
-          <span class="font-mono truncate max-w-[160px]">{{ skillLocationInfo.label }}</span>
-        </div>
-
         <!-- Launch AIPRO Studio Button -->
         <button
           type="button"
           :disabled="isLaunchingStudio"
-          class="py-1.5 px-3 text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl shadow-xs shadow-emerald-500/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 flex-shrink-0 active:scale-95"
+          class="py-1.5 px-3 text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl shadow-xs shadow-emerald-500/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60 flex-shrink-0 active:scale-95 whitespace-nowrap"
           @click="handleLaunchStudio"
         >
           <AxIcon v-if="isLaunchingStudio" name="spinner" size="xs" class="animate-spin" />
@@ -294,7 +230,7 @@ onMounted(async () => {
         </button>
 
         <!-- Multi-language Switcher (VI | EN | KO) -->
-        <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-[#2B2D30] border border-slate-200 dark:border-[#393B40] rounded-xl p-0.5 shadow-xs">
+        <div class="flex items-center gap-0.5 bg-slate-100 dark:bg-[#2B2D30] border border-slate-200 dark:border-[#393B40] rounded-xl p-0.5 shadow-xs flex-shrink-0">
           <button
             type="button"
             class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
@@ -324,7 +260,7 @@ onMounted(async () => {
         <!-- Dark/Light Theme Toggle -->
         <button
           type="button"
-          class="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#2B2D30] transition-colors cursor-pointer"
+          class="p-1.5 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#2B2D30] transition-colors cursor-pointer flex-shrink-0"
           :title="settingsStore.darkMode ? t('portal.themeLightTitle') : t('portal.themeDarkTitle')"
           @click="settingsStore.toggleDarkMode"
         >
@@ -332,14 +268,14 @@ onMounted(async () => {
         </button>
 
         <!-- User Profile Avatar & Solid Dropdown Menu -->
-        <div class="relative" ref="userMenuContainerRef">
+        <div class="relative flex-shrink-0" ref="userMenuContainerRef">
           <button
             type="button"
             data-testid="header-user-btn"
-            class="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-[#2B2D30] transition-colors cursor-pointer"
+            class="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-[#2B2D30] transition-colors cursor-pointer whitespace-nowrap"
             @click="isUserMenuOpen = !isUserMenuOpen"
           >
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-bold text-xs shadow-xs flex-shrink-0">
               {{ (authStore.currentUser?.name || 'AX').substring(0, 2).toUpperCase() }}
             </div>
             <span class="text-xs font-semibold text-slate-700 dark:text-[#CED0D6] hidden md:inline max-w-[110px] truncate">
@@ -431,23 +367,81 @@ onMounted(async () => {
       </div>
 
       <!-- Mode 2: Skill Marketplace Mode -->
-      <div v-else class="h-full flex min-h-0 overflow-hidden">
-        <!-- Marketplace & Installed: 2-column layout (List + Detail) -->
-        <template v-if="store.activeTab === 'marketplace' || store.activeTab === 'installed'">
-          <div class="w-80 md:w-96 lg:w-[420px] flex-shrink-0 h-full overflow-hidden border-r border-slate-200/80 dark:border-[#393B40]">
-            <SkillList />
-          </div>
-          <div class="flex-1 h-full overflow-hidden">
-            <SkillDetailPanel />
-          </div>
-        </template>
+      <div v-else class="h-full flex flex-col min-h-0 overflow-hidden">
+        <!-- Sub-navigation Bar for Skills (Marketplace, Installed) -->
+        <div class="h-10 border-b border-slate-200/80 dark:border-[#393B40] bg-white/80 dark:bg-[#1E1F22] px-6 flex items-center justify-between flex-shrink-0 select-none">
+          <div class="flex items-center gap-6 h-full">
+            <button
+              type="button"
+              data-testid="tab-marketplace"
+              class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
+              :class="store.activeTab === 'marketplace'
+                ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
+              @click="store.setActiveTab('marketplace')"
+            >
+              <AxIcon name="compass" size="sm" />
+              <span>{{ t('portal.tabMarketplace') }}</span>
+              <span
+                class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full"
+                :class="store.activeTab === 'marketplace'
+                  ? 'bg-[#3574F0] text-white'
+                  : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
+              >
+                {{ store.skills.length }}
+              </span>
+            </button>
 
-        <!-- Projects: Full width Workspace Management -->
-        <template v-else-if="store.activeTab === 'projects'">
-          <div class="flex-1 h-full overflow-hidden">
-            <ProjectListPanel />
+            <button
+              type="button"
+              data-testid="tab-installed"
+              class="h-full flex items-center gap-2 border-b-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-shrink-0"
+              :class="store.activeTab === 'installed'
+                ? 'border-[#3574F0] text-[#3574F0] dark:text-[#56A8F5]'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-[#DFE1E5]'"
+              @click="store.setActiveTab('installed')"
+            >
+              <AxIcon name="check-circle" size="sm" />
+              <span>{{ t('portal.tabInstalled') }}</span>
+              <span
+                class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full"
+                :class="store.activeTab === 'installed'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-slate-200 dark:bg-[#393B40] text-slate-700 dark:text-[#CED0D6]'"
+              >
+                {{ store.installedSkills.length }}
+              </span>
+            </button>
           </div>
-        </template>
+
+          <!-- Right side of sub-bar: Active workspace / location info (if any) -->
+          <div
+            v-if="skillLocationInfo"
+            class="flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-slate-100 dark:bg-[#2B2D30] border border-slate-200 dark:border-[#393B40] text-[11px] text-slate-600 dark:text-[#CED0D6] font-mono"
+            :title="skillLocationInfo.title"
+          >
+            <AxIcon :name="skillLocationInfo.iconName" size="xs" :class="skillLocationInfo.iconColor" />
+            <span class="truncate max-w-xs">{{ skillLocationInfo.label }}</span>
+          </div>
+        </div>
+
+        <!-- Content Layout (List + Detail or Projects) -->
+        <div class="flex-1 flex min-h-0 overflow-hidden">
+          <template v-if="store.activeTab === 'marketplace' || store.activeTab === 'installed'">
+            <div class="w-80 md:w-96 lg:w-[420px] flex-shrink-0 h-full overflow-hidden border-r border-slate-200/80 dark:border-[#393B40]">
+              <SkillList />
+            </div>
+            <div class="flex-1 h-full overflow-hidden">
+              <SkillDetailPanel />
+            </div>
+          </template>
+
+          <template v-else-if="store.activeTab === 'projects'">
+            <div class="flex-1 h-full overflow-hidden">
+              <ProjectListPanel />
+            </div>
+          </template>
+        </div>
       </div>
     </div>
 
